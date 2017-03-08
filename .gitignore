@@ -1,0 +1,8 @@
+/maldump/
+/slowpoke/examples/
+/.lein-repl-history
+/.nrepl-port
+/target/
+/sample-users.txt
+/test-users.txt
+*.pyc
