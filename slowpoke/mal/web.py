@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import bs4
+import gzip
 import logging
 import re
 import urllib.parse
@@ -16,11 +17,11 @@ def fetch_user_info(username):
 
     url = BASE + '/malappinfo.php?' + urlargs
     try:
-        with urllib.request.urlopen(url, timeout=3) as response:
+        with _request(url, timeout=3) as response:
             if response.status != 200:
                 LOGGER.warn('Error while fetching user info: %s', response.reason)
             else:
-                return re.sub(b'[\x00-\x1f]', b' ', response.read())
+                return re.sub(b'[\x00-\x1f]', b' ', _body(response))
     except Exception as e:
         LOGGER.warn('Exception while fetching user info: %s', e)
 
@@ -29,11 +30,11 @@ def fetch_user_info(username):
 def fetch_random_users():
     url = BASE + '/users.php'
     try:
-        with urllib.request.urlopen(url, timeout=3) as response:
+        with _request(url, timeout=3) as response:
             if response.status != 200:
                 LOGGER.warn('Error while fetching users: %s', response.reason)
             else:
-                return parse_users(_body(response))
+                return parse_users(_decoded_body(response))
     except Exception as e:
         LOGGER.warn('Exception while fetching users: %s', e)
 
@@ -42,11 +43,11 @@ def fetch_random_users():
 def fetch_anime_page(anime_id):
     url = BASE + '/anime/' + str(anime_id)
     try:
-        with urllib.request.urlopen(url, timeout=3) as response:
+        with _request(url, timeout=3) as response:
             if response.status != 200:
                 LOGGER.warn('Error while fetching anime: %s', response.reason)
             else:
-                return parse_anime_page(anime_id, _body(response))
+                return parse_anime_page(anime_id, _decoded_body(response))
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return ({}, [], set(), {})
@@ -57,8 +58,25 @@ def fetch_anime_page(anime_id):
 
     return None, None, None, None
 
+def _request(url, **args):
+    request =  urllib.request.Request(url)
+    request.add_header('Accept-Encoding', 'gzip')
+
+    return urllib.request.urlopen(request, **args)
+
 def _body(response):
-    return response.read().decode('utf-8', 'replace')
+    compression = response.getheader('Content-Encoding')
+
+    body = response.read()
+    if compression == 'gzip':
+        body = gzip.decompress(body)
+    elif compression:
+        raise Exception("Unrecognized Content-Encoding: " + compression)
+
+    return body
+
+def _decoded_body(response):
+    return _body(response).decode('utf-8', 'replace')
 
 def parse_users(body):
     return set(match.group(1)
