@@ -8,6 +8,7 @@ import math
 import os
 import random
 import sqlite3
+import sys
 import xml.etree.ElementTree
 
 from mal.constants import STATUS_COMPLETED, STATUS_DROPPED
@@ -150,11 +151,17 @@ def _anime_item(animedb_id, anime, now_days):
             _int_text(anime, 'my_score'),
             now_days]
 
+def _load_blob(blob):
+    if sys.version_info >= (3, 6):
+        return json.loads(gzip.decompress(blob))
+    else:
+        return json.loads(gzip.decompress(blob).decode())
+
 def _insert_anime_list(c, user_id, data):
     c.execute("SELECT anime_list FROM anime_list WHERE user_id = ?", (user_id,))
     row = c.fetchone()
     if row:
-        previous_map = {item[0]: item for item in json.loads(gzip.decompress(row[0]))}
+        previous_map = {item[0]: item for item in _load_blob(row[0])}
 
         changed = False
         for item in data:
@@ -188,7 +195,7 @@ def fetch_anime_list(basedir, username):
         (user_id,) = c.fetchone()
         c.execute('SELECT anime_list FROM anime_list WHERE user_id = ?', (user_id,))
         (blob,) = c.fetchone()
-        return json.loads(gzip.decompress(blob))
+        return _load_blob(blob)
 
 def make_user_sample(basedir):
     with _connection(basedir) as conn:
@@ -218,7 +225,7 @@ def make_user_sample(basedir):
                 for user_id in shuffled_users:
                     c.execute('SELECT anime_list FROM anime_list WHERE user_id = ?', (user_id,))
                     (user_blob,) = c.fetchone()
-                    user_anime_list = json.loads(gzip.decompress(user_blob))
+                    user_anime_list = _load_blob(user_blob)
                     user_anime_ids = [rated[0] for rated in user_anime_list if rated[1] == STATUS_COMPLETED or rated[1] == STATUS_DROPPED]
                     added = (set(user_anime_ids) & cover_anime) - covered
                     if len(added) < 4:
