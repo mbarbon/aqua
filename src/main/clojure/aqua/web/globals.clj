@@ -1,5 +1,5 @@
 (ns aqua.web.globals
-  )
+  (:require aqua.mal-local))
 
 (def *data-source-rw (atom nil))
 (def *data-source-ro (atom nil))
