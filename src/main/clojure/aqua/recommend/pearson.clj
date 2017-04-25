@@ -4,7 +4,10 @@
 
 (defn- rank-users [min-common-items user users]
   (let [user-pearson (Pearson. user min-common-items)]
-    (sort-by #(% 0) (map #(vector (.userSimilarity user-pearson %) %) users))))
+    (->> users
+      (filter #(aqua.recommend.collaborative-filter/similar-watched-count user %))
+      (map #(vector (.userSimilarity user-pearson %) %))
+      (sort-by #(% 0)))))
 
 (defn get-recommendations [min-common-items user users remove-known-anime]
   (let [ranked-users (take 100 (rank-users min-common-items user users))

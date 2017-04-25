@@ -59,6 +59,18 @@ public class User {
     public String username;
     public long userId;
     public List<Rated> animeList;
+    public int completedCount, droppedCount;
+
+    public void computeAnimeStats() {
+        completedCount = droppedCount = 0;
+
+        for (Rated rated : animeList) {
+            if (rated.status == Rated.COMPLETED)
+                ++completedCount;
+            else if (rated.status == Rated.DROPPED)
+                ++droppedCount;
+        }
+    }
 
     public Iterable<Rated> withStatusMask(int mask) {
         return new FilteredListIterator(animeList, mask);
@@ -85,6 +97,8 @@ public class User {
 
         filtered.username = username;
         filtered.userId = userId;
+        filtered.completedCount = completedCount;
+        filtered.droppedCount = droppedCount;
         filtered.animeList = animeList.stream()
             .filter(rated -> rated.animedbId != animedbId)
             .collect(Collectors.toList());

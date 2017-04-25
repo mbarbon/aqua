@@ -4,7 +4,10 @@
 
 (defn- rank-users [user users]
   (let [user-cosine (Cosine. user)]
-    (sort-by #(% 0) (map #(vector (.userSimilarity user-cosine %) %) users))))
+    (->> users
+      (filter #(aqua.recommend.collaborative-filter/similar-watched-count user %))
+      (map #(vector (.userSimilarity user-cosine %) %))
+      (sort-by #(% 0)))))
 
 (defn get-recommendations [user users remove-known-anime]
   (let [ranked-users (take 100 (rank-users user users))

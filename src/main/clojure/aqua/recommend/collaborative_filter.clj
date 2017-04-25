@@ -1,6 +1,19 @@
 (ns aqua.recommend.collaborative-filter
   )
 
+(defn similar-watched-count [^aqua.mal.data.User usera
+                             ^aqua.mal.data.User userb]
+  (let [completed-a (.completedCount usera)
+        completed-b (.completedCount userb)
+        completed-min (min completed-a completed-b)
+        completed-max (max completed-a completed-b)]
+    (cond
+      (= completed-min 0) false
+      (= completed-max 0) false
+      (< (/ completed-max completed-min) 2) true
+      (and (< completed-min 5) (< completed-max 10)) true
+      :else false)))
+
 (defn- score-completed-anime [remove-known-anime user user-rank]
   (into {}
     (for [^aqua.mal.data.Rated item (remove-known-anime (.completed user))]

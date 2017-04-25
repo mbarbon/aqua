@@ -50,6 +50,7 @@
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
     (set! (.animeList user) (Json/readRatedList al-data))
+    (.computeAnimeStats user)
     user))
 
 (defn- select-users-by-id [connection ids loader]
