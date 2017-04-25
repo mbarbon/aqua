@@ -60,7 +60,7 @@
   (let [directory "maldump"
         compare-count 25
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
-        users (load-stable-user-sample data-source 20000 "sample-users.txt")
+        users (aqua.mal-local/load-users data-source 20000)
         anime (aqua.mal-local/load-anime data-source)
         test-users (into []
                      (map make-test-entry
