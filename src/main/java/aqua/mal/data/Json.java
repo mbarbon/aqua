@@ -70,7 +70,7 @@ public class Json {
     public static User readUser(InputStream is) throws IOException {
         User user = JSON_MAPPER.readValue(is, User.class);
         user.animeList.sort(Rated::compareTo);
-        user.computeAnimeStats();
+        user.processAfterDeserialize();
         return user;
     }
 

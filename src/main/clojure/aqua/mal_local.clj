@@ -49,8 +49,7 @@
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (set! (.animeList user) (Json/readRatedList al-data))
-    (.computeAnimeStats user)
+    (.setAnimeList user (Json/readRatedList al-data))
     user))
 
 (defn- select-users-by-id [connection ids loader]

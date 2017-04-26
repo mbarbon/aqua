@@ -1,6 +1,8 @@
 package aqua.mal.data;
 
 import java.lang.Iterable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -47,6 +49,7 @@ public class User {
         }
     }
 
+    private static final Rated[] EMPTY_RATED_ARRAY = new Rated[0];
     private static final int COMPLETED_AND_DROPPED =
         statusMask(Rated.COMPLETED, Rated.DROPPED);
     private static final int COMPLETED =
@@ -59,25 +62,34 @@ public class User {
     public String username;
     public long userId;
     public List<Rated> animeList;
+    public Rated[] completedAndDroppedArray;
     public int completedCount, droppedCount;
 
-    public void computeAnimeStats() {
+    public void processAfterDeserialize() {
         completedCount = droppedCount = 0;
 
-        for (Rated rated : animeList) {
+        List<Rated> completedAndDropped = new ArrayList<>();
+        for (Rated rated : withStatusMask(COMPLETED_AND_DROPPED)) {
             if (rated.status == Rated.COMPLETED)
                 ++completedCount;
             else if (rated.status == Rated.DROPPED)
                 ++droppedCount;
+            completedAndDropped.add(rated);
         }
+        completedAndDroppedArray = completedAndDropped.toArray(EMPTY_RATED_ARRAY);
     }
 
-    public Iterable<Rated> withStatusMask(int mask) {
+    public void setAnimeList(List<Rated> animeList) {
+        this.animeList = animeList;
+        processAfterDeserialize();
+    }
+
+    private Iterable<Rated> withStatusMask(int mask) {
         return new FilteredListIterator(animeList, mask);
     }
 
     public Iterable<Rated> completedAndDropped() {
-        return withStatusMask(COMPLETED_AND_DROPPED);
+        return Arrays.asList(completedAndDroppedArray);
     }
 
     public Iterable<Rated> completed() {
@@ -97,11 +109,10 @@ public class User {
 
         filtered.username = username;
         filtered.userId = userId;
-        filtered.completedCount = completedCount;
-        filtered.droppedCount = droppedCount;
         filtered.animeList = animeList.stream()
             .filter(rated -> rated.animedbId != animedbId)
             .collect(Collectors.toList());
+        filtered.processAfterDeserialize();
 
         return filtered;
     }
