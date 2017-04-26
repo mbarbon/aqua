@@ -17,45 +17,43 @@ public class Pearson {
     public double userSimilarity(User userb) {
         if (usera.equals(userb))
             return 1;
-        Iterator<Rated> ratedA = usera.completedAndDropped().iterator();
-        Iterator<Rated> ratedB = userb.completedAndDropped().iterator();
-        if (!ratedA.hasNext() || !ratedB.hasNext())
+        Rated[] ratedA = usera.completedAndDroppedArray;
+        Rated[] ratedB = userb.completedAndDroppedArray;
+        int indexA = 0, indexB = 0, maxA = ratedA.length, maxB = ratedB.length;
+        if (maxA == 0 || maxB == 0)
             return 0;
-        Rated currentA = null;
-        Rated currentB = null;
+        Rated currentA = ratedA[indexA++];
+        Rated currentB = ratedB[indexB++];
         double productSum = 0.0, sumSquaresA = 0.0, sumSquaresB = 0.0;
-        int count = 0, countA = 0, countB = 0;
+        int count = 0;
 
         for (;;) {
-            if (currentA == null) {
-                if (!ratedA.hasNext())
-                    break;
-                currentA = ratedA.next();
-                ++countA;
-            }
-            if (currentB == null) {
-                if (!ratedB.hasNext())
-                    break;
-                currentB = ratedB.next();
-                ++countB;
-            }
-
             int order = currentA.animedbId - currentB.animedbId;
             if (order == 0) {
                 productSum += currentA.normalizedRating * currentB.normalizedRating;
                 sumSquaresA += currentA.normalizedRating * currentA.normalizedRating;
                 sumSquaresB += currentB.normalizedRating * currentB.normalizedRating;
                 ++count;
-                currentA = currentB = null;
+
+                if (indexA == maxA)
+                    break;
+                currentA = ratedA[indexA++];
+                if (indexB == maxB)
+                    break;
+                currentB = ratedB[indexB++];
             } else if (order > 0) {
-                currentB = null;
+                if (indexB == maxB)
+                    break;
+                currentB = ratedB[indexB++];
             } else {
-                currentA = null;
+                if (indexA == maxA)
+                    break;
+                currentA = ratedA[indexA++];
             }
         }
 
-        if (100 * count / countA < minCommonItems ||
-                100 * count / countB < minCommonItems)
+        if (100 * count / maxA < minCommonItems ||
+                100 * count / maxB < minCommonItems)
             return 1;
         if (sumSquaresA == 0.0 || sumSquaresB == 0.0)
             return 1;

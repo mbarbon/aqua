@@ -26,40 +26,40 @@ public class Cosine {
 
     private static double sumSquares(User user) {
         double sum = 0.0;
-        for (Rated item : user.completedAndDropped())
+        for (Rated item : user.completedAndDroppedArray)
             sum += item.normalizedRating * item.normalizedRating;
         return Math.sqrt(sum);
     }
 
     private static double productSum(User usera, User userb) {
-        Iterator<Rated> ratedA = usera.completedAndDropped().iterator();
-        Iterator<Rated> ratedB = userb.completedAndDropped().iterator();
-        if (!ratedA.hasNext() || !ratedB.hasNext())
+        Rated[] ratedA = usera.completedAndDroppedArray;
+        Rated[] ratedB = userb.completedAndDroppedArray;
+        int indexA = 0, indexB = 0, maxA = ratedA.length, maxB = ratedB.length;
+        if (maxA == 0 || maxB == 0)
             return 0;
-        Rated currentA = null;
-        Rated currentB = null;
+        Rated currentA = ratedA[indexA++];
+        Rated currentB = ratedB[indexB++];
         double sum = 0.0;
 
         for (;;) {
-            if (currentA == null) {
-                if (!ratedA.hasNext())
-                    break;
-                currentA = ratedA.next();
-            }
-            if (currentB == null) {
-                if (!ratedB.hasNext())
-                    break;
-                currentB = ratedB.next();
-            }
-
             int order = currentA.animedbId - currentB.animedbId;
             if (order == 0) {
                 sum += currentA.normalizedRating * currentB.normalizedRating;
-                currentA = currentB = null;
+
+                if (indexA == maxA)
+                    break;
+                currentA = ratedA[indexA++];
+                if (indexB == maxB)
+                    break;
+                currentB = ratedB[indexB++];
             } else if (order > 0) {
-                currentB = null;
+                if (indexB == maxB)
+                    break;
+                currentB = ratedB[indexB++];
             } else {
-                currentA = null;
+                if (indexA == maxA)
+                    break;
+                currentA = ratedA[indexA++];
             }
         }
 
