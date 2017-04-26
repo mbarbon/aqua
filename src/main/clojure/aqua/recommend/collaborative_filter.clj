@@ -10,8 +10,8 @@
     (cond
       (= completed-min 0) false
       (= completed-max 0) false
-      (< (/ completed-max completed-min) 2) true
       (and (< completed-min 5) (< completed-max 10)) true
+      (< completed-max (* 2 completed-min)) true
       :else false)))
 
 (defn- score-completed-anime [remove-known-anime user user-rank]
