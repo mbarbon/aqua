@@ -3,13 +3,16 @@
             aqua.web.render
             [aqua.web.globals :refer [*data-source-ro *users *anime]]
             aqua.recommend.cosine
-            aqua.misc))
+            aqua.misc
+            [clojure.tools.logging :as log]))
 
 (defn- reload-users []
+  (log/info "Start loading users")
   (let [data-source @*data-source-ro
         users (aqua.mal-local/load-users data-source 20000)]
     (aqua.misc/normalize-all-ratings users)
-    (reset! *users users)))
+    (reset! *users users))
+  (log/info "Done loading users"))
 
 (defn init []
   (reload-users))

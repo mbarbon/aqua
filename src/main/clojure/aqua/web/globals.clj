@@ -1,5 +1,6 @@
 (ns aqua.web.globals
-  (:require aqua.mal-local))
+  (:require aqua.mal-local
+            [clojure.tools.logging :as log]))
 
 (def *data-source-rw (atom nil))
 (def *data-source-ro (atom nil))
@@ -9,9 +10,11 @@
 (def *background (atom nil))
 
 (defn- reload-anime []
+  (log/info "Start loading anime")
   (let [data-source @*data-source-ro
         anime (aqua.mal-local/load-anime data-source)]
-    (reset! *anime anime)))
+    (reset! *anime anime))
+  (log/info "Done loading anime"))
 
 (defn init [directory]
   (reset! *background (java.util.concurrent.Executors/newScheduledThreadPool 5))
