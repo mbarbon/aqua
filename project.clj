@@ -1,8 +1,8 @@
 (defproject aquq-recommend "0.0.1-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "Aqua: simplistic anime recommendations"
   :url "https://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "https://www.eclipse.org/legal/epl-v10.html"}
+  :license {:name "3-Clause BSD License"
+            :url "https://opensource.org/licenses/BSD-3-Clause"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.xerial/sqlite-jdbc "3.16.1"]
                  [com.fasterxml.jackson.core/jackson-databind "2.8.7"]
