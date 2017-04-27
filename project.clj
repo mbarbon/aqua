@@ -10,6 +10,7 @@
                  [com.google.guava/guava "21.0"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
+                 [org.eclipse.jetty/jetty-server "9.3.18.v20170406"]
                  [ch.qos.logback/logback-classic "1.2.2"]
                  [http-kit "2.2.0"]
                  [ring "1.5.0"]

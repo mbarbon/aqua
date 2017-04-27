@@ -57,6 +57,11 @@
   raw-routes
   (route/not-found "Not Found"))
 
+(defn- configurator [jetty-server]
+  (.setRequestLog jetty-server
+    (doto (org.eclipse.jetty.server.Slf4jRequestLog.)
+      (.setLoggerName "access-logger"))))
+
 (defn init []
   (aqua.web.globals/init "maldump")
   (aqua.web.mal-proxy/init)
@@ -92,7 +97,8 @@
 
     (ring.adapter.jetty/run-jetty
       handler
-      {:port         (:port options)})))
+      {:port         (:port options)
+       :configurator configurator})))
 
 (defn -main [& args]
   (let [{:keys [options arguments errors summary]} (clojure.tools.cli/parse-opts args cli-options)]
