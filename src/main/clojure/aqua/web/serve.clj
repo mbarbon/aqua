@@ -1,11 +1,16 @@
 (ns aqua.web.serve
+  (:gen-class)
   (:require aqua.web.recommender
             aqua.web.search
             aqua.web.mal-proxy
             [compojure.core :refer :all]
             [compojure.route :as route]
+            clojure.tools.cli
+            ring.adapter.jetty
             ring.util.response
             ring.middleware.json
+            ring.middleware.reload
+            ring.middleware.stacktrace
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]))
 
 (defn bad-request [body]
@@ -64,3 +69,34 @@
         modified-site-defaults (assoc site-defaults :security no-csrf)]
     (-> app-routes
       (wrap-defaults modified-site-defaults))))
+
+(def ^:private cli-options
+  [["-p" "--port PORT" "Port number"
+    :default 9000
+    :parse-fn #(Integer/parseInt %)
+    :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
+   [nil "--code-reload" "Enable code reloading"]
+   [nil "--stacktraces" "Enable stacktrace middleware"]
+   ["-h" "--help"]])
+
+(defn- run-server [options]
+  (let [maybe-reload (if (:code-reload options)
+                       (ring.middleware.reload/wrap-reload
+                           app {:dirs ["src/main/clojure"]})
+                       app)
+        maybe-stacktraces (if (:stacktraces options)
+                            (ring.middleware.stacktrace/wrap-stacktrace maybe-reload)
+                            maybe-reload)
+        handler maybe-stacktraces]
+    (init)
+
+    (ring.adapter.jetty/run-jetty
+      handler
+      {:port         (:port options)})))
+
+(defn -main [& args]
+  (let [{:keys [options arguments errors summary]} (clojure.tools.cli/parse-opts args cli-options)]
+    (cond
+      (:help options) ;
+      errors ;
+      :else (run-server options))))
