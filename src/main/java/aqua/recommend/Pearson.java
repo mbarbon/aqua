@@ -1,38 +1,39 @@
 package aqua.recommend;
 
-import aqua.mal.data.User;
-import aqua.mal.data.Rated;
-
 import java.util.Iterator;
 
 public class Pearson {
-    private final User usera;
+    private final CFUser usera;
     private final int minCommonItems;
 
-    public Pearson(User usera, int minCommonItems) {
+    public Pearson(CFUser usera, int minCommonItems) {
         this.usera = usera;
         this.minCommonItems = minCommonItems;
     }
 
-    public double userSimilarity(User userb) {
+    public double userSimilarity(CFUser userb) {
         if (usera.equals(userb))
             return 1;
-        Rated[] ratedA = usera.completedAndDroppedArray;
-        Rated[] ratedB = userb.completedAndDroppedArray;
+        float[] ratedRatingA = usera.completedAndDroppedRating;
+        float[] ratedRatingB = userb.completedAndDroppedRating;
+        int[] ratedA = usera.completedAndDroppedIds;
+        int[] ratedB = userb.completedAndDroppedIds;
         int indexA = 0, indexB = 0, maxA = ratedA.length, maxB = ratedB.length;
         if (maxA == 0 || maxB == 0)
             return 0;
-        Rated currentA = ratedA[indexA++];
-        Rated currentB = ratedB[indexB++];
+        int currentA = ratedA[indexA++];
+        int currentB = ratedB[indexB++];
         double productSum = 0.0, sumSquaresA = 0.0, sumSquaresB = 0.0;
         int count = 0;
 
         for (;;) {
-            int order = currentA.animedbId - currentB.animedbId;
+            int order = currentA - currentB;
             if (order == 0) {
-                productSum += currentA.normalizedRating * currentB.normalizedRating;
-                sumSquaresA += currentA.normalizedRating * currentA.normalizedRating;
-                sumSquaresB += currentB.normalizedRating * currentB.normalizedRating;
+                float normalizedA = ratedRatingA[indexA - 1];
+                float normalizedB = ratedRatingB[indexB - 1];
+                productSum += normalizedA * normalizedB;
+                sumSquaresA += normalizedA * normalizedA;
+                sumSquaresB += normalizedB * normalizedB;
                 ++count;
 
                 if (indexA == maxA)

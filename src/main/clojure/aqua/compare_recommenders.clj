@@ -12,10 +12,9 @@
     lst))
 
 (defn- make-test-entry [user]
-  (aqua.misc/normalize-ratings user 0 0)
-  (let [completed-good (filter #(>= (.normalizedRating %) 0) (.completed user))
+  (let [completed-good (filter #(>= (.normalizedRating user %) 0) (.completed user))
         total (count completed-good)
-        by-rating (sort-by #(.normalizedRating %) (stable-shuffle completed-good))
+        by-rating (sort-by #(.normalizedRating user %) (stable-shuffle completed-good))
         low-value (take 5 (drop 5 by-rating))
         mid-value (take 5 (drop (/ total 2) by-rating))
         high-value (take 5 (drop (- total 5) by-rating))]
@@ -51,8 +50,12 @@
   (if (.exists (clojure.java.io/as-file file))
     (let [user-ids (take max-count
                          (line-seq (clojure.java.io/reader file)))]
-      (aqua.mal-local/load-users-by-id data-source user-ids))
-    (let [users (aqua.mal-local/load-users data-source max-count)]
+      (aqua.mal-local/load-cf-users-by-id data-source
+                                          (aqua.recommend.CFParameters.)
+                                          user-ids))
+    (let [users (aqua.mal-local/load-cf-users data-source
+                                              (aqua.recommend.CFParameters.)
+                                              max-count)]
       (spit file (clojure.string/join "\n" (map #(.userId %) users)))
       users)))
 
@@ -60,7 +63,8 @@
   (let [directory "maldump"
         compare-count 25
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
-        users (aqua.mal-local/load-users data-source 20000)
+        cf-parameters-std (aqua.recommend.CFParameters.)
+        users (aqua.mal-local/load-cf-users data-source cf-parameters-std 20000)
         anime (aqua.mal-local/load-anime data-source)
         test-users (into []
                      (map make-test-entry
@@ -70,8 +74,9 @@
                                                     (* 4 compare-count)
                                                     "test-users.txt")))))
         normalize-test-users (fn [test-users watched-zero dropped-zero]
-                               (doseq [test-user test-users]
-                                 (aqua.misc/normalize-ratings (first test-user) watched-zero dropped-zero)))
+                               (let [cf-parameters (aqua.misc/make-cf-parameters watched-zero dropped-zero)]
+                                 (doseq [test-user test-users]
+                                   (.processAfterDeserialize (first test-user) cf-parameters))))
         make-score-pearson (fn [min-common-items]
                              (partial score-recommender #(aqua.recommend.pearson/get-recommendations min-common-items %1 users %2)))
         score-pearson (make-score-pearson 20)

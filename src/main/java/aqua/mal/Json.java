@@ -1,4 +1,11 @@
-package aqua.mal.data;
+package aqua.mal;
+
+import aqua.mal.data.MalAppInfo;
+import aqua.mal.data.Rated;
+import aqua.mal.data.User;
+import aqua.recommend.CFParameters;
+import aqua.recommend.CFRated;
+import aqua.recommend.CFUser;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -44,15 +51,27 @@ public class Json {
         }
     }
 
+    private static class CFRatedDeserializer extends JsonDeserializer<CFRated> {
+        @Override
+        public CFRated deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonParseException {
+            int[] array = jp.readValueAs(int[].class);
+
+            return new CFRated(array[0], (byte) array[1], (byte) array[2]);
+        }
+    }
+
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final ObjectMapper XML_MAPPER = new XmlMapper();
     private static final TypeReference RATED_LIST =
         new TypeReference<List<Rated>>() {};
+    private static final TypeReference CFRATED_LIST =
+        new TypeReference<List<CFRated>>() {};
 
     static {
         SimpleModule malDecoder = new SimpleModule();
         malDecoder.addDeserializer(Rated.class, new RatedDeserializer());
         malDecoder.addSerializer(Rated.class, new RatedSerializer());
+        malDecoder.addDeserializer(CFRated.class, new CFRatedDeserializer());
 
         JSON_MAPPER.registerModule(malDecoder);
     }
@@ -67,10 +86,22 @@ public class Json {
         JSON_MAPPER.writeValue(os, rated);
     }
 
+    public static List<CFRated> readCFRatedList(InputStream is) throws IOException {
+        List<CFRated> rated = JSON_MAPPER.readValue(is, CFRATED_LIST);
+        rated.sort(CFRated::compareTo);
+        return rated;
+    }
+
     public static User readUser(InputStream is) throws IOException {
         User user = JSON_MAPPER.readValue(is, User.class);
         user.animeList.sort(Rated::compareTo);
-        user.processAfterDeserialize();
+        return user;
+    }
+
+    public static CFUser readCFUser(CFParameters cfParameters, InputStream is) throws IOException {
+        CFUser user = JSON_MAPPER.readValue(is, CFUser.class);
+        user.animeList.sort(CFRated::compareTo);
+        user.processAfterDeserialize(cfParameters);
         return user;
     }
 

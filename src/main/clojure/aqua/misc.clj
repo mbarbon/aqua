@@ -1,42 +1,17 @@
 (ns aqua.misc
   )
 
-(defn- statistics [anime-list]
-  (let [anime-list-ratings (remove zero?
-                             (map (fn [^aqua.mal.data.Rated r]
-                               (.rating r)) anime-list))]
-    (if (empty? anime-list-ratings)
-      [0 1 0]
-      (let [size (count anime-list-ratings)
-            sum (apply + anime-list-ratings)
-            sum-sq (apply + (map #(* % %) anime-list-ratings))
-            mean (float (/ sum size))
-            variance (- (/ sum-sq size) (* mean mean))
-            stddev (if (zero? variance) 1 (Math/sqrt variance))]
-        [mean stddev (apply min anime-list-ratings)]))))
-
-(defn normalize-ratings
-  ([user] (normalize-ratings user 0.5 -1))
-  ([user watched-zero dropped-zero]
-    (let [[mean stddev min-rating] (statistics (.completedAndDropped user))
-          dropped-rating (- (+ min-rating dropped-zero) mean)]
-      (doseq [^aqua.mal.data.Rated item (.completed user)]
-        (if (zero? (.rating item))
-          ; we assume non-rated completed items got the mean rating
-          (set! (.normalizedRating item) (/ watched-zero stddev))
-          (set! (.normalizedRating item) (/ (+ (- (.rating item) mean) watched-zero) stddev))))
-      (doseq [^aqua.mal.data.Rated item (.dropped user)]
-        (if (zero? (.rating item))
-          (set! (.normalizedRating item) (/ dropped-rating stddev))
-          (set! (.normalizedRating item) (/ (- (.rating item) mean) stddev)))))))
+(defn make-cf-parameters [watched-zero dropped-zero]
+  (doto (aqua.recommend.CFParameters.)
+    (-> .nonRatedCompleted (set! watched-zero))
+    (-> .nonRatedDropped (set! dropped-zero))))
 
 (defn normalize-all-ratings
-  ([users]
-    (doseq [user users]
-      (normalize-ratings user)))
+  ([users] (normalize-all-ratings 0.5 -1))
   ([users watched-zero dropped-zero]
-    (doseq [user users]
-      (normalize-ratings user watched-zero dropped-zero))))
+    (let [cf-parameters (make-cf-parameters watched-zero dropped-zero)]
+      (doseq [user users]
+        (.processAfterDeserialize user cf-parameters)))))
 
 (defn- all-but-planned [user]
   (->> (.animeList user)
@@ -84,7 +59,7 @@
 
 (defn make-filter [user anime-map]
   (let [known-anime (set (all-but-planned user))
-        is-known-anime (fn [^aqua.mal.data.Rated rated]
+        is-known-anime (fn [^aqua.recommend.CFRated rated]
                          (known-anime (.animedbId rated)))
         remove-known-anime (partial remove is-known-anime)]
     remove-known-anime))

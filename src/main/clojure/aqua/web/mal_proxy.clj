@@ -12,7 +12,6 @@
 
 (defn fetch-user [username decompress]
   (let [last-user-update (aqua.mal-local/last-user-update @*data-source-ro username)]
-    (println last-user-update (- (/ (System/currentTimeMillis) 1000) (* 3600 6)))
     (if (> last-user-update (- (/ (System/currentTimeMillis) 1000) (* 3600 6)))
       (let [bytes (aqua.mal-local/load-user-anime-list @*data-source-ro username)]
         (let [stream (java.io.ByteArrayInputStream. bytes)]

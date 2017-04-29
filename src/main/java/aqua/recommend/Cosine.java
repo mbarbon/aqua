@@ -1,20 +1,17 @@
 package aqua.recommend;
 
-import aqua.mal.data.User;
-import aqua.mal.data.Rated;
-
 import java.util.Iterator;
 
 public class Cosine {
-    private final User usera;
+    private final CFUser usera;
     private final double sumSquaresA;
 
-    public Cosine(User usera) {
+    public Cosine(CFUser usera) {
         this.usera = usera;
         this.sumSquaresA = sumSquares(usera);
     }
 
-    public double userSimilarity(User userb) {
+    public double userSimilarity(CFUser userb) {
         if (usera.equals(userb) || sumSquaresA == 0)
             return 1;
         double sumSquaresB = sumSquares(userb);
@@ -24,27 +21,29 @@ public class Cosine {
         return -productSum / (sumSquaresA * sumSquaresB);
     }
 
-    private static double sumSquares(User user) {
+    private static double sumSquares(CFUser user) {
         double sum = 0.0;
-        for (Rated item : user.completedAndDroppedArray)
-            sum += item.normalizedRating * item.normalizedRating;
+        for (float rating : user.completedAndDroppedRating)
+            sum += rating * rating;
         return Math.sqrt(sum);
     }
 
-    private static double productSum(User usera, User userb) {
-        Rated[] ratedA = usera.completedAndDroppedArray;
-        Rated[] ratedB = userb.completedAndDroppedArray;
+    private static double productSum(CFUser usera, CFUser userb) {
+        float[] ratedRatingA = usera.completedAndDroppedRating;
+        float[] ratedRatingB = userb.completedAndDroppedRating;
+        int[] ratedA = usera.completedAndDroppedIds;
+        int[] ratedB = userb.completedAndDroppedIds;
         int indexA = 0, indexB = 0, maxA = ratedA.length, maxB = ratedB.length;
         if (maxA == 0 || maxB == 0)
             return 0;
-        Rated currentA = ratedA[indexA++];
-        Rated currentB = ratedB[indexB++];
+        int currentA = ratedA[indexA++];
+        int currentB = ratedB[indexB++];
         double sum = 0.0;
 
         for (;;) {
-            int order = currentA.animedbId - currentB.animedbId;
+            int order = currentA - currentB;
             if (order == 0) {
-                sum += currentA.normalizedRating * currentB.normalizedRating;
+                sum += ratedRatingA[indexA - 1] * ratedRatingB[indexB - 1];
 
                 if (indexA == maxA)
                     break;

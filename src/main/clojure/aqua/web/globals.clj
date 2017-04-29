@@ -1,5 +1,6 @@
 (ns aqua.web.globals
   (:require aqua.mal-local
+            aqua.misc
             [clojure.tools.logging :as log]))
 
 (def *data-source-rw (atom nil))
@@ -8,6 +9,8 @@
 (def *anime (atom nil))
 (def *suggest (atom nil))
 (def *background (atom nil))
+
+(def cf-parameters (aqua.misc/make-cf-parameters 0.5 -1))
 
 (defn- reload-anime []
   (log/info "Start loading anime")

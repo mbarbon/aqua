@@ -1,6 +1,6 @@
 (ns aqua.mal-local
   (:require [clojure.java.io :as io])
-  (:import (aqua.mal.data Json)))
+  (:import (aqua.mal Json)))
 
 (defn open-sqlite-rw [directory file]
   (let [data-source (org.sqlite.SQLiteDataSource.)]
@@ -52,6 +52,24 @@
     (.setAnimeList user (Json/readRatedList al-data))
     user))
 
+(defn- load-cf-users-from-rs [cf-parameters ^java.sql.ResultSet rs]
+  (let [user (aqua.recommend.CFUser.)
+        al-data (java.util.zip.GZIPInputStream.
+                  (io/input-stream (.getBinaryStream rs 3)))]
+    (set! (.userId user) (.getInt rs 1))
+    (set! (.username user) (.getString rs 2))
+    (.setAnimeList user cf-parameters (Json/readCFRatedList al-data))
+    user))
+
+(defn- load-filtered-cf-users-from-rs [cf-parameters ^java.sql.ResultSet rs]
+  (let [user (aqua.recommend.CFUser.)
+        al-data (java.util.zip.GZIPInputStream.
+                  (io/input-stream (.getBinaryStream rs 3)))]
+    (set! (.userId user) (.getInt rs 1))
+    (set! (.username user) (.getString rs 2))
+    (.setFilteredAnimeList user cf-parameters (Json/readCFRatedList al-data))
+    user))
+
 (defn- select-users-by-id [connection ids loader]
   (let [query (str select-users "(" (clojure.string/join "," ids) ")")]
     (with-open [statement (doto (.prepareStatement connection query
@@ -71,15 +89,22 @@
     (let [ids (doall-rs rs (fn [^java.sql.ResultSet rs] (.getInt rs 1)))]
       ids)))
 
-(defn load-users-by-id [data-source ids]
+(defn load-cf-users-by-id [data-source cf-parameters ids]
   (with-open [connection (.getConnection data-source)]
-    (select-users-by-id connection ids load-users-from-rs)))
+    (select-users-by-id connection ids
+                        (partial load-cf-users-from-rs cf-parameters))))
 
-(defn load-users [data-source max-count]
+(defn load-cf-users [data-source cf-parameters max-count]
   (with-open [connection (.getConnection data-source)]
     (select-users-by-id connection
                         (random-user-ids connection max-count)
-                        load-users-from-rs)))
+                        (partial load-cf-users-from-rs cf-parameters))))
+
+(defn load-filtered-cf-users [data-source cf-parameters max-count]
+  (with-open [connection (.getConnection data-source)]
+    (select-users-by-id connection
+                        (random-user-ids connection max-count)
+                        (partial load-filtered-cf-users-from-rs cf-parameters))))
 
 (def ^:private select-user
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
@@ -88,11 +113,14 @@
   (with-open [statement (doto (.prepareStatement connection select-user)
                               (.setString 1 username))
               rs (.executeQuery statement)]
-    (first (doall-rs rs load-users-from-rs))))
+    (first (doall-rs rs (partial load-users-from-rs)))))
 
-(defn load-user [data-source username]
-  (with-open [connection (.getConnection data-source)]
-    (load-user-from-connection connection username)))
+(defn load-cf-user [data-source username cf-parameters]
+  (with-open [connection (.getConnection data-source)
+              statement (doto (.prepareStatement connection select-user)
+                              (.setString 1 username))
+              rs (.executeQuery statement)]
+    (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters)))))
 
 (def ^:private select-user-blob
   "SELECT LENGTH(al.anime_list) AS blob_length, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
@@ -370,7 +398,7 @@
     (when changed
       (let [sink (java.io.ByteArrayOutputStream.)
             compress (java.util.zip.GZIPOutputStream. sink)]
-        (aqua.mal.data.Json/writeRatedList compress new-rated-list)
+        (Json/writeRatedList compress new-rated-list)
         (.finish compress)
         (with-open [statement (doto (.prepareStatement connection insert-anime-list)
                                     (.setInt 1 (.userId user))

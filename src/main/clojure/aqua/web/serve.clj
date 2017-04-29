@@ -2,6 +2,7 @@
   (:gen-class)
   (:require aqua.web.recommender
             aqua.web.search
+            aqua.web.globals
             aqua.web.mal-proxy
             [compojure.core :refer :all]
             [compojure.route :as route]
@@ -41,7 +42,7 @@
                                             "text/html"))
 
   (POST "/recommend" {:keys [body]}
-    (let [user (aqua.mal.data.Json/readUser body)]
+    (let [user (aqua.mal.Json/readCFUser aqua.web.globals/cf-parameters body)]
       (ring.util.response/response
         (aqua.web.recommender/recommend user))))
 

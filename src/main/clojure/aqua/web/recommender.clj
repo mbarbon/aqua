@@ -9,8 +9,7 @@
 (defn- reload-users []
   (log/info "Start loading users")
   (let [data-source @*data-source-ro
-        users (aqua.mal-local/load-users data-source 20000)]
-    (aqua.misc/normalize-all-ratings users)
+        users (aqua.mal-local/load-filtered-cf-users data-source aqua.web.globals/cf-parameters 20000)]
     (reset! *users users))
   (log/info "Done loading users"))
 
@@ -24,7 +23,7 @@
 (defn recommend [user]
   (let [users @*users
         lookup-anime @*anime]
-    (aqua.misc/normalize-ratings user)
+    ; (aqua.misc/normalize-ratings user)
     (let [known-anime-filter (aqua.misc/make-filter user lookup-anime)
           airing-anime-filter (aqua.misc/make-airing-filter user lookup-anime)
           known-anime-tagger (aqua.misc/make-tagger user lookup-anime)

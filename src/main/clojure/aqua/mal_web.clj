@@ -5,7 +5,7 @@
   (try
     (if error
       (callback nil error)
-      (callback (aqua.mal.data.Json/readMalAppInfo body) nil))
+      (callback (aqua.mal.Json/readMalAppInfo body) nil))
     (catch Exception e (callback nil e))))
 
 (defn fetch-anime-list [username callback]

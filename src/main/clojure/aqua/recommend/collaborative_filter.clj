@@ -1,8 +1,8 @@
 (ns aqua.recommend.collaborative-filter
   )
 
-(defn similar-watched-count [^aqua.mal.data.User usera
-                             ^aqua.mal.data.User userb]
+(defn similar-watched-count [^aqua.recommend.CFUser usera
+                             ^aqua.recommend.CFUser userb]
   (let [completed-a (.completedCount usera)
         completed-b (.completedCount userb)
         completed-min (min completed-a completed-b)
@@ -23,12 +23,14 @@
           (.put result (.getKey entry) (.getValue entry)))))
     result))
 
-(defn- score-completed-anime [remove-known-anime user user-rank]
+(defn- score-completed-anime [remove-known-anime
+                              ^aqua.recommend.CFUser user
+                              user-rank]
   (let [result (java.util.HashMap.)]
-    (doseq [^aqua.mal.data.Rated item (remove-known-anime (.completed user))]
-      ; [(.animedbId item) (- (* (.normalizedRating item) (- user-rank)))])))
-      (.put result (.animedbId item) (if (>= (.normalizedRating item) 0)
-                                       (- (.normalizedRating item))
+    (doseq [^aqua.recommend.CFRated item (remove-known-anime (.completed user))]
+      ; [(.animedbId item) (- (* (.normalizedRating user item) (- user-rank)))])))
+      (.put result (.animedbId item) (if (>= (.normalizedRating user item) 0)
+                                       (- (.normalizedRating user item))
                                        0.5)))
     result))
 
@@ -44,7 +46,7 @@
 
 (defn- score-airing-anime [keep-airing-anime user user-rank]
   (let [result (java.util.HashMap.)]
-    (doseq [^aqua.mal.data.Rated item (keep-airing-anime (.watching user))]
+    (doseq [^aqua.recommend.CFRated item (keep-airing-anime (.watching user))]
       (.put result (.animedbId item) user-rank))
     result))
 

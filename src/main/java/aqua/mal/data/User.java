@@ -1,55 +1,9 @@
 package aqua.mal.data;
 
 import java.lang.Iterable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 public class User {
-    private static class FilteredListIterator implements Iterable<Rated>, Iterator<Rated> {
-        private final int mask;
-        private final Iterator<Rated> parent;
-        private Rated next;
-
-        private FilteredListIterator(List<Rated> animeList, int mask) {
-            this.mask = mask;
-            this.parent = animeList.iterator();
-            this.next = findNext();
-        }
-
-        @Override
-        public Iterator<Rated> iterator() {
-            return this;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return next != null;
-        }
-
-        @Override
-        public Rated next() {
-            if (next == null)
-                throw new NoSuchElementException();
-            Rated result = next;
-            next = findNext();
-            return result;
-        }
-
-        private Rated findNext() {
-            while (parent.hasNext()) {
-                Rated maybeNext = parent.next();
-                if ((mask & (1 << maybeNext.status)) != 0)
-                    return maybeNext;
-            }
-            return null;
-        }
-    }
-
-    private static final Rated[] EMPTY_RATED_ARRAY = new Rated[0];
     private static final int COMPLETED_AND_DROPPED =
         statusMask(Rated.COMPLETED, Rated.DROPPED);
     private static final int COMPLETED =
@@ -62,34 +16,17 @@ public class User {
     public String username;
     public long userId;
     public List<Rated> animeList;
-    public Rated[] completedAndDroppedArray;
-    public int completedCount, droppedCount;
-
-    public void processAfterDeserialize() {
-        completedCount = droppedCount = 0;
-
-        List<Rated> completedAndDropped = new ArrayList<>();
-        for (Rated rated : withStatusMask(COMPLETED_AND_DROPPED)) {
-            if (rated.status == Rated.COMPLETED)
-                ++completedCount;
-            else if (rated.status == Rated.DROPPED)
-                ++droppedCount;
-            completedAndDropped.add(rated);
-        }
-        completedAndDroppedArray = completedAndDropped.toArray(EMPTY_RATED_ARRAY);
-    }
 
     public void setAnimeList(List<Rated> animeList) {
         this.animeList = animeList;
-        processAfterDeserialize();
     }
 
     private Iterable<Rated> withStatusMask(int mask) {
-        return new FilteredListIterator(animeList, mask);
+        return new FilteredListIterator<>(animeList, mask);
     }
 
     public Iterable<Rated> completedAndDropped() {
-        return Arrays.asList(completedAndDroppedArray);
+        return withStatusMask(COMPLETED_AND_DROPPED);
     }
 
     public Iterable<Rated> completed() {
@@ -102,19 +39,6 @@ public class User {
 
     public Iterable<Rated> watching() {
         return withStatusMask(WATCHING);
-    }
-
-    public User removeAnime(int animedbId) {
-        User filtered = new User();
-
-        filtered.username = username;
-        filtered.userId = userId;
-        filtered.animeList = animeList.stream()
-            .filter(rated -> rated.animedbId != animedbId)
-            .collect(Collectors.toList());
-        filtered.processAfterDeserialize();
-
-        return filtered;
     }
 
     @Override
