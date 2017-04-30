@@ -34,7 +34,7 @@
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source username cf-parameters)
-        users (aqua.mal-local/load-filtered-cf-users data-source cf-parameters 20000)
+        users (aqua.mal-local/load-filtered-cf-users data-source cf-parameters (java.util.HashMap.) 20000)
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)]
     (println "Running recommender")

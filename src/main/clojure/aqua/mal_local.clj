@@ -61,13 +61,24 @@
     (.setAnimeList user cf-parameters (Json/readCFRatedList al-data))
     user))
 
-(defn- load-filtered-cf-users-from-rs [cf-parameters ^java.sql.ResultSet rs]
+(defn- load-filtered-cf-users-from-rs [cf-parameters
+                                       ^java.util.Map cache
+                                       ^java.sql.ResultSet rs]
   (let [user (aqua.recommend.CFUser.)
         al-data (java.util.zip.GZIPInputStream.
-                  (io/input-stream (.getBinaryStream rs 3)))]
+                  (io/input-stream (.getBinaryStream rs 3)))
+        anime-list (Json/readCFRatedList al-data)]
+    (dotimes [n (.size anime-list)]
+      (let [item (.get anime-list n)
+            cached (if-let [existing (.get cache item)]
+                     existing
+                     (do
+                       (.put cache item item)
+                       item))]
+        (.set anime-list n cached)))
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setFilteredAnimeList user cf-parameters (Json/readCFRatedList al-data))
+    (.setFilteredAnimeList user cf-parameters anime-list)
     user))
 
 (defn- select-users-by-id [connection ids loader]
@@ -100,11 +111,11 @@
                         (random-user-ids connection max-count)
                         (partial load-cf-users-from-rs cf-parameters))))
 
-(defn load-filtered-cf-users [data-source cf-parameters max-count]
+(defn load-filtered-cf-users [data-source cf-parameters cache max-count]
   (with-open [connection (.getConnection data-source)]
     (select-users-by-id connection
                         (random-user-ids connection max-count)
-                        (partial load-filtered-cf-users-from-rs cf-parameters))))
+                        (partial load-filtered-cf-users-from-rs cf-parameters cache))))
 
 (def ^:private select-user
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")

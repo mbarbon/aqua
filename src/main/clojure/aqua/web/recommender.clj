@@ -9,7 +9,8 @@
 (defn- reload-users []
   (log/info "Start loading users")
   (let [data-source @*data-source-ro
-        users (aqua.mal-local/load-filtered-cf-users data-source aqua.web.globals/cf-parameters 20000)]
+        cache (java.util.HashMap.)
+        users (aqua.mal-local/load-filtered-cf-users data-source aqua.web.globals/cf-parameters cache 20000)]
     (reset! *users users))
   (log/info "Done loading users"))
 
