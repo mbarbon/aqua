@@ -30,7 +30,7 @@
     (doseq [^aqua.recommend.CFRated item (remove-known-anime (.completed user))]
       ; [(.animedbId item) (- (* (.normalizedRating user item) (- user-rank)))])))
       (.put result (.animedbId item) (if (>= (.normalizedRating user item) 0)
-                                       (- (.normalizedRating user item))
+                                       (- (* (.normalizedRating user item) (- user-rank)))
                                        0.5)))
     result))
 
