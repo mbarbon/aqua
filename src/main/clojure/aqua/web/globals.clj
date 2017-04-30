@@ -3,6 +3,9 @@
             aqua.misc
             [clojure.tools.logging :as log]))
 
+; this is in a separate, rarely modified file to avoid the globals
+; being empty on reload
+
 (def *data-source-rw (atom nil))
 (def *data-source-ro (atom nil))
 (def *users (atom nil))
