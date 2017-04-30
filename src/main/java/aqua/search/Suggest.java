@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Suggest {
-    private class Entry {
+    private static class Entry {
         public String string;
         public int start;
         public int[] animedbIds;
@@ -55,7 +55,7 @@ public class Suggest {
         }
     }
 
-    private class Suggestion {
+    private static class Suggestion {
         public int matches = 1;
         public int matchRank = Integer.MAX_VALUE;
         public int animeRank;
