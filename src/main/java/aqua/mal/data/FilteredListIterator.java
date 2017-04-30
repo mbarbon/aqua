@@ -1,6 +1,7 @@
 package aqua.mal.data;
 
 import java.lang.Iterable;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -10,9 +11,9 @@ public class FilteredListIterator<T extends RatedBase> implements Iterable<T>, I
     private final Iterator<T> parent;
     private T next;
 
-    public FilteredListIterator(List<T> animeList, int mask) {
+    public FilteredListIterator(T[] animeList, int mask) {
         this.mask = mask;
-        this.parent = animeList.iterator();
+        this.parent = Arrays.asList(animeList).iterator();
         this.next = findNext();
     }
 

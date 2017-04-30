@@ -7,10 +7,12 @@ import com.google.common.primitives.Ints;
 
 import java.lang.Iterable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class CFUser {
+    private static final CFRated[] EMPTY_CFRATED_ARRAY = new CFRated[0];
     private static final int COMPLETED_AND_DROPPED =
         statusMask(CFRated.COMPLETED, CFRated.DROPPED);
     private static final int COMPLETED =
@@ -22,7 +24,7 @@ public class CFUser {
 
     public String username;
     public long userId;
-    public List<CFRated> animeList;
+    public CFRated[] animeList;
     public int[] completedAndDroppedIds;
     public float[] completedAndDroppedRating;
     public int completedCount, droppedCount;
@@ -77,15 +79,15 @@ public class CFUser {
     }
 
     public void setAnimeList(CFParameters cfParameters, List<CFRated> animeList) {
-        this.animeList = animeList;
+        this.animeList = animeList.toArray(EMPTY_CFRATED_ARRAY);
         processAfterDeserialize(cfParameters);
     }
 
     public void setFilteredAnimeList(CFParameters cfParameters, List<CFRated> animeList) {
         List<CFRated> filtered = new ArrayList<>();
-        for (CFRated item : new FilteredListIterator<>(animeList, COMPLETED_AND_DROPPED|WATCHING))
+        for (CFRated item : new FilteredListIterator<>(animeList.toArray(EMPTY_CFRATED_ARRAY), COMPLETED_AND_DROPPED|WATCHING))
             filtered.add(item);
-        this.animeList = filtered;
+        this.animeList = filtered.toArray(EMPTY_CFRATED_ARRAY);
         processAfterDeserialize(cfParameters);
     }
 
@@ -114,9 +116,10 @@ public class CFUser {
 
         filtered.username = username;
         filtered.userId = userId;
-        filtered.animeList = animeList.stream()
+        filtered.animeList = Arrays.stream(animeList)
             .filter(rated -> rated.animedbId != animedbId)
-            .collect(Collectors.toList());
+            .collect(Collectors.toList())
+            .toArray(EMPTY_CFRATED_ARRAY);
         filtered.processAfterDeserialize(cfParameters);
 
         return filtered;

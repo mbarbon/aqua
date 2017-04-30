@@ -4,6 +4,7 @@ import java.lang.Iterable;
 import java.util.List;
 
 public class User {
+    private static final Rated[] EMPTY_RATED_ARRAY = new Rated[0];
     private static final int COMPLETED_AND_DROPPED =
         statusMask(Rated.COMPLETED, Rated.DROPPED);
     private static final int COMPLETED =
@@ -15,10 +16,10 @@ public class User {
 
     public String username;
     public long userId;
-    public List<Rated> animeList;
+    public Rated[] animeList;
 
     public void setAnimeList(List<Rated> animeList) {
-        this.animeList = animeList;
+        this.animeList = animeList.toArray(EMPTY_RATED_ARRAY);
     }
 
     private Iterable<Rated> withStatusMask(int mask) {

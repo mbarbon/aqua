@@ -24,6 +24,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.List;
 
 public class Json {
@@ -94,13 +95,13 @@ public class Json {
 
     public static User readUser(InputStream is) throws IOException {
         User user = JSON_MAPPER.readValue(is, User.class);
-        user.animeList.sort(Rated::compareTo);
+        Arrays.sort(user.animeList, Rated::compareTo);
         return user;
     }
 
     public static CFUser readCFUser(CFParameters cfParameters, InputStream is) throws IOException {
         CFUser user = JSON_MAPPER.readValue(is, CFUser.class);
-        user.animeList.sort(CFRated::compareTo);
+        Arrays.sort(user.animeList, CFRated::compareTo);
         user.processAfterDeserialize(cfParameters);
         return user;
     }
