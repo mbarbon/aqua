@@ -1,4 +1,4 @@
-(defproject aquq-recommend "0.0.1-SNAPSHOT"
+(defproject aqua-recommend "0.0.1-SNAPSHOT"
   :description "Aqua: simplistic anime recommendations"
   :url "https://example.com/FIXME"
   :license {:name "3-Clause BSD License"
