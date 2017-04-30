@@ -24,7 +24,6 @@
 (defn recommend [user]
   (let [users @*users
         lookup-anime @*anime]
-    ; (aqua.misc/normalize-ratings user)
     (let [known-anime-filter (aqua.misc/make-filter user lookup-anime)
           airing-anime-filter (aqua.misc/make-airing-filter user lookup-anime)
           known-anime-tagger (aqua.misc/make-tagger user lookup-anime)
