@@ -12,6 +12,7 @@
 (def *anime (atom nil))
 (def *suggest (atom nil))
 (def *background (atom nil))
+(def *state-directory (atom nil))
 
 (def cf-parameters (aqua.misc/make-cf-parameters 0.5 -1))
 
@@ -22,8 +23,9 @@
     (reset! *anime anime))
   (log/info "Done loading anime"))
 
-(defn init [directory]
+(defn init [directory state-directory]
   (reset! *background (java.util.concurrent.Executors/newScheduledThreadPool 5))
+  (reset! *state-directory state-directory)
   (let [data-source (aqua.mal-local/open-sqlite-rw directory "maldump.sqlite")]
     (reset! *data-source-rw data-source))
   (let [data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")]

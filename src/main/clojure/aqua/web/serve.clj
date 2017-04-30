@@ -4,6 +4,7 @@
             aqua.web.search
             aqua.web.globals
             aqua.web.mal-proxy
+            aqua.web.internal
             [compojure.core :refer :all]
             [compojure.route :as route]
             clojure.tools.cli
@@ -58,13 +59,20 @@
   raw-routes
   (route/not-found "Not Found"))
 
+(defroutes service-app-routes
+  (GET "/_is_enabled" []
+    (ring.util.response/response
+      (str (aqua.web.internal/enabled-and-healthy))))
+  (route/not-found "Service endpoint not found"))
+
 (defn- configurator [jetty-server]
   (.setRequestLog jetty-server
     (doto (org.eclipse.jetty.server.Slf4jRequestLog.)
       (.setLoggerName "access-logger"))))
 
-(defn init []
-  (aqua.web.globals/init "maldump")
+(defn init [options]
+  (aqua.web.globals/init (:mal-data-directory options)
+                         (:state-directory options))
   (aqua.web.mal-proxy/init)
   (aqua.web.search/init)
   (aqua.web.recommender/init))
@@ -76,30 +84,54 @@
     (-> app-routes
       (wrap-defaults modified-site-defaults))))
 
+(def service-app
+  (let [security (site-defaults :security)
+        no-csrf (assoc security :anti-forgery false)
+        modified-site-defaults (assoc site-defaults :security no-csrf)]
+    (-> service-app-routes
+      (ring.middleware.json/wrap-json-response)
+      (wrap-defaults modified-site-defaults))))
+
 (def ^:private cli-options
   [["-p" "--port PORT" "Port number"
     :default 9000
     :parse-fn #(Integer/parseInt %)
     :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
+   [nil "--state-directory" "Runtime state directory"
+    :default "/var/tmp"]
+   [nil "--mal-data-directory" "MAL dump database directory"
+    :default "maldump"]
    [nil "--code-reload" "Enable code reloading"]
    [nil "--stacktraces" "Enable stacktrace middleware"]
    ["-h" "--help"]])
 
-(defn- run-server [options]
+(defn- wrap-handler [handler options]
   (let [maybe-reload (if (:code-reload options)
                        (ring.middleware.reload/wrap-reload
-                           app {:dirs ["src/main/clojure"]})
-                       app)
+                           handler {:dirs ["src/main/clojure"]})
+                       handler)
         maybe-stacktraces (if (:stacktraces options)
                             (ring.middleware.stacktrace/wrap-stacktrace maybe-reload)
                             maybe-reload)
-        handler maybe-stacktraces]
-    (init)
+        wrapped-handler maybe-stacktraces]
+    wrapped-handler))
 
-    (ring.adapter.jetty/run-jetty
-      handler
-      {:port         (:port options)
-       :configurator configurator})))
+(defn- run-server [options]
+  (let [main-handler (wrap-handler app options)
+        service-handler (wrap-handler service-app options)]
+    (init options)
+
+    (let [main-server (ring.adapter.jetty/run-jetty
+                        main-handler
+                        {:port         (:port options)
+                         :join?        false
+                         :configurator configurator})
+          service-server (ring.adapter.jetty/run-jetty
+                           service-handler
+                           {:port (+ 1 (:port options))
+                            :join?        false})]
+      (.join main-server)
+      (.join service-server))))
 
 (defn -main [& args]
   (let [{:keys [options arguments errors summary]} (clojure.tools.cli/parse-opts args cli-options)]
