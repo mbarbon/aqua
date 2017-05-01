@@ -1,0 +1,20 @@
+<!-- use -Dlogback.configurationFile=logback-syslog.xml to enable -->
+<configuration debug="false">
+  <appender name="SYSLOG-accesslog" class="ch.qos.logback.classic.net.SyslogAppender">
+    <facility>LOCAL0</facility>
+    <suffixPattern>aqua-access:%msg</suffixPattern>
+  </appender>
+
+  <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
+    <facility>LOCAL0</facility>
+    <suffixPattern>aqua:%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</suffixPattern>
+  </appender>
+
+  <logger name="access-logger" level="info" additivity="false">
+    <appender-ref ref="SYSLOG-accesslog" />
+  </logger>
+
+  <root level="info">
+    <appender-ref ref="SYSLOG" />
+  </root>
+</configuration>
