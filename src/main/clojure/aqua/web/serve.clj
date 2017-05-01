@@ -97,6 +97,8 @@
     :default 9000
     :parse-fn #(Integer/parseInt %)
     :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
+   [nil "--host HOST" "Listen address"
+    :default "0.0.0.0"]
    [nil "--state-directory DIR" "Runtime state directory"
     :default "/var/tmp"]
    [nil "--mal-data-directory DIR" "MAL dump database directory"
@@ -124,11 +126,13 @@
     (let [main-server (ring.adapter.jetty/run-jetty
                         main-handler
                         {:port         (:port options)
+                         :host         (:host options)
                          :join?        false
                          :configurator configurator})
           service-server (ring.adapter.jetty/run-jetty
                            service-handler
                            {:port (+ 1 (:port options))
+                            :host         "127.0.0.1"
                             :join?        false})]
       (.join main-server)
       (.join service-server))))
