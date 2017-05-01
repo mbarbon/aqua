@@ -97,9 +97,9 @@
     :default 9000
     :parse-fn #(Integer/parseInt %)
     :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
-   [nil "--state-directory" "Runtime state directory"
+   [nil "--state-directory DIR" "Runtime state directory"
     :default "/var/tmp"]
-   [nil "--mal-data-directory" "MAL dump database directory"
+   [nil "--mal-data-directory DIR" "MAL dump database directory"
     :default "maldump"]
    [nil "--code-reload" "Enable code reloading"]
    [nil "--stacktraces" "Enable stacktrace middleware"]
