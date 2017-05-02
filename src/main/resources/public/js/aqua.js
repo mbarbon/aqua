@@ -187,11 +187,15 @@ $(function () {
         var callback = function (count) {
             if (count > 15)
                 return;
+            if (!self.malUserName())
+                return;
 
             self.loadingTimer = setTimeout(callback, 17000, count + 1);
             self.loadMalListRequest();
         };
 
+        if (!self.malUserName())
+            return;
         if (self.loadingTimer)
             clearTimeout(self.loadingTimer);
         self.loadingTimer = setTimeout(callback, 500, 0)
