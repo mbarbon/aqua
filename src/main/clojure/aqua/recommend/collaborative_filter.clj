@@ -44,7 +44,9 @@
         ranked-anime (sort-by #(% 1) (map hash-entry-to-pair (seq scored-anime)))]
     ranked-anime))
 
-(defn- score-airing-anime [keep-airing-anime user user-rank]
+(defn- score-airing-anime [keep-airing-anime
+                           ^aqua.recommend.CFUser user
+                           user-rank]
   (let [result (java.util.HashMap.)]
     (doseq [^aqua.recommend.CFRated item (keep-airing-anime (.watching user))]
       (.put result (.animedbId item) user-rank))

@@ -17,6 +17,7 @@
                  [compojure "1.5.1"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.2.1"]]
+;  :global-vars {*warn-on-reflection* true}
   :source-paths ["src/main/clojure"]
   :resource-paths ["src/main/resource"]
   :java-source-paths ["src/main/java"]

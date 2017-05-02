@@ -9,7 +9,7 @@
   (let [word-anime (java.util.HashMap.)]
     (doseq [[anime-id title] anime-title-list]
       (doseq [word (split-words title)]
-        (if-let [entries (.get word-anime word)]
+        (if-let [^java.util.Set entries (.get word-anime word)]
           (.add entries anime-id)
           (let [entries (java.util.HashSet.)]
             (.add entries anime-id)

@@ -13,24 +13,32 @@
       (doseq [user users]
         (.processAfterDeserialize user cf-parameters)))))
 
+; those accessor-like functions ar there to avoid the memory overhead
+; of Method objects created by reflection
+(defn- rated-animedb-id [^aqua.recommend.CFRated rated] (.animedbId rated))
+(defn- rated-status [^aqua.recommend.CFRated rated] (.status rated))
+(defn- franchise-anime [^aqua.mal.data.Franchise franchise] (.anime franchise))
+(defn- anime-animedb-id [^aqua.mal.data.Anime anime] (.animedbId anime))
+(defn- anime-franchise [^aqua.mal.data.Anime anime] (.franchise anime))
+
 (defn- all-but-planned [user]
   (->> (.animeList user)
-       (filter #(not= (.status %) aqua.mal.data.Rated/PLANTOWATCH))
-       (map #(.animedbId %))))
+       (filter #(not= (rated-status %) aqua.mal.data.Rated/PLANTOWATCH))
+       (map rated-animedb-id)))
 
 (defn- only-planned [user]
   (->> (.animeList user)
-       (filter #(= (.status %) aqua.mal.data.Rated/PLANTOWATCH))
-       (map #(.animedbId %))))
+       (filter #(= (rated-status %) aqua.mal.data.Rated/PLANTOWATCH))
+       (map rated-animedb-id)))
 
 (defn- franchise-anime-ids [anime-ids anime-map]
   (set (->> anime-ids
             (map #(-> %
                       (anime-map)
-                      (.franchise)))
+                      anime-franchise))
             (remove nil?)
-            (mapcat #(.anime %))
-            (map #(.animedbId %)))))
+            (mapcat franchise-anime)
+            (map anime-animedb-id))))
 
 (defn user-anime-ids [user anime-map]
   (let [known (all-but-planned user)
@@ -60,14 +68,14 @@
 (defn make-filter [user anime-map]
   (let [known-anime (set (all-but-planned user))
         is-known-anime (fn [^aqua.recommend.CFRated rated]
-                         (known-anime (.animedbId rated)))
+                         (known-anime (rated-animedb-id rated)))
         remove-known-anime (partial remove is-known-anime)]
     remove-known-anime))
 
 (defn make-airing-filter [user anime-map]
   (let [known-anime-filter (make-filter user anime-map)
         not-airing-or-old? (fn [rated]
-                             (let [anime (anime-map (.animedbId rated))]
+                             (let [^aqua.mal.data.Anime anime (anime-map (rated-animedb-id rated))]
                                (or (.isCompleted anime)
                                    (.isOld anime))))]
     #(remove not-airing-or-old? (known-anime-filter %))))

@@ -14,7 +14,7 @@
                  :else        "Winter")]
     (str season " " (.getYear date))))
 
-(defn render-anime [anime tags]
+(defn render-anime [^aqua.mal.data.Anime anime tags]
   {:animedbId (.animedbId anime)
    :title (.title anime)
    :image (.image anime)
