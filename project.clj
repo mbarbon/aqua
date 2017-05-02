@@ -19,7 +19,7 @@
                  [ring/ring-defaults "0.2.1"]]
 ;  :global-vars {*warn-on-reflection* true}
   :source-paths ["src/main/clojure"]
-  :resource-paths ["src/main/resource"]
+  :resource-paths ["src/main/resources"]
   :java-source-paths ["src/main/java"]
   :test-paths ["test" "src/test/clojure"]
   :target-path "target/%s"
