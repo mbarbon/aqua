@@ -219,6 +219,7 @@ $(function () {
                     localStorage.setItem('malUserName', self.malUserName());
                     localStorage.setItem('malRefresh', time());
                     localStorage.setItem('sourceMode', 'mal');
+                    localStorage.setItem('lastRecommendationTime', 0);
 
                     self.malRefresh(localStorage.getItem('malRefresh'));
                     self.malLoadQueuePosition(0);
@@ -288,6 +289,7 @@ $(function () {
         var rateList = [];
         var manualAnimeList = self.manualAnimeList();
 
+        localStorage.setItem('lastRecommendationTime', 0);
         if (manualAnimeList.length == 0) {
             self.jsonAnimeList('');
             localStorage.setItem('manualAnimeList', '');
@@ -355,10 +357,25 @@ $(function () {
     AnimeRecommendationModel.prototype.reloadRecommendations = function reloadRecommendations() {
         var self = this;
         var jsonAnimeList = self.localAnimeListModel.jsonAnimeList();
+        var lastRecommendationTime = localStorage.getItem('lastRecommendationTime') || 0;
+        var lastRecommendation = localStorage.getItem('lastRecommendation');
+        var useRecommendation = function useRecommendation (allData) {
+            var completed = $.map(allData.completed, function (item) { return new AnimeRecommendation(item, self.localAnimeListModel.isManualList) });
+            var airing = $.map(allData.airing, function (item) { return new AnimeRecommendation(item) });
+            self.recommendedCompletedAnime(completed);
+            self.recommendedAiringAnime(airing);
+            localStorage.setItem('lastRecommendationTime', time());
+            localStorage.setItem('lastRecommendation', JSON.stringify(allData));
+        };
 
         if (!jsonAnimeList) {
             self.recommendedCompletedAnime([]);
             self.recommendedAiringAnime([]);
+            return;
+        }
+
+        if (lastRecommendation && time() - lastRecommendationTime < 3600 * 5) {
+            useRecommendation(JSON.parse(lastRecommendation));
             return;
         }
 
@@ -367,12 +384,7 @@ $(function () {
             data: '{"animeList":' + jsonAnimeList + '}',
             dataType: 'json',
             contentType: 'application/json',
-            success: function (allData) {
-                var completed = $.map(allData.completed, function (item) { return new AnimeRecommendation(item, self.localAnimeListModel.isManualList) });
-                var airing = $.map(allData.airing, function (item) { return new AnimeRecommendation(item) });
-                self.recommendedCompletedAnime(completed);
-                self.recommendedAiringAnime(airing);
-            }
+            success: useRecommendation
         });
     };
     AnimeRecommendationModel.prototype.addManualRating = function addManualRating(item, rating) {
