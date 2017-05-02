@@ -37,6 +37,10 @@ $(function () {
         }
     };
 
+    var time = function time() {
+        return new Date().getTime() / 1000;
+    };
+
     var AnimeFilterButton = function AnimeFilterButton(tag, description, show) {
         var self = this;
 
@@ -167,9 +171,8 @@ $(function () {
         self.malRefresh = ko.observable(localStorage.getItem('malRefresh'));
         self.malCanRefresh = ko.pureComputed(function () {
             var lastRefresh = self.malRefresh();
-            var now = new Date().getTime() / 1000;
 
-            return now - lastRefresh > 6 * 3600;
+            return time() - lastRefresh > 6 * 3600;
         });
         self.isManualList = ko.observable();
         self.isManualEdit = ko.observable();
@@ -214,7 +217,7 @@ $(function () {
 
                     localStorage.setItem('malRated', jsonAnimeList);
                     localStorage.setItem('malUserName', self.malUserName());
-                    localStorage.setItem('malRefresh', new Date().getTime() / 1000);
+                    localStorage.setItem('malRefresh', time());
                     localStorage.setItem('sourceMode', 'mal');
 
                     self.malRefresh(localStorage.getItem('malRefresh'));
