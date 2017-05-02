@@ -22,6 +22,6 @@
   :java-source-paths ["src/main/java"]
   :test-paths ["test" "src/test/clojure"]
   :target-path "target/%s"
-  :jvm-opts ["-Xmx400M"]
+  :jvm-opts ["-Xmx400M" "-XX:+PrintGCTimeStamps" "-XX:+PrintGCDetails"]
   :profiles {:uberjar {:aot  :all
                        :main aqua.web.serve}})
