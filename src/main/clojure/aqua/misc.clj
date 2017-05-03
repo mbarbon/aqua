@@ -53,8 +53,9 @@
                  planned-anime
                  known-franchises
                  planned-franchises]
-  (for [[anime-id score] ranked-anime-seq]
-    (let [is-planned (planned-anime anime-id)
+  (doseq [^aqua.recommend.ScoredAnime scored-anime ranked-anime-seq]
+    (let [anime-id (.animedbId scored-anime)
+          is-planned (planned-anime anime-id)
           in-franchise (known-franchises anime-id)
           in-planned-franchise (planned-franchises anime-id)
           tags (cond
@@ -63,7 +64,8 @@
                  in-franchise :franchise
                  in-planned-franchise :planned-franchise
                  :else        nil)]
-      [anime-id score tags])))
+      (set! (.tags scored-anime) tags)))
+  ranked-anime-seq)
 
 (defn make-filter [user anime-map]
   (let [known-anime (set (all-but-planned user))

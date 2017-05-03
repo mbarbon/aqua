@@ -17,21 +17,23 @@
 (defn- mutating-merge-with [fun & rest]
   (let [result (java.util.HashMap.)]
     (doseq [merge-item rest]
-      (doseq [^java.util.Map$Entry entry merge-item]
-        (if-let [current-value (.get result (.getKey entry))]
-          (.put result (.getKey entry) (fun current-value (.getValue entry)))
-          (.put result (.getKey entry) (.getValue entry)))))
+      (doseq [^aqua.recommend.ScoredAnime entry merge-item]
+        ; ScoredAnime objects can be used as keys (on the anime id)
+        (if-let [^aqua.recommend.ScoredAnime current-entry (.get result entry)]
+          (set! (.score current-entry) (fun (.score current-entry) (.score entry)))
+          (.put result entry entry))))
     result))
 
 (defn- score-completed-anime [remove-known-anime
                               ^aqua.recommend.CFUser user
                               user-rank]
-  (let [result (java.util.HashMap.)]
+  (let [result (java.util.ArrayList.)]
     (doseq [^aqua.recommend.CFRated item (remove-known-anime (.completed user))]
-      ; [(.animedbId item) (- (* (.normalizedRating user item) (- user-rank)))])))
-      (.put result (.animedbId item) (if (>= (.normalizedRating user item) 0)
-                                       (- (* (.normalizedRating user item) (- user-rank)))
-                                       0.5)))
+      ; other-score: (- (* (.normalizedRating user item) (- user-rank)))
+      (let [score (if (>= (.normalizedRating user item) 0)
+                    (- (* (.normalizedRating user item) (- user-rank)))
+                    0.5)]
+        (.add result (aqua.recommend.ScoredAnime. item score))))
     result))
 
 (defn- hash-entry-to-pair [^java.util.Map$Entry entry]
@@ -39,22 +41,24 @@
 
 (defn recommended-completed [similar-users remove-known-anime]
   (let [scored-anime (apply mutating-merge-with min
-                       (for [[rank similar-user] similar-users]
-                         (score-completed-anime remove-known-anime similar-user rank)))
-        ranked-anime (sort-by #(% 1) (map hash-entry-to-pair (seq scored-anime)))]
+                       (for [^aqua.recommend.ScoredUser scored-user similar-users]
+                         (score-completed-anime remove-known-anime (.user scored-user) (.score scored-user))))
+        ranked-anime (java.util.ArrayList. (.values scored-anime))]
+    (.sort ranked-anime aqua.recommend.ScoredAnime/SORT_SCORE)
     ranked-anime))
 
 (defn- score-airing-anime [keep-airing-anime
                            ^aqua.recommend.CFUser user
                            user-rank]
-  (let [result (java.util.HashMap.)]
+  (let [result (java.util.ArrayList.)]
     (doseq [^aqua.recommend.CFRated item (keep-airing-anime (.watching user))]
-      (.put result (.animedbId item) user-rank))
+      (.add result (aqua.recommend.ScoredAnime. item user-rank)))
     result))
 
 (defn recommended-airing [similar-users keep-airing-anime]
   (let [scored-anime (apply mutating-merge-with +
-                       (for [[rank similar-user] similar-users]
-                         (score-airing-anime keep-airing-anime similar-user rank)))
-        ranked-anime (sort-by #(% 1) (map hash-entry-to-pair (seq scored-anime)))]
+                       (for [^aqua.recommend.ScoredUser scored-user similar-users]
+                         (score-airing-anime keep-airing-anime (.user scored-user) (.score scored-user))))
+        ranked-anime (java.util.ArrayList. (.values scored-anime))]
+    (.sort ranked-anime aqua.recommend.ScoredAnime/SORT_SCORE)
     ranked-anime))

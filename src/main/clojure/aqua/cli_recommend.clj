@@ -14,18 +14,18 @@
         [_ recommended-airing] (known-anime-tagger [users (aqua.recommend.collaborative-filter/recommended-airing users airing-anime-filter)])]
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
     (println "Users")
-    (doseq [[score user] users]
-      (println (.username user) (count (seq (.completedAndDropped user))) score))
+    (doseq [scored-user users]
+      (println (.username (.user scored-user)) (count (seq (.completedAndDropped user))) (.score scored-user)))
     (println)
     (println "Airing anime")
-    (doseq [[anime-id score tag] (take 15 recommended-airing)]
-      (let [anime (anime-map anime-id)]
-        (println tag anime-id (.title anime) score)))
+    (doseq [scored-anime (take 15 recommended-airing)]
+      (let [anime (anime-map (.animedbId scored-anime))]
+        (println (.tags scored-anime) (.animedbId anime) (.title anime) (.score scored-anime))))
     (println)
     (println "Completed anime")
-    (doseq [[anime-id score tag] recommended]
-      (let [anime (anime-map anime-id)]
-        (println tag anime-id (.title anime) score)))))
+    (doseq [scored-anime recommended]
+      (let [anime (anime-map (.animedbId scored-anime))]
+        (println (.tags scored-anime) (.animedbId anime) (.title anime) (.score scored-anime))))))
 
 (defn -main [username]
   (println "Starting")

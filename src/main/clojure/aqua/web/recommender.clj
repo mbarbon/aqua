@@ -18,8 +18,8 @@
   (reload-users))
 
 (defn- make-list [lookup-anime recommended]
-  (for [[anime-id score tags] recommended]
-    (aqua.web.render/render-anime (lookup-anime anime-id) tags)))
+  (for [^aqua.recommend.ScoredAnime scored-anime recommended]
+    (aqua.web.render/render-anime (lookup-anime (.animedbId scored-anime)) (.tags scored-anime))))
 
 (defn recommend [user]
   (let [users @*users

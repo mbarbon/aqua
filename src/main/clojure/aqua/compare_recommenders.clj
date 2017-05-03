@@ -26,11 +26,11 @@
   (let [filtered-user (.removeAnime test-user (.animedbId test-anime))
         known-anime-filter (aqua.misc/make-filter filtered-user anime)
         [_ ranked-anime] (recommender filtered-user known-anime-filter)
-        test-anime-rank ((fn [index [[anime _ tag] & rest]]
+        test-anime-rank ((fn [index [scored-anime & rest]]
                           (cond
-                            (nil? anime) nil
-                            (= anime (.animedbId test-anime)) index
-                            tag   (recur index rest)
+                            (nil? scored-anime) nil
+                            (= (.animedbId scored-anime) (.animedbId test-anime)) index
+                            (.tags scored-anime) (recur index rest)
                             :else (recur (+ 1 index) rest))) 0 ranked-anime)]
     (if (and test-anime-rank (<= test-anime-rank 30))
       1 ; (.normalizedRating test-anime)

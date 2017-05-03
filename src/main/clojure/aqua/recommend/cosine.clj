@@ -3,11 +3,14 @@
   (:import (aqua.recommend Cosine)))
 
 (defn- rank-users [user users]
-  (let [user-cosine (Cosine. user)]
-    (->> users
-      (filter #(aqua.recommend.collaborative-filter/similar-watched-count user %))
-      (map #(vector (.userSimilarity user-cosine %) %))
-      (sort-by #(% 0)))))
+  (let [user-cosine (Cosine. user)
+        scored (java.util.ArrayList.)]
+    (doseq [similar users]
+      (if (aqua.recommend.collaborative-filter/similar-watched-count user similar)
+        (.add scored (aqua.recommend.ScoredUser.
+                       similar (.userSimilarity user-cosine similar)))))
+    (.sort scored aqua.recommend.ScoredUser/SORT_SCORE)
+    scored))
 
 (defn get-recommendations [user users remove-known-anime]
   (let [ranked-users (take 100 (rank-users user users))
