@@ -227,6 +227,8 @@ $(function () {
                     self.isManualList(false);
                     self.isManualEdit(false);
                     self.jsonAnimeList(jsonAnimeList);
+                    if (self.loadingTimer)
+                        clearTimeout(self.loadingTimer);
                 }
             }
         });
