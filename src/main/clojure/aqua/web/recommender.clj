@@ -6,15 +6,34 @@
             aqua.misc
             [clojure.tools.logging :as log]))
 
-(defn- reload-users []
+(defn- load-users []
   (log/info "Start loading users")
   (let [data-source @*data-source-ro
         cache (java.util.HashMap.)
-        users (aqua.mal-local/load-filtered-cf-users data-source aqua.web.globals/cf-parameters cache 20000)]
+        target (java.util.ArrayList. (for [_ (range 20000)] nil))
+        users (aqua.mal-local/load-filtered-cf-users-into data-source aqua.web.globals/cf-parameters cache target)]
     (reset! *users users))
   (log/info "Done loading users"))
 
+(defn- cf-rated-cache [users]
+  (let [cache (java.util.HashMap.)]
+    (doseq [^aqua.recommend.CFUser user users]
+      (doseq [rated (.animeList user)]
+        (.putIfAbsent cache rated rated)))
+    cache))
+
+(defn- reload-users []
+  (log/info "Start reloading users")
+  (let [data-source @*data-source-ro
+        cache (cf-rated-cache @*users)
+        target @*users]
+    (aqua.mal-local/load-filtered-cf-users-into data-source aqua.web.globals/cf-parameters cache target))
+  (log/info "Done reloading users"))
+
 (defn init []
+  (load-users))
+
+(defn reload []
   (reload-users))
 
 (defn- make-list [lookup-anime recommended]

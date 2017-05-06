@@ -59,10 +59,14 @@
   raw-routes
   (route/not-found "Not Found"))
 
+(def reload)
+
 (defroutes service-app-routes
   (GET "/_is_enabled" []
     (ring.util.response/response
       (str (aqua.web.internal/enabled-and-healthy))))
+  (GET "/_reload_data" []
+    (ring.util.response/response (reload)))
   (route/not-found "Service endpoint not found"))
 
 (defn- configurator [jetty-server]
@@ -76,6 +80,12 @@
   (aqua.web.mal-proxy/init)
   (aqua.web.search/init)
   (aqua.web.recommender/init))
+
+(defn reload []
+  (aqua.web.globals/reload)
+  (aqua.web.search/reload)
+  (aqua.web.recommender/reload)
+  (str true))
 
 (def app
   (let [security (site-defaults :security)

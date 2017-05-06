@@ -63,6 +63,7 @@
 
 (defn- load-filtered-cf-users-from-rs [cf-parameters
                                        ^java.util.Map cache
+                                       ^java.util.List target
                                        ^java.sql.ResultSet rs]
   (let [user (aqua.recommend.CFUser.)
         al-data (java.util.zip.GZIPInputStream.
@@ -79,7 +80,10 @@
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
     (.setFilteredAnimeList user cf-parameters anime-list)
-    user))
+    (.set target (- (.getRow rs) 1) user)
+    ; return nil to avoid retaining the previous value in the
+    ; result list
+    nil))
 
 (defn- select-users-by-id [connection ids loader]
   (let [query (str select-users "(" (clojure.string/join "," ids) ")")]
@@ -111,11 +115,15 @@
                         (random-user-ids connection max-count)
                         (partial load-cf-users-from-rs cf-parameters))))
 
-(defn load-filtered-cf-users [data-source cf-parameters cache max-count]
+; the only purpose of this function is to avoid doubling memory usage
+; while users are reloaded: old users become garbage while new users are loaded
+(defn load-filtered-cf-users-into [data-source cf-parameters cache target]
   (with-open [connection (.getConnection data-source)]
+    ; this allocates and throws away an ArrayList, it's fine
     (select-users-by-id connection
-                        (random-user-ids connection max-count)
-                        (partial load-filtered-cf-users-from-rs cf-parameters cache))))
+                        (random-user-ids connection (count target))
+                        (partial load-filtered-cf-users-from-rs cf-parameters cache target))
+    target))
 
 (def ^:private select-user
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")

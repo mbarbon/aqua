@@ -16,6 +16,9 @@
 (defn init []
   (rebuild-suggester))
 
+(defn reload []
+  (rebuild-suggester))
+
 (defn autocomplete [term]
   (let [suggestions (aqua.search.autocomplete/get-suggestions @*suggest term @*anime)]
     (for [anime suggestions]
