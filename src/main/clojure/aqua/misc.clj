@@ -15,6 +15,7 @@
 
 ; those accessor-like functions ar there to avoid the memory overhead
 ; of Method objects created by reflection
+(defn- scored-animedb-id [^aqua.recommend.RecommendationItem scored] (.animedbId scored))
 (defn- rated-animedb-id [^aqua.recommend.CFRated rated] (.animedbId rated))
 (defn- rated-status [^aqua.recommend.CFRated rated] (.status rated))
 (defn- franchise-anime [^aqua.mal.data.Franchise franchise] (.anime franchise))
@@ -73,20 +74,20 @@
                    :else        nil)]
         (if franchise-id
           (.add seen-franchises franchise-id))
-        (set! (.tags scored-anime) tags))))
+        (.setTags scored-anime tags))))
   ranked-anime-seq)
 
 (defn make-filter [user anime-map]
   (let [known-anime (set (all-but-planned user))
         is-known-anime (fn [^aqua.recommend.CFRated rated]
-                         (known-anime (rated-animedb-id rated)))
+                         (known-anime (scored-animedb-id rated)))
         remove-known-anime (partial remove is-known-anime)]
     remove-known-anime))
 
 (defn make-airing-filter [user anime-map]
   (let [known-anime-filter (make-filter user anime-map)
         not-airing-or-old? (fn [rated]
-                             (let [^aqua.mal.data.Anime anime (anime-map (rated-animedb-id rated))]
+                             (let [^aqua.mal.data.Anime anime (anime-map (scored-animedb-id rated))]
                                (or (.isCompleted anime)
                                    (.isOld anime))))]
     #(remove not-airing-or-old? (known-anime-filter %))))

@@ -2,11 +2,13 @@
   (:require aqua.mal-local
             aqua.misc
             aqua.recommend.user-sample
+            aqua.recommend.lfd
             aqua.recommend.rp-similar-anime
             clojure.java.io))
 
 (def user-count 20000)
 (def all-items ["user-sample"
+                "lfd-model"
                 "rp-similarity"
                 "rp-similarity-unfiltered"])
 
@@ -18,10 +20,27 @@
 ; arbitrary
 (def rp-similar-item-count 30)
 
+(def lfd-rank 25)
+(def lfd-lambda 0.1)
+(def lfd-iterations 20)
+
 (defn- recompute-rp-model [users anime-map model-path]
   (let [rp-similar (aqua.recommend.rp-similar-anime/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
     (with-open [out (clojure.java.io/writer model-path)]
       (aqua.recommend.rp-similar-anime/store-rp-similarity out rp-similar))))
+
+(defn- recompute-lfd-model [users anime-map rank lambda iterations model-path airing-model-path user-model-path]
+  (let [[lfdr lfdr-airing] (aqua.recommend.lfd/prepare-lfd-decompositor users anime-map rank lambda)]
+     (dotimes [_ iterations]
+       (aqua.recommend.lfd/run-anime-steps lfdr)
+       (aqua.recommend.lfd/run-user-steps lfdr))
+     (aqua.recommend.lfd/run-anime-steps lfdr-airing)
+     (with-open [out (clojure.java.io/writer user-model-path)]
+       (aqua.recommend.lfd/store-user-lfd out (.decompositionUsers lfdr)))
+     (with-open [out (clojure.java.io/writer model-path)]
+       (aqua.recommend.lfd/store-lfd out (.decomposition lfdr)))
+     (with-open [out (clojure.java.io/writer airing-model-path)]
+       (aqua.recommend.lfd/store-lfd out (.decomposition lfdr-airing)))))
 
 (defn -main [& items]
   (when (some #{"user-sample"} (if (seq items) items all-items))
@@ -36,6 +55,10 @@
       (case item
         "user-sample"
           nil ; handled above
+        "lfd-model"
+          (do
+            (println "Recomputing latent factor decomposition")
+            (time (recompute-lfd-model users anime lfd-rank lfd-lambda lfd-iterations "maldump/lfd-model" "maldump/lfd-model-airing" "maldump/lfd-user-model")))
         "rp-similarity"
           (do
             (println "Recomputing random projection similarity model")

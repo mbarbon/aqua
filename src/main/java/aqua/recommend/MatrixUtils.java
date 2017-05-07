@@ -3,6 +3,7 @@ package aqua.recommend;
 import java.util.concurrent.ThreadLocalRandom;
 
 import no.uib.cipr.matrix.DenseMatrix;
+import no.uib.cipr.matrix.DenseVector;
 
 import no.uib.cipr.matrix.sparse.SparseVector;
 import no.uib.cipr.matrix.sparse.FlexCompRowMatrix;
@@ -89,5 +90,37 @@ public class MatrixUtils {
         }
 
         return dot;
+    }
+
+    public static void partialTransAmult(DenseMatrix A, int[] aIndices, int indicesCount, DenseMatrix B, DenseMatrix C) {
+        // TODO check dimensions
+
+        double[] aData = A.getData(), bData = B.getData();
+        for (int i = 0; i < A.numColumns(); ++i) {
+            for (int j = 0; j < B.numColumns(); ++j) {
+                double dot = 0;
+                int aIndex = i * A.numRows(), bIndex = j * B.numRows();
+                for (int k = 0; k < indicesCount; ++k) {
+                    dot += aData[aIndex + aIndices[k]] *
+                           bData[bIndex + aIndices[k]];
+                }
+                C.set(i, j, dot);
+            }
+        }
+    }
+
+    public static void partialTransAmult(DenseMatrix A, int[] aIndices, int indicesCount, DenseVector B, DenseVector C) {
+        // TODO check dimensions
+
+        double[] aData = A.getData(), bData = B.getData();
+        for (int i = 0; i < A.numColumns(); ++i) {
+            double dot = 0;
+            int aIndex = i * A.numRows(), bIndex = 0;
+            for (int k = 0; k < indicesCount; ++k) {
+                dot += aData[aIndex + aIndices[k]] *
+                       bData[bIndex + aIndices[k]];
+            }
+            C.set(i, dot);
+        }
     }
 }

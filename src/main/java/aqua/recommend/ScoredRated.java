@@ -2,26 +2,26 @@ package aqua.recommend;
 
 import java.util.Comparator;
 
-public class ScoredAnimeId implements RecommendationItem, ScoredAnime {
-    public static final Comparator<ScoredAnimeId> SORT_SCORE = new Comparator<ScoredAnimeId>() {
+public class ScoredRated implements ScoredAnime {
+    public static final Comparator<ScoredRated> SORT_SCORE = new Comparator<ScoredRated>() {
         @Override
-        public int compare(ScoredAnimeId a, ScoredAnimeId b) {
+        public int compare(ScoredRated a, ScoredRated b) {
             return Float.compare(a.score, b.score);
         }
     };
 
-    public int animedbId;
+    public CFRated rated;
     public float score;
     public clojure.lang.Keyword tags;
 
-    public ScoredAnimeId(int animedbId, float score) {
-        this.animedbId = animedbId;
+    public ScoredRated(CFRated rated, float score) {
+        this.rated = rated;
         this.score = score;
     }
 
     @Override
     public int animedbId() {
-        return animedbId;
+        return rated.animedbId;
     }
 
     @Override
@@ -36,17 +36,17 @@ public class ScoredAnimeId implements RecommendationItem, ScoredAnime {
 
     @Override
     public int hashCode() {
-        return animedbId;
+        return rated.animedbId;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ScoredAnimeId))
+        if (!(o instanceof ScoredRated))
             return false;
-        return equals((ScoredAnimeId) o);
+        return equals((ScoredRated) o);
     }
 
-    public boolean equals(ScoredAnimeId other) {
-        return animedbId == other.animedbId;
+    public boolean equals(ScoredRated other) {
+        return rated.animedbId == other.rated.animedbId;
     }
 }

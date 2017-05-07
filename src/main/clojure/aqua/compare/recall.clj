@@ -1,6 +1,8 @@
 (ns aqua.compare.recall
   (:require aqua.misc
             aqua.compare.misc
+            aqua.recommend.lfd
+            aqua.recommend.lfd-cf
             aqua.recommend.cosine
             aqua.recommend.pearson))
 
@@ -61,3 +63,9 @@
 
 (defn make-score-cosine [users]
   (partial score-recommender #(aqua.recommend.cosine/get-recommendations %1 users %2)))
+
+(defn make-score-lfd [lfd]
+  (partial score-recommender #(aqua.recommend.lfd/get-recommendations %1 lfd %2)))
+
+(defn make-score-lfd-cf [lfd-users]
+  (partial score-recommender #(aqua.recommend.lfd-cf/get-recommendations %1 lfd-users %2)))

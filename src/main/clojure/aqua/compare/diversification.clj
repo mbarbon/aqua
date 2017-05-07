@@ -1,5 +1,7 @@
 (ns aqua.compare.diversification
   (:require aqua.misc
+            aqua.recommend.lfd
+            aqua.recommend.lfd-cf
             aqua.recommend.cosine
             aqua.recommend.pearson
             aqua.recommend.rp-similar-anime
@@ -48,3 +50,9 @@
 
 (defn make-score-cosine [rp-model users]
   (partial score-recommender rp-model #(aqua.recommend.cosine/get-recommendations %1 users %2)))
+
+(defn make-score-lfd [rp-model lfd]
+  (partial score-recommender rp-model #(aqua.recommend.lfd/get-recommendations %1 lfd %2)))
+
+(defn make-score-lfd-cf [rp-model lfd-users]
+  (partial score-recommender rp-model #(aqua.recommend.lfd-cf/get-recommendations %1 lfd-users %2)))

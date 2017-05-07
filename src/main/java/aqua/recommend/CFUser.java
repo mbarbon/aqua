@@ -9,6 +9,7 @@ import java.lang.Iterable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CFUser {
@@ -118,6 +119,20 @@ public class CFUser {
         filtered.userId = userId;
         filtered.animeList = Arrays.stream(animeList)
             .filter(rated -> rated.animedbId != animedbId)
+            .collect(Collectors.toList())
+            .toArray(EMPTY_CFRATED_ARRAY);
+        filtered.processAfterDeserialize(cfParameters);
+
+        return filtered;
+    }
+
+    public CFUser removeAnime(Set<Integer> animedbIds) {
+        CFUser filtered = new CFUser();
+
+        filtered.username = username;
+        filtered.userId = userId;
+        filtered.animeList = Arrays.stream(animeList)
+            .filter(rated -> !animedbIds.contains(rated.animedbId))
             .collect(Collectors.toList())
             .toArray(EMPTY_CFRATED_ARRAY);
         filtered.processAfterDeserialize(cfParameters);

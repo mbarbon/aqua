@@ -13,6 +13,10 @@
         sampled-ids (aqua.mal-local/load-sampled-user-ids directory 20000)
         cf-parameters-std (aqua.recommend.CFParameters.)
         users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
+        lfd (with-open [in (clojure.java.io/reader "maldump/lfd-model")]
+              (aqua.recommend.lfd/load-lfd in))
+        lfd-users (with-open [in (clojure.java.io/reader "maldump/lfd-user-model")]
+                    (aqua.recommend.lfd/load-user-lfd in lfd users))
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory
                                                                      data-source
                                                                      (* 10 compare-count)
@@ -21,10 +25,14 @@
     (let [rp-model (aqua.compare.diversification/load-rp-model)
           score-pearson (aqua.compare.diversification/make-score-pearson rp-model users 20)
           score-cosine (aqua.compare.diversification/make-score-cosine rp-model users)
+          score-lfd (aqua.compare.diversification/make-score-lfd rp-model lfd)
+          score-lfd-cf (aqua.compare.diversification/make-score-lfd-cf rp-model lfd-users)
           test-users (take compare-count test-users-sample)]
       (println (str "\nStart diversification comparison ("
                     (count test-users)
                     " users)"))
+      (timed-score "LFD" (score-lfd test-users anime-map))
+      (timed-score "LFD CF" (score-lfd-cf test-users anime-map))
       (aqua.misc/normalize-all-ratings users 0 0)
       (aqua.misc/normalize-all-ratings test-users 0 0)
       (timed-score "Cosine (default)" (score-cosine test-users anime-map))
@@ -36,11 +44,15 @@
 
     (let [score-pearson (aqua.compare.recall-planned/make-score-pearson users 20)
           score-cosine (aqua.compare.recall-planned/make-score-cosine users)
+          score-lfd (aqua.compare.recall-planned/make-score-lfd lfd)
+          score-lfd-cf (aqua.compare.recall-planned/make-score-lfd-cf lfd-users)
           test-users (aqua.compare.recall-planned/make-test-users-list compare-count
                                                                        test-users-sample)]
       (println (str "\nStart planned items recall comparison ("
                     (count test-users)
                     " users)"))
+      (timed-score "LFD" (score-lfd test-users anime-map))
+      (timed-score "LFD CF" (score-lfd-cf test-users anime-map))
       (aqua.misc/normalize-all-ratings users 0 0)
       (aqua.misc/normalize-all-ratings test-users 0 0)
       (timed-score "Cosine (default)" (score-cosine test-users anime-map))
@@ -52,11 +64,15 @@
 
     (let [score-pearson (aqua.compare.recall/make-score-pearson users 20)
           score-cosine (aqua.compare.recall/make-score-cosine users)
+          score-lfd (aqua.compare.recall/make-score-lfd lfd)
+          score-lfd-cf (aqua.compare.recall/make-score-lfd-cf lfd-users)
           test-users (aqua.compare.recall/make-test-users-list compare-count
                                                              test-users-sample)]
       (println (str "\nStart single-item recall comparison ("
                     (count test-users)
                     " users)"))
+      (timed-score "LFD" (score-lfd test-users anime-map))
+      (timed-score "LFD CF" (score-lfd-cf test-users anime-map))
       (aqua.misc/normalize-all-ratings users 0 0)
       (aqua.compare.recall/normalize-test-users test-users 0 0)
       (timed-score "Cosine (default)" (score-cosine test-users anime-map))

@@ -40,6 +40,19 @@
 (def ^:private select-users
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.user_id IN ")
 
+(def ^:private select-test-user-ids
+  (str "SELECT u.user_id"
+       "    FROM users AS u"
+       "      INNER JOIN user_anime_stats AS uas"
+       "        ON uas.user_id = u.user_id"
+       "    WHERE completed > 10 AND"
+       "          completed < 100 AND"
+       "          u.user_id NOT IN ("
+       "              SELECT user_id"
+       "              FROM users_anime_sample"
+       "              WHERE sequence < 40000)"
+       "    LIMIT ?"))
+
 (defn- load-users-from-rs [^java.sql.ResultSet rs]
   (let [user (aqua.mal.data.User.)
         al-data (java.util.zip.GZIPInputStream.
@@ -91,14 +104,31 @@
                 rs (.executeQuery statement)]
       (doall-rs rs loader))))
 
+
 (defn load-sampled-user-ids [directory size]
   (with-open [in (io/reader (io/file directory "user-sample"))]
     (doall (take size (for [line (line-seq in)]
                         (Integer/valueOf line))))))
 
+(defn- selected-cf-user-ids [connection max-count query]
+  (with-open [statement (doto (.prepareStatement connection query
+                                                 java.sql.ResultSet/TYPE_FORWARD_ONLY
+                                                 java.sql.ResultSet/CONCUR_READ_ONLY)
+                              (.setInt 1 max-count)
+                              (.setFetchSize 1000))
+              rs (.executeQuery statement)]
+    (let [ids (doall-rs rs (fn [^java.sql.ResultSet rs] (.getInt rs 1)))]
+      ids)))
+
 (defn load-cf-users-by-id [data-source cf-parameters ids]
   (with-open [connection (.getConnection data-source)]
     (select-users-by-id connection ids
+                        (partial load-cf-users-from-rs cf-parameters))))
+
+(defn load-test-cf-users [data-source cf-parameters max-count]
+  (with-open [connection (.getConnection data-source)]
+    (select-users-by-id connection
+                        (selected-cf-user-ids connection max-count select-test-user-ids)
                         (partial load-cf-users-from-rs cf-parameters))))
 
 ; the only purpose of this function is to avoid doubling memory usage

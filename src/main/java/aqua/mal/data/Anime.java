@@ -22,6 +22,10 @@ public class Anime {
             (status == AIRING && endedAiring >= System.currentTimeMillis() / 1000);
     }
 
+    public boolean isAiring() {
+        return status == AIRING && !isCompleted();
+    }
+
     public boolean isOld() {
         return (System.currentTimeMillis() / 1000 - startedAiring) > 365 * 86400;
     }
