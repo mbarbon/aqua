@@ -1,4 +1,4 @@
-(ns aqua.compare-recommenders
+(ns aqua.cli.compare-recommenders
   (:require aqua.mal-local
             aqua.misc
             aqua.recommend.cosine

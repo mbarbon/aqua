@@ -1,4 +1,4 @@
-(ns aqua.cli-recommend
+(ns aqua.cli.cf-recommend
   (:require aqua.mal-local aqua.recommend.cosine aqua.misc))
 
 (defn- run-recommender [user users anime-map]
