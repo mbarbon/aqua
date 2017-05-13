@@ -197,6 +197,12 @@ def fetch_anime_list(basedir, username):
         (blob,) = c.fetchone()
         return _load_blob(blob)
 
+def count_to_bucket(count):
+    return int(4 * (math.log(count * 10) - 2))
+
+def bucket_to_count(bucket):
+    return math.floor(math.exp((bucket / 4.) + 2) / 10. + 0.5)
+
 def make_user_sample(basedir):
     with _connection(basedir) as conn:
         c = conn.cursor()
@@ -207,7 +213,7 @@ def make_user_sample(basedir):
         user_buckets = {}
         c.execute('SELECT user_id, completed FROM user_anime_stats WHERE completed > 5 AND completed < 500')
         for user_id, completed in c.fetchall():
-            bucket = int(4 * (math.log(completed * 10) - 2))
+            bucket = count_to_bucket(completed)
             users = user_buckets.get(bucket)
             if users is None:
                 users = set()
@@ -216,7 +222,7 @@ def make_user_sample(basedir):
 
         user_sample = []
         user_sample_count = 0
-        while len([v for v in user_buckets.values() if v]) > 10:
+        while len([v for v in user_buckets.values() if v]) > 5:
             for bucket, users in user_buckets.items():
                 covered = set()
                 shuffled_users = list(users)
@@ -228,7 +234,7 @@ def make_user_sample(basedir):
                     user_anime_list = _load_blob(user_blob)
                     user_anime_ids = [rated[0] for rated in user_anime_list if rated[1] == STATUS_COMPLETED or rated[1] == STATUS_DROPPED]
                     added = (set(user_anime_ids) & cover_anime) - covered
-                    if len(added) < 4:
+                    if len(added) < max(4, len(user_anime_ids) * .03):
                         continue
                     users.remove(user_id)
                     user_sample.append((user_sample_count, user_id, bucket))
