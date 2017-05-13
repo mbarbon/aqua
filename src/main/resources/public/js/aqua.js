@@ -72,6 +72,7 @@ $(function () {
         'planned': showHideTags[0].show,
         'franchise': showHideTags[1].show,
         'planned-franchise': showHideTags[2].show,
+        'same-franchise': showHideTags[1].show,
         null: true
     };
 
@@ -80,7 +81,8 @@ $(function () {
         'planned': 'Plan to watch',
         'franchise': 'Related to watched anime',
         'planned-franchise': 'Related to planned anime',
-        null: '',
+        'same-franchise': 'Same franchise',
+        null: ''
     };
 
     var AnimeRecommendation = function AnimeRecommendation(data, showStars) {

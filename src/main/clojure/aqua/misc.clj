@@ -52,19 +52,28 @@
 (defn- add-tags [ranked-anime-seq
                  planned-anime
                  known-franchises
-                 planned-franchises]
-  (doseq [^aqua.recommend.ScoredAnime scored-anime ranked-anime-seq]
-    (let [anime-id (.animedbId scored-anime)
-          is-planned (planned-anime anime-id)
-          in-franchise (known-franchises anime-id)
-          in-planned-franchise (planned-franchises anime-id)
-          tags (cond
-                 (and is-planned in-franchise) :planned-and-franchise
-                 is-planned   :planned
-                 in-franchise :franchise
-                 in-planned-franchise :planned-franchise
-                 :else        nil)]
-      (set! (.tags scored-anime) tags)))
+                 planned-franchises
+                 anime-map]
+  (let [seen-franchises (java.util.HashSet.)]
+    (doseq [^aqua.recommend.ScoredAnime scored-anime ranked-anime-seq]
+      (let [anime-id (.animedbId scored-anime)
+            franchise-id (let [^aqua.mal.data.Anime anime (.get anime-map anime-id)]
+                           (when-let [franchise (.franchise anime)]
+                             (.franchiseId franchise)))
+            is-planned (planned-anime anime-id)
+            in-franchise (known-franchises anime-id)
+            in-planned-franchise (planned-franchises anime-id)
+            same-franchise (.contains seen-franchises franchise-id)
+            tags (cond
+                   (and is-planned in-franchise) :planned-and-franchise
+                   is-planned   :planned
+                   in-franchise :franchise
+                   in-planned-franchise :planned-franchise
+                   same-franchise :same-franchise
+                   :else        nil)]
+        (if franchise-id
+          (.add seen-franchises franchise-id))
+        (set! (.tags scored-anime) tags))))
   ranked-anime-seq)
 
 (defn make-filter [user anime-map]
@@ -86,4 +95,4 @@
   (let [[known-anime planned-anime known-franchises planned-franchises]
             (user-anime-ids user anime-map)]
     (fn [[users ranked-anime-seq]]
-      [users (add-tags ranked-anime-seq planned-anime known-franchises planned-franchises)])))
+      [users (add-tags ranked-anime-seq planned-anime known-franchises planned-franchises anime-map)])))
