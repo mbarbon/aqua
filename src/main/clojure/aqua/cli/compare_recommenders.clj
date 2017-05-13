@@ -4,10 +4,9 @@
             aqua.recommend.cosine
             aqua.recommend.pearson))
 
-(def ^:private rnd (java.util.Random. 1643789325))
-
 (defn- stable-shuffle [^java.util.Collection items]
-  (let [lst (java.util.ArrayList. items)]
+  (let [rnd (java.util.Random. 1643789325)
+        lst (java.util.ArrayList. items)]
     (java.util.Collections/shuffle lst rnd)
     lst))
 
