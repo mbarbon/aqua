@@ -53,9 +53,10 @@
                                           user-ids))
     (let [users (aqua.mal-local/load-cf-users data-source
                                               (aqua.recommend.CFParameters.)
-                                              max-count)]
-      (spit file (clojure.string/join "\n" (map #(.userId %) users)))
-      users)))
+                                              20000)
+          shuffled-users (stable-shuffle users)]
+      (spit file (clojure.string/join "\n" (map #(.userId %) shuffled-users)))
+      (take max-count shuffled-users))))
 
 (defn -main []
   (let [directory "maldump"
