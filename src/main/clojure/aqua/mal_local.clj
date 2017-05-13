@@ -94,7 +94,7 @@
                 rs (.executeQuery statement)]
       (doall-rs rs loader))))
 
-(defn- random-user-ids [connection max-count]
+(defn- selected-cf-user-ids [connection max-count]
   (with-open [statement (doto (.prepareStatement connection select-user-ids
                                                  java.sql.ResultSet/TYPE_FORWARD_ONLY
                                                  java.sql.ResultSet/CONCUR_READ_ONLY)
@@ -112,7 +112,7 @@
 (defn load-cf-users [data-source cf-parameters max-count]
   (with-open [connection (.getConnection data-source)]
     (select-users-by-id connection
-                        (random-user-ids connection max-count)
+                        (selected-cf-user-ids connection max-count)
                         (partial load-cf-users-from-rs cf-parameters))))
 
 ; the only purpose of this function is to avoid doubling memory usage
@@ -121,7 +121,7 @@
   (with-open [connection (.getConnection data-source)]
     ; this allocates and throws away an ArrayList, it's fine
     (select-users-by-id connection
-                        (random-user-ids connection (count target))
+                        (selected-cf-user-ids connection (count target))
                         (partial load-filtered-cf-users-from-rs cf-parameters cache target))
     target))
 
