@@ -12,15 +12,14 @@
     lst))
 
 (defn- make-test-entry [user]
-  (let [completed-good (filter #(>= (.normalizedRating user %) 0) (.completed user))
+  (let [completed-good (filter #(>= (.normalizedRating user %) 0.6) (.completed user))
         total (count completed-good)
         by-rating (sort-by #(.normalizedRating user %) (stable-shuffle completed-good))
-        low-value (take 5 (drop 5 by-rating))
-        mid-value (take 5 (drop (/ total 2) by-rating))
+        mid-value (take 2 (drop (/ total 2) by-rating))
         high-value (take 5 (drop (- total 5) by-rating))]
     (if (<= total 10)
       [user #{}]
-      [user (set (concat high-value mid-value low-value))])))
+      [user (set (concat high-value mid-value))])))
 
 (defn- score-user-anime [recommender test-user test-anime anime]
   (let [filtered-user (.removeAnime test-user (.animedbId test-anime))
@@ -33,7 +32,7 @@
                             (.tags scored-anime) (recur index rest)
                             :else (recur (+ 1 index) rest))) 0 ranked-anime)]
     (if (and test-anime-rank (<= test-anime-rank 30))
-      1 ; (.normalizedRating test-anime)
+      1
       0)))
 
 (defn- score-recommender [recommender test-users anime]
@@ -43,8 +42,8 @@
                                           (known-anime-tagger
                                             (recommender filtered-user known-anime-filter)))
                        score (apply + (map #(score-user-anime user-recommender test-user % anime) test-anime))]
-                   (/ score (count test-anime))))]
-    (apply + scores)))
+                   [score (count test-anime)]))]
+    (/ (apply + (map first scores)) (apply + (map second scores)))))
 
 (defn load-stable-user-sample [data-source max-count file]
   (if (.exists (clojure.java.io/as-file file))
@@ -69,7 +68,7 @@
         test-users (into []
                      (map make-test-entry
                        (take compare-count
-                         (remove #(empty? (.completed %))
+                         (remove #(< (count (seq (.completed %))) 20)
                            (load-stable-user-sample data-source
                                                     (* 4 compare-count)
                                                     "test-users.txt")))))
@@ -81,7 +80,7 @@
                              (partial score-recommender #(aqua.recommend.pearson/get-recommendations min-common-items %1 users %2)))
         score-pearson (make-score-pearson 20)
         score-cosine (partial score-recommender #(aqua.recommend.cosine/get-recommendations %1 users %2))
-        print-score (fn [name score] (printf "%s: %.02f\n" name (float score)) (flush))]
+        print-score (fn [name score] (printf "%s: %.03f\n" name (float score)) (flush))]
     (let [start-time (System/currentTimeMillis)]
       (println "Start")
       (aqua.misc/normalize-all-ratings users 0 0)
