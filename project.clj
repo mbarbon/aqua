@@ -8,6 +8,7 @@
                  [com.fasterxml.jackson.core/jackson-databind "2.8.7"]
                  [com.fasterxml.jackson.dataformat/jackson-dataformat-xml "2.8.7"]
                  [com.google.guava/guava "21.0"]
+                 [com.googlecode.matrix-toolkits-java/mtj "1.0.2"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.eclipse.jetty/jetty-server "9.3.18.v20170406"]
