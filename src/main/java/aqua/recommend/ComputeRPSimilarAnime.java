@@ -100,7 +100,7 @@ public class ComputeRPSimilarAnime {
         while (!topScored.isEmpty()) {
             ScoredAnimeId scoredAnimeId = topScored.removeFirst();
             Anime anime = animeMap.get(scoredAnimeId.animedbId);
-            if (anime.franchise != null) {
+            if (anime != null && anime.franchise != null) {
                 if (seenFranchises.contains(anime.franchise.franchiseId))
                     continue;
                 seenFranchises.add(anime.franchise.franchiseId);

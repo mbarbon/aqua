@@ -12,9 +12,9 @@
 ; arbitrary
 (def rp-similar-item-count 30)
 
-(defn- recompute-rp-model [users anime-map]
+(defn- recompute-rp-model [users anime-map model-path]
   (let [rp-similar (aqua.recommend.rp-similar-anime/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
-    (with-open [out (clojure.java.io/writer "maldump/rp-model")]
+    (with-open [out (clojure.java.io/writer model-path)]
       (aqua.recommend.rp-similar-anime/store-rp-similarity out rp-similar))))
 
 (defn -main [& projection-sizes]
@@ -23,4 +23,6 @@
         users (aqua.mal-local/load-filtered-cf-users-into data-source cf-parameters (java.util.HashMap.) (java.util.ArrayList. (for [_ (range user-count)] nil)))
         anime (aqua.mal-local/load-anime data-source)]
     (println "Recomputing random projection similarity model")
-    (time (recompute-rp-model users anime))))
+    (time (recompute-rp-model users anime "maldump/rp-model"))
+    (println "Recomputing unfiltered random projection similarity model")
+    (time (recompute-rp-model users {} "maldump/rp-model-unfiltered"))))
