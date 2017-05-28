@@ -5,6 +5,8 @@
             clojure.java.io))
 
 (def user-count 20000)
+(def all-items ["rp-similarity"
+                "rp-similarity-unfiltered"])
 
 ; around the point where the score from find-rp-size starts stabilizing
 ; (i.e. multiple random projections start returning more stable results)
@@ -17,12 +19,21 @@
     (with-open [out (clojure.java.io/writer model-path)]
       (aqua.recommend.rp-similar-anime/store-rp-similarity out rp-similar))))
 
-(defn -main [& projection-sizes]
+(defn -main [& items]
   (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
         users (aqua.mal-local/load-filtered-cf-users-into data-source cf-parameters (java.util.HashMap.) (java.util.ArrayList. (for [_ (range user-count)] nil)))
         anime (aqua.mal-local/load-anime data-source)]
-    (println "Recomputing random projection similarity model")
-    (time (recompute-rp-model users anime "maldump/rp-model"))
-    (println "Recomputing unfiltered random projection similarity model")
-    (time (recompute-rp-model users {} "maldump/rp-model-unfiltered"))))
+    (doseq [item (if (seq items) items all-items)]
+      (case item
+        "rp-similarity"
+          (do
+            (println "Recomputing random projection similarity model")
+            (time (recompute-rp-model users anime "maldump/rp-model")))
+        "rp-similarity-unfiltered"
+          (do
+            (println "Recomputing unfiltered random projection similarity model")
+            (time (recompute-rp-model users {} "maldump/rp-model-unfiltered")))
+        (do
+          (println (str "Invalid item " item " (possible values "
+                     (clojure.string/join " " all-items) ")")))))))
