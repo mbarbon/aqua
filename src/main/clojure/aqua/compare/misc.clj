@@ -7,16 +7,17 @@
     (java.util.Collections/shuffle lst rnd)
     lst))
 
-(defn load-stable-user-sample [data-source max-count file]
+(defn load-stable-user-sample [directory data-source max-count file]
   (if (.exists (clojure.java.io/as-file file))
     (let [user-ids (take max-count
                          (line-seq (clojure.java.io/reader file)))]
       (aqua.mal-local/load-cf-users-by-id data-source
                                           (aqua.recommend.CFParameters.)
                                           user-ids))
-    (let [users (aqua.mal-local/load-cf-users data-source
-                                              (aqua.recommend.CFParameters.)
-                                              20000)
+    (let [sampled-ids (aqua.mal-local/load-sampled-user-ids directory 20000)
+          users (aqua.mal-local/load-cf-users-by-id data-source
+                                                    (aqua.recommend.CFParameters.)
+                                                    sampled-ids)
           shuffled-users (stable-shuffle users)]
       (spit file (clojure.string/join "\n" (map #(.userId %) shuffled-users)))
       (take max-count shuffled-users))))

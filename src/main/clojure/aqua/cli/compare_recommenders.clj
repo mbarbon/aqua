@@ -10,9 +10,11 @@
   (let [directory "maldump"
         compare-count 40
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
+        sampled-ids (aqua.mal-local/load-sampled-user-ids directory 20000)
         cf-parameters-std (aqua.recommend.CFParameters.)
-        users (aqua.mal-local/load-cf-users data-source cf-parameters-std 20000)
-        test-users-sample (aqua.compare.misc/load-stable-user-sample data-source
+        users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
+        test-users-sample (aqua.compare.misc/load-stable-user-sample directory
+                                                                     data-source
                                                                      (* 10 compare-count)
                                                                      "test-users.txt")
         anime-map (aqua.mal-local/load-anime data-source)]

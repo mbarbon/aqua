@@ -1,17 +1,18 @@
 (ns aqua.web.recommender
   (:require aqua.mal-local
             aqua.web.render
-            [aqua.web.globals :refer [*data-source-ro *users *anime]]
+            [aqua.web.globals :refer [*maldump-directory *data-source-ro *users *anime]]
             aqua.recommend.cosine
             aqua.misc
             [clojure.tools.logging :as log]))
 
 (defn- load-users []
   (log/info "Start loading users")
-  (let [data-source @*data-source-ro
+  (let [maldump-directory @*maldump-directory
+        data-source @*data-source-ro
         cache (java.util.HashMap.)
         target (java.util.ArrayList. (for [_ (range 20000)] nil))
-        users (aqua.mal-local/load-filtered-cf-users-into data-source aqua.web.globals/cf-parameters cache target)]
+        users (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source aqua.web.globals/cf-parameters cache target)]
     (reset! *users users))
   (log/info "Done loading users"))
 
@@ -24,10 +25,11 @@
 
 (defn- reload-users []
   (log/info "Start reloading users")
-  (let [data-source @*data-source-ro
+  (let [maldump-directory @*maldump-directory
+        data-source @*data-source-ro
         cache (cf-rated-cache @*users)
         target @*users]
-    (aqua.mal-local/load-filtered-cf-users-into data-source aqua.web.globals/cf-parameters cache target))
+    (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source aqua.web.globals/cf-parameters cache target))
   (log/info "Done reloading users"))
 
 (defn init []

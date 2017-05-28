@@ -6,6 +6,7 @@
 ; this is in a separate, rarely modified file to avoid the globals
 ; being empty on reload
 
+(def *maldump-directory (atom nil))
 (def *data-source-rw (atom nil))
 (def *data-source-ro (atom nil))
 (def *users (atom nil))
@@ -25,6 +26,7 @@
 
 (defn init [directory state-directory]
   (reset! *background (java.util.concurrent.Executors/newScheduledThreadPool 5))
+  (reset! *maldump-directory directory)
   (reset! *state-directory state-directory)
   (let [data-source (aqua.mal-local/open-sqlite-rw directory "maldump.sqlite")]
     (reset! *data-source-rw data-source))
