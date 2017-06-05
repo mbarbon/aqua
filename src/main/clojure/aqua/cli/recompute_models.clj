@@ -24,7 +24,7 @@
       (aqua.recommend.rp-similar-anime/store-rp-similarity out rp-similar))))
 
 (defn -main [& items]
-  (when (some #{"user-sample"} items)
+  (when (some #{"user-sample"} (if (seq items) items all-items))
     (println "Recomputing user sample")
     (time (aqua.recommend.user-sample/recompute-user-sample user-sample-count "maldump/user-sample")))
 
