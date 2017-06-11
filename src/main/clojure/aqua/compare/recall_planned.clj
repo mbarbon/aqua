@@ -31,8 +31,8 @@
   (let [scores (for [test-user test-users]
                  (let [known-anime-tagger (aqua.misc/make-tagger test-user anime-map)
                        known-anime-filter (aqua.misc/make-filter test-user anime-map)
-                       [_ recommended-anime] (known-anime-tagger
-                                               (recommender test-user known-anime-filter))
+                       [_ untagged] (recommender test-user known-anime-filter)
+                       recommended-anime (known-anime-tagger untagged)
                        first-anime (take 40 recommended-anime)]
                    [(count-planned first-anime) (count first-anime)]))]
     (/ (apply + (map first scores)) (apply + (map second scores)))))

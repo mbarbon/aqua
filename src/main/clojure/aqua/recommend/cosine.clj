@@ -16,3 +16,8 @@
   (let [ranked-users (take 100 (rank-users user users))
         recommended-complete (aqua.recommend.collaborative-filter/recommended-completed ranked-users remove-known-anime)]
     [ranked-users (take 100 recommended-complete)]))
+
+(defn get-all-recommendations [user users remove-known-anime keep-airing-anime tagger]
+  (let [[similar-users recommended-completed] (get-recommendations user users remove-known-anime)
+        recommended-airing (aqua.recommend.collaborative-filter/recommended-airing similar-users keep-airing-anime)]
+    [(tagger recommended-completed) (tagger recommended-airing)]))

@@ -111,14 +111,14 @@
     (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
     [[] (take 100 (remove-known-anime ranked-anime))]))
 
-(defn get-all-recommendations [user lfd lfd-airing remove-known-anime]
+(defn get-all-recommendations [user lfd lfd-airing remove-known-anime keep-airing-anime tagger]
   (let [user-vector (.computeUserVector lfd user)
         ranked-anime (.computeUserAnimeScores lfd user-vector)
         ranked-airing-anime (.computeUserAnimeScores lfd-airing user-vector)]
     (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
     (.sort ranked-airing-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
-    [(take 100 (remove-known-anime ranked-anime))
-     (take 100 (remove-known-anime ranked-airing-anime))]))
+    [(tagger (take 100 (remove-known-anime ranked-anime)))
+     (tagger (take 100 (keep-airing-anime ranked-airing-anime)))]))
 
 (defn anime-score-map [user lfd]
   (let [user-vector (.computeUserVector lfd user)

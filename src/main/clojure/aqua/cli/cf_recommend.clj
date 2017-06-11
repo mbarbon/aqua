@@ -5,20 +5,11 @@
 
 (defn- run-recommender [user users anime-map]
   (let [known-anime-filter (aqua.misc/make-filter user anime-map)
+        airing-anime-filter (aqua.misc/make-airing-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
-        not-airing-or-old? (fn [rated]
-                             (let [anime (anime-map (.animedbId rated))]
-                               (or (.isCompleted anime)
-                                   (.isOld anime))))
-        airing-anime-filter #(remove not-airing-or-old? (known-anime-filter %))
-        [users recommended] (known-anime-tagger
-                              (aqua.recommend.cosine/get-recommendations user users known-anime-filter))
-        [_ recommended-airing] (known-anime-tagger [users (aqua.recommend.collaborative-filter/recommended-airing users airing-anime-filter)])]
+        [recommended recommended-airing]
+          (aqua.recommend.cosine/get-all-recommendations user users known-anime-filter airing-anime-filter known-anime-tagger)]
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
-    (println "Users")
-    (doseq [scored-user users]
-      (println (.username (.user scored-user)) (count (seq (.completedAndDropped user))) (.score scored-user)))
-    (println)
     (println "Airing anime")
     (doseq [scored-anime (take 15 recommended-airing)]
       (let [anime (anime-map (.animedbId scored-anime))]

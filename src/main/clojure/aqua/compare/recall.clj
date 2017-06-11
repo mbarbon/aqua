@@ -37,7 +37,7 @@
 (defn- score-user-anime [recommender test-user test-anime anime-map]
   (let [filtered-user (.removeAnime test-user (.animedbId test-anime))
         known-anime-filter (aqua.misc/make-filter filtered-user anime-map)
-        [_ ranked-anime] (recommender filtered-user known-anime-filter)
+        ranked-anime (recommender filtered-user known-anime-filter)
         test-anime-rank ((fn [index [scored-anime & rest]]
                           (cond
                             (nil? scored-anime) nil
@@ -53,7 +53,8 @@
                  (let [known-anime-tagger (aqua.misc/make-tagger test-user anime-map)
                        user-recommender (fn [filtered-user known-anime-filter]
                                           (known-anime-tagger
-                                            (recommender filtered-user known-anime-filter)))
+                                            (second
+                                              (recommender filtered-user known-anime-filter))))
                        score (apply + (map #(score-user-anime user-recommender test-user % anime-map) test-anime))]
                    [score (count test-anime)]))]
     (/ (apply + (map first scores)) (apply + (map second scores)))))

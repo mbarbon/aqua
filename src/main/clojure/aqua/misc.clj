@@ -95,5 +95,5 @@
 (defn make-tagger [user anime-map]
   (let [[known-anime planned-anime known-franchises planned-franchises]
             (user-anime-ids user anime-map)]
-    (fn [[users ranked-anime-seq]]
-      [users (add-tags ranked-anime-seq planned-anime known-franchises planned-franchises anime-map)])))
+    (fn [ranked-anime-seq]
+      (add-tags ranked-anime-seq planned-anime known-franchises planned-franchises anime-map))))

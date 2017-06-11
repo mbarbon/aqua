@@ -48,11 +48,7 @@
     (let [known-anime-filter (aqua.misc/make-filter user lookup-anime)
           airing-anime-filter (aqua.misc/make-airing-filter user lookup-anime)
           known-anime-tagger (aqua.misc/make-tagger user lookup-anime)
-          [users recommended-completed]
-            (known-anime-tagger
-              (aqua.recommend.cosine/get-recommendations user users known-anime-filter))
-          [_ recommended-airing]
-            (known-anime-tagger
-              [users (aqua.recommend.collaborative-filter/recommended-airing users airing-anime-filter)])]
+          [recommended-completed recommended-airing]
+            (aqua.recommend.cosine/get-all-recommendations user users known-anime-filter airing-anime-filter known-anime-tagger)]
       {:airing (make-list lookup-anime (take 10 recommended-airing))
        :completed (make-list lookup-anime recommended-completed)})))

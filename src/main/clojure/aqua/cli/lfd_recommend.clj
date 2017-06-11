@@ -3,15 +3,10 @@
 
 (defn- run-recommender [user lfd lfd-airing anime-map]
   (let [known-anime-filter (aqua.misc/make-filter user anime-map)
+        airing-anime-filter (aqua.misc/make-airing-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
-        not-airing-or-old? (fn [rated]
-                             (let [anime (anime-map (.animedbId rated))]
-                               (or (.isCompleted anime)
-                                   (.isOld anime))))
-        airing-anime-filter #(remove not-airing-or-old? (known-anime-filter %))
-        [completed airing] (aqua.recommend.lfd/get-all-recommendations user lfd lfd-airing known-anime-filter)
-        [_ recommended] (known-anime-tagger [[] completed])
-        [_ recommended-airing] (known-anime-tagger [[] airing])]
+        [recommended recommended-airing]
+          (aqua.recommend.lfd/get-all-recommendations user lfd lfd-airing known-anime-filter airing-anime-filter known-anime-tagger)]
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
     (println)
     (println "Airing anime")
