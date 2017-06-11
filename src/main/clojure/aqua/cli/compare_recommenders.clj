@@ -6,11 +6,13 @@
             aqua.mal-local
             aqua.misc))
 
+(def user-count 20000)
+
 (defn -main []
   (let [directory "maldump"
         compare-count 40
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
-        sampled-ids (aqua.mal-local/load-sampled-user-ids directory 20000)
+        sampled-ids (aqua.mal-local/load-sampled-user-ids directory user-count)
         cf-parameters-std (aqua.recommend.CFParameters.)
         users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
         lfd (with-open [in (clojure.java.io/reader "maldump/lfd-model")]

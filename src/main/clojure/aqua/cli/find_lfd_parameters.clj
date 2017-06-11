@@ -8,6 +8,7 @@
             aqua.misc
             aqua.recommend.lfd))
 
+(def user-count 20000)
 (def compare-count 40)
 
 (defn- compute-scores [lfd rp-model test-users-sample anime-map]
@@ -52,7 +53,7 @@
 (defn -main [ranks lambdas iteration-counts]
   (let [directory "maldump"
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
-        sampled-ids (aqua.mal-local/load-sampled-user-ids directory 20000)
+        sampled-ids (aqua.mal-local/load-sampled-user-ids directory user-count)
         cf-parameters-std (aqua.misc/make-cf-parameters 0 0)
         users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory

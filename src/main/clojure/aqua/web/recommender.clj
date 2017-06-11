@@ -6,13 +6,13 @@
             aqua.misc
             [clojure.tools.logging :as log]))
 
+(def ^:private user-count 20000)
+
 (defn- load-users []
   (log/info "Start loading users")
   (let [maldump-directory @*maldump-directory
         data-source @*data-source-ro
-        cache (java.util.HashMap.)
-        target (java.util.ArrayList. (for [_ (range 20000)] nil))
-        users (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source aqua.web.globals/cf-parameters cache target)]
+        users (aqua.mal-local/load-filtered-cf-users maldump-directory data-source aqua.web.globals/cf-parameters user-count)]
     (reset! *users users))
   (log/info "Done loading users"))
 

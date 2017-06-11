@@ -141,6 +141,11 @@
                         (partial load-filtered-cf-users-from-rs cf-parameters cache target))
     target))
 
+(defn load-filtered-cf-users [directory data-source cf-parameters max-count]
+  (let [cache (java.util.HashMap.)
+        target (java.util.ArrayList. (repeat max-count nil))]
+    (load-filtered-cf-users-into directory data-source cf-parameters cache target)))
+
 (def ^:private select-user
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
 

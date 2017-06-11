@@ -49,7 +49,7 @@
 
   (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        users (aqua.mal-local/load-filtered-cf-users-into "maldump" data-source cf-parameters (java.util.HashMap.) (java.util.ArrayList. (for [_ (range user-count)] nil)))
+        users (aqua.mal-local/load-filtered-cf-users "maldump" data-source cf-parameters user-count)
         anime (aqua.mal-local/load-anime data-source)]
     (doseq [item (if (seq items) items all-items)]
       (case item

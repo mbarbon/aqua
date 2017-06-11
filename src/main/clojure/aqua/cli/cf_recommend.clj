@@ -1,6 +1,8 @@
 (ns aqua.cli.cf-recommend
   (:require aqua.mal-local aqua.recommend.cosine aqua.misc))
 
+(def user-count 20000)
+
 (defn- run-recommender [user users anime-map]
   (let [known-anime-filter (aqua.misc/make-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
@@ -34,7 +36,7 @@
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source username cf-parameters)
-        users (aqua.mal-local/load-filtered-cf-users-into directory data-source cf-parameters (java.util.HashMap.) (java.util.ArrayList. (for [_ (range 20000)] nil)))
+        users (aqua.mal-local/load-filtered-cf-users directory data-source cf-parameters user-count)
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)]
     (println "Running recommender")

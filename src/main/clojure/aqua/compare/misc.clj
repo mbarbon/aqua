@@ -14,7 +14,7 @@
       (aqua.mal-local/load-cf-users-by-id data-source
                                           (aqua.recommend.CFParameters.)
                                           user-ids))
-    (let [sampled-ids (aqua.mal-local/load-sampled-user-ids directory 20000)
+    (let [sampled-ids (aqua.mal-local/load-sampled-user-ids directory max-count)
           users (aqua.mal-local/load-test-cf-users data-source
                                                    (aqua.recommend.CFParameters.)
                                                    sampled-ids)

@@ -37,7 +37,7 @@
 (defn -main [& projection-sizes]
   (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        users (aqua.mal-local/load-filtered-cf-users-into "maldump" data-source cf-parameters (java.util.HashMap.) (java.util.ArrayList. (for [_ (range user-count)] nil)))
+        users (aqua.mal-local/load-filtered-cf-users "maldump" data-source cf-parameters user-count)
         anime (aqua.mal-local/load-anime data-source)
         similar-count 30
         anime-sample (take 1000 (shuffle (keys anime)))]

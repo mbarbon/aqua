@@ -3,6 +3,8 @@
             aqua.recommend.lfd-cf
             aqua.misc))
 
+(def user-count 20000)
+
 (defn- run-recommender [user lfd-users anime-map]
   (let [known-anime-filter (aqua.misc/make-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
@@ -36,7 +38,7 @@
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source username cf-parameters)
-        users (aqua.mal-local/load-filtered-cf-users-into directory data-source cf-parameters (java.util.HashMap.) (java.util.ArrayList. (for [_ (range 20000)] nil)))
+        users (aqua.mal-local/load-filtered-cf-users directory data-source cf-parameters user-count)
         lfd (with-open [in (clojure.java.io/reader "maldump/lfd-model")]
               (aqua.recommend.lfd/load-lfd in))
         lfd-users (with-open [in (clojure.java.io/reader "maldump/lfd-user-model")]
