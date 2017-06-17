@@ -5,6 +5,7 @@
             aqua.web.globals
             aqua.web.mal-proxy
             aqua.web.internal
+            aqua.web.background
             [compojure.core :refer :all]
             [compojure.route :as route]
             clojure.tools.cli
@@ -79,7 +80,8 @@
                          (:state-directory options))
   (aqua.web.mal-proxy/init)
   (aqua.web.search/init)
-  (aqua.web.recommender/init))
+  (aqua.web.recommender/init)
+  (aqua.web.background/schedule reload "Reload user models" 43200 86400))
 
 (defn reload []
   (aqua.web.globals/reload)

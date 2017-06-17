@@ -6,7 +6,7 @@
             aqua.mal-local
             aqua.misc))
 
-(def user-count 20000)
+(def user-count 15000)
 
 (defn -main []
   (let [directory "maldump"

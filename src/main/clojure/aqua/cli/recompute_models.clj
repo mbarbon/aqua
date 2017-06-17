@@ -6,7 +6,7 @@
             aqua.recommend.rp-similar-anime
             clojure.java.io))
 
-(def user-count 20000)
+(def user-count 15000)
 (def all-items ["user-sample"
                 "lfd-model"
                 "rp-similarity"
