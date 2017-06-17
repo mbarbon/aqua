@@ -3,7 +3,8 @@
             aqua.recommend.collaborative-filter)
   (:import (aqua.recommend LatentFactorDecompositionUsers)))
 
-(defn- rank-users-x [user lfd-users]
+(defn- rank-users-x [user
+                     ^aqua.recommend.LatentFactorDecompositionUsers lfd-users]
   (let [scored (.computeUserUserScores lfd-users user)]
     (.sort scored aqua.recommend.ScoredUser/SORT_SCORE)
     scored))

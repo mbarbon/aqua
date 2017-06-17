@@ -6,7 +6,7 @@
         anime-rated-map (java.util.ArrayList.)
         airing-anime-index-map (java.util.HashMap.)
         airing-anime-rated-map (java.util.ArrayList.)]
-    (doseq [anime (vals anime-map)]
+    (doseq [^aqua.mal.data.Anime anime (vals anime-map)]
       (cond
         (.isAiring anime) (.put airing-anime-index-map
                                 (.animedbId anime)
@@ -18,9 +18,9 @@
       (.add anime-rated-map nil))
     (dotimes [_ (.size airing-anime-index-map)]
       (.add airing-anime-rated-map nil))
-    (doseq [entry anime-index-map]
+    (doseq [^java.util.Map$Entry entry anime-index-map]
       (.set anime-rated-map (.getValue entry) (.getKey entry)))
-    (doseq [entry airing-anime-index-map]
+    (doseq [^java.util.Map$Entry entry airing-anime-index-map]
       (.set airing-anime-rated-map (.getValue entry) (.getKey entry)))
     (let [lfdr (aqua.recommend.ComputeLatentFactorDecomposition. anime-index-map
                                                                  (into-array Integer/TYPE anime-rated-map)
@@ -40,18 +40,20 @@
       [lfdr lfdr-airing])))
 
 (defn run-user-steps
-  ([lfdr] (run-user-steps lfdr 0 (.userCount lfdr)))
-  ([lfdr current-index steps]
+  ([^aqua.recommend.ComputeLatentFactorDecomposition lfdr]
+    (run-user-steps lfdr 0 (.userCount lfdr)))
+  ([^aqua.recommend.ComputeLatentFactorDecomposition lfdr current-index steps]
     (dotimes [i steps]
       (.userStep lfdr (+ current-index i)))))
 
 (defn run-anime-steps
-  ([lfdr] (run-anime-steps lfdr 0 (.animeCount lfdr)))
-  ([lfdr current-index steps]
+  ([^aqua.recommend.ComputeLatentFactorDecomposition lfdr]
+    (run-anime-steps lfdr 0 (.animeCount lfdr)))
+  ([^aqua.recommend.ComputeLatentFactorDecomposition  lfdr current-index steps]
     (dotimes [i steps]
       (.animeStep lfdr (+ current-index i)))))
 
-(defn store-lfd [out lfd]
+(defn store-lfd [out ^aqua.recommend.LatentFactorDecomposition lfd]
   (let [anime-indices (.animeRatedMap lfd)
         anime-factors (.animeFactors lfd)
         writer (no.uib.cipr.matrix.io.MatrixVectorWriter. out)]
@@ -79,7 +81,7 @@
                                                    anime-indices
                                                    (no.uib.cipr.matrix.DenseMatrix. rows cols factors-data false))))))
 
-(defn store-user-lfd [out user-lfd]
+(defn store-user-lfd [out ^aqua.recommend.LatentFactorDecompositionUsers user-lfd]
   (let [user-map (map #(.userId %) (.userMap user-lfd))
         writer (no.uib.cipr.matrix.io.MatrixVectorWriter. out)]
     (binding [*out* out]
@@ -105,13 +107,18 @@
                                                         user-factors
                                                         (into-array Integer/TYPE (filter some? (map-indexed #(if (get user-map %2) %1 nil) user-int-map))))))))
 
-(defn get-recommendations [user lfd remove-known-anime]
+(defn get-recommendations [user
+                           ^aqua.recommend.LatentFactorDecomposition lfd
+                           remove-known-anime]
   (let [user-vector (.computeUserVector lfd user)
         ranked-anime (.computeUserAnimeScores lfd user-vector)]
     (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
     [[] (take 100 (remove-known-anime ranked-anime))]))
 
-(defn get-all-recommendations [user lfd lfd-airing remove-known-anime keep-airing-anime tagger]
+(defn get-all-recommendations [user
+                               ^aqua.recommend.LatentFactorDecomposition lfd
+                               ^aqua.recommend.LatentFactorDecomposition lfd-airing
+                               remove-known-anime keep-airing-anime tagger]
   (let [user-vector (.computeUserVector lfd user)
         ranked-anime (.computeUserAnimeScores lfd user-vector)
         ranked-airing-anime (.computeUserAnimeScores lfd-airing user-vector)]
