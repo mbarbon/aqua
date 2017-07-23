@@ -20,6 +20,8 @@ a:hover {
     text-align: center;
 }
 
+@media (max-height: 700px)  { .start-page { margin-top: 1.5ex; } }
+
 .start-page-body {
     display: inline-block;
     width: 500px;
@@ -28,14 +30,33 @@ a:hover {
     background: linear-gradient(to left, #d9f4fb, #a9d6f5);
 }
 
+@media (max-width: 600px)  { .start-page-body { width: auto; padding: 1ex; } }
+
 .start-page-body img {
     float: left;
+    align: center;
+    height: 225px;
+    margin-top: 0px;
+}
+
+@media (max-height: 320px) { .start-page-body img { height: 180px; } }
+@media (max-width: 500px)  {
+    .start-page-body img {
+        float: none;
+        margin-top: 2ex;
+    }
 }
 
 .start-page-head {
     float: left;
     margin-left: 1.5ex;
     color: #484e98;
+}
+
+@media (max-width: 500px)  {
+    .start-page-head {
+        float: none;
+    }
 }
 
 .start-page-head .first-head {
@@ -57,6 +78,7 @@ a:hover {
     float: right;
     display: inline-block;
     text-align: center;
+    height: 100px;
 }
 
 .main-page-head {
@@ -64,6 +86,17 @@ a:hover {
     height: 100px;
     background-color: #c8ecfa;
     background: linear-gradient(to right, #d9f4fb, #a9d6f5);
+}
+
+@media (max-width: 500px)  { .main-page-head { height: 140px; } }
+
+.main-page-logo {
+    float: right;
+}
+
+.main-page-logo img {
+    float: right;
+    height: 100px;
 }
 
 .main-page-head .first-head {
@@ -76,7 +109,11 @@ a:hover {
 
 .recommendation-source {
     color: #484e98;
+    float: left;
+    margin-bottom: 0.5ex;
 }
+
+@media (max-width: 500px)  { .recommendation-source { float: right; } }
 
 .aqua-body {
     width: 95%;
@@ -97,9 +134,9 @@ a:hover {
     margin-bottom: 1em;
 }
 
-@media (max-width: 1600px) { .recommendation-item { width: 31%; } }
-@media (max-width: 1200px) { .recommendation-item { width: 45%; } }
-@media (max-width: 800px)  { .recommendation-item { width: 98%; } }
+@media (max-width: 1500px) { .recommendation-item { width: 31%; } }
+@media (max-width: 1000px) { .recommendation-item { width: 45%; } }
+@media (max-width: 500px)  { .recommendation-item { width: 98%; } }
 
 .recommendation-image {
     float: left;
@@ -145,6 +182,18 @@ a:hover {
 .search-item-details {
     float: left;
     margin-left: 1ex;
+}
+
+div.small-aqua-button {
+    margin: 0px;
+}
+
+@media (max-width: 350px) and (orientation: portrait) {
+    div.small-aqua-button { font-size: 90%; }
+}
+
+@media (max-width: 600px) and (orientation: landscape) {
+    div.small-aqua-button { font-size: 60%; }
 }
 
 div.inline-aqua-button {
