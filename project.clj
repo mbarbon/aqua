@@ -23,6 +23,7 @@
   :resource-paths ["src/main/resources"]
   :java-source-paths ["src/main/java"]
   :test-paths ["test" "src/test/clojure"]
+  :jar-exclusions [#"^public/cdn-libs/"]
   :target-path "target/%s"
   :profiles {:serve {:jvm-opts ["-Xms100M" "-Xmx100M" "-XX:+PrintGCDateStamps" "-XX:+PrintGCDetails"]}
              :uberjar {:aot  :all

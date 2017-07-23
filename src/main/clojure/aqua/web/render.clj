@@ -1,5 +1,5 @@
 (ns aqua.web.render
-  )
+  (:require clojure.string))
 
 (def ^:private jst-tz (java.time.ZoneId/of "Asia/Tokyo"))
 
@@ -28,3 +28,14 @@
              "Unknown season")
    :tags tags
    :status (.status anime)})
+
+(defn rewrite-resources [response]
+  (let [body-string (slurp (:body response))
+        rewritten-body (clojure.string/replace body-string
+                                               "//cdnjs.cloudflare.com/ajax/libs/"
+                                               "/cdn-libs/")]
+   (assoc response
+     :headers (assoc (:headers response)
+                     "Content-Length"
+                     (str (count rewritten-body)))
+     :body rewritten-body)))

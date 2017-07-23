@@ -9,6 +9,7 @@
             [compojure.core :refer :all]
             [compojure.route :as route]
             clojure.tools.cli
+            [clojure.tools.logging :as log]
             ring.adapter.jetty
             ring.util.response
             ring.middleware.json
@@ -60,6 +61,15 @@
   raw-routes
   (route/not-found "Not Found"))
 
+(defroutes app-routes-local
+  (GET "/" []
+    (aqua.web.render/rewrite-resources
+      (ring.util.response/content-type
+        (ring.util.response/resource-response "index.html"
+                                              {:root "public"})
+                                              "text/html")))
+  app-routes)
+
 (def reload)
 
 (defroutes service-app-routes
@@ -89,20 +99,24 @@
   (aqua.web.recommender/reload)
   (str true))
 
-(def app
+(def modified-site-defaults
   (let [security (site-defaults :security)
         no-csrf (assoc security :anti-forgery false)
         modified-site-defaults (assoc site-defaults :security no-csrf)]
-    (-> app-routes
-      (wrap-defaults modified-site-defaults))))
+    modified-site-defaults))
+
+(def app
+  (-> app-routes
+    (wrap-defaults modified-site-defaults)))
+
+(def app-local
+  (-> app-routes-local
+    (wrap-defaults modified-site-defaults)))
 
 (def service-app
-  (let [security (site-defaults :security)
-        no-csrf (assoc security :anti-forgery false)
-        modified-site-defaults (assoc site-defaults :security no-csrf)]
-    (-> service-app-routes
-      (ring.middleware.json/wrap-json-response)
-      (wrap-defaults modified-site-defaults))))
+  (-> service-app-routes
+    (ring.middleware.json/wrap-json-response)
+    (wrap-defaults modified-site-defaults)))
 
 (def ^:private cli-options
   [["-p" "--port PORT" "Port number"
@@ -117,6 +131,7 @@
     :default "maldump"]
    [nil "--code-reload" "Enable code reloading"]
    [nil "--stacktraces" "Enable stacktrace middleware"]
+   [nil "--local-libs" "Rewrite index to use local libraries"]
    ["-h" "--help"]])
 
 (defn- wrap-handler [handler options]
@@ -131,7 +146,10 @@
     wrapped-handler))
 
 (defn- run-server [options]
-  (let [main-handler (wrap-handler app options)
+  (let [main-handler (wrap-handler (if (:local-libs options)
+                                     app-local
+                                     app)
+                                   options)
         service-handler (wrap-handler service-app options)]
     (init options)
 
