@@ -90,6 +90,13 @@ a:hover {
 
 @media (max-width: 500px)  { .main-page-head { height: 140px; } }
 
+.main-page-head-actions {
+    color: #484e98;
+    float: left;
+}
+
+@media (max-width: 500px)  { .main-page-head-actions { float: right; } }
+
 .main-page-logo {
     float: right;
 }
@@ -109,7 +116,6 @@ a:hover {
 
 .recommendation-source {
     color: #484e98;
-    float: left;
     margin-bottom: 0.5ex;
 }
 
