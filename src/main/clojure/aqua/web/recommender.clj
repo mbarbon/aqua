@@ -90,11 +90,11 @@
                                                        known-anime-filter
                                                        airing-anime-filter
                                                        known-anime-tagger)
-      (aqua.recommend.cosine/get-all-recommendations user
-                                                     @*users
-                                                     known-anime-filter
-                                                     airing-anime-filter
-                                                     known-anime-tagger))
+        (aqua.recommend.cosine/get-all-recommendations user
+                                                       @*users
+                                                       known-anime-filter
+                                                       airing-anime-filter
+                                                       known-anime-tagger))
     :lfd
       (aqua.recommend.lfd/get-all-recommendations user
                                                   @*lfd-anime
