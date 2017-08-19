@@ -13,7 +13,16 @@ public class CFRated extends RatedBase implements Comparable<CFRated>, Recommend
 
     @Override
     public int animedbId() {
-        return animedbId;
+        return Math.abs(animedbId);
+    }
+
+    @Override
+    public boolean isHentai() {
+        return animedbId < 0;
+    }
+
+    public void setHentai() {
+        animedbId = -Math.abs(animedbId);
     }
 
     @Override

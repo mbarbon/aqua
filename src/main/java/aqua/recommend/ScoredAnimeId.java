@@ -21,7 +21,12 @@ public class ScoredAnimeId implements RecommendationItem, ScoredAnime {
 
     @Override
     public int animedbId() {
-        return animedbId;
+        return Math.abs(animedbId);
+    }
+
+    @Override
+    public boolean isHentai() {
+        return animedbId < 0;
     }
 
     @Override

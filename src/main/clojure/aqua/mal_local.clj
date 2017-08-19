@@ -74,16 +74,20 @@
 (defn- load-filtered-cf-users-from-rs [cf-parameters
                                        ^java.util.Map cache
                                        ^java.util.List target
+                                       ^java.util.Map anime-map-to-filter-hentai
                                        ^java.sql.ResultSet rs]
   (let [user (aqua.recommend.CFUser.)
         al-data (java.util.zip.GZIPInputStream.
                   (io/input-stream (.getBinaryStream rs 3)))
         anime-list (Json/readCFRatedList al-data)]
     (dotimes [n (.size anime-list)]
-      (let [item (.get anime-list n)
+      (let [^aqua.recommend.CFRated item (.get anime-list n)
             cached (if-let [existing (.get cache item)]
                      existing
                      (do
+                       (if (and anime-map-to-filter-hentai
+                                (.isHentai (anime-map-to-filter-hentai (.animedbId item))))
+                         (.setHentai item))
                        (.put cache item item)
                        item))]
         (.set anime-list n cached)))
@@ -133,18 +137,24 @@
 
 ; the only purpose of this function is to avoid doubling memory usage
 ; while users are reloaded: old users become garbage while new users are loaded
-(defn load-filtered-cf-users-into [directory data-source cf-parameters cache target]
+(defn load-filtered-cf-users-into [directory data-source cf-parameters cache target anime-map-to-filter-hentai]
   (with-open [connection (.getConnection data-source)]
     ; this allocates and throws away an ArrayList, it's fine
     (select-users-by-id connection
                         (load-sampled-user-ids directory (count target))
-                        (partial load-filtered-cf-users-from-rs cf-parameters cache target))
+                        (partial load-filtered-cf-users-from-rs cf-parameters cache target anime-map-to-filter-hentai))
     target))
 
-(defn load-filtered-cf-users [directory data-source cf-parameters max-count]
+(defn- load-filtered-cf-users-helper [directory data-source cf-parameters max-count anime-map-to-filter-hentai]
   (let [cache (java.util.HashMap.)
         target (java.util.ArrayList. (repeat max-count nil))]
-    (load-filtered-cf-users-into directory data-source cf-parameters cache target)))
+    (load-filtered-cf-users-into directory data-source cf-parameters cache target anime-map-to-filter-hentai)))
+
+(defn load-filtered-cf-users
+  ([directory data-source cf-parameters max-count]
+    (load-filtered-cf-users-helper directory data-source cf-parameters max-count nil))
+  ([directory data-source cf-parameters max-count anime-map-to-filter-hentai]
+    (load-filtered-cf-users-helper directory data-source cf-parameters max-count anime-map-to-filter-hentai)))
 
 (def ^:private select-user
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
@@ -273,11 +283,27 @@
           (for [item (resultset-seq rs)]
             [(:animedb_id item) (:rank item)])))))
 
+(def ^:private select-hentai-anime-ids
+  (str "SELECT a.animedb_id AS animedb_id"
+       "    FROM anime AS a"
+       "      INNER JOIN anime_genres AS ag"
+       "        ON a.animedb_id = ag.animedb_id AND"
+       "           genre_id = 12"))
+
+(defn- load-hentai-anime-ids [data-source]
+  (with-open [connection (.getConnection data-source)
+              statement (.createStatement connection)
+              rs (.executeQuery statement select-hentai-anime-ids)]
+    (doall
+      (for [item (resultset-seq rs)]
+        (:animedb_id item)))))
+
 (def ^:private select-anime
   "SELECT animedb_id, title, status, episodes, start, end, image FROM anime")
 
 (defn- load-anime-list [data-source]
-  (let [relation-map (transitive-map-closure (load-relation-map data-source))
+  (let [hentai-id-set (set (load-hentai-anime-ids data-source))
+        relation-map (transitive-map-closure (load-relation-map data-source))
         genres-map (load-genres-map data-source)
         franchise-map (java.util.HashMap.)]
     (doseq [franchise-id (.values relation-map)]
@@ -299,6 +325,7 @@
             (set! (.startedAiring anime) (if-let [start (:start item)] start 0))
             (set! (.endedAiring anime) (if-let [end (:end item)] end 0))
             (set! (.genres anime) (.get genres-map animedb-id))
+            (set! (.isHentai anime) (.contains hentai-id-set animedb-id))
             (if-let [franchise (.get franchise-map animedb-id)]
               (do
                 (.add (.anime franchise) anime)

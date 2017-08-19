@@ -16,6 +16,7 @@ public class Anime {
     public List<String> genres;
     public long startedAiring;
     public long endedAiring;
+    public boolean isHentai;
 
     public boolean isCompleted() {
         return status == FINISHED ||

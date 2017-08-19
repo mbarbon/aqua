@@ -3,6 +3,8 @@
             aqua.misc
             aqua.mal-local))
 
+; nothing against hentai, just there is not enough data for meaningful
+; recommendations
 (def select-non-hentai-anime
   (str "SELECT a.animedb_id AS animedb_id"
        "    FROM anime AS a"

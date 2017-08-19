@@ -23,11 +23,11 @@
   (log/info "Start loading users")
   (let [maldump-directory @*maldump-directory
         data-source @*data-source-ro
-        users (aqua.mal-local/load-filtered-cf-users maldump-directory data-source aqua.web.globals/cf-parameters user-count)
+        users (aqua.mal-local/load-filtered-cf-users maldump-directory data-source aqua.web.globals/cf-parameters user-count @*anime)
         lfd (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model"))]
-              (aqua.recommend.lfd/load-lfd in))
+              (aqua.recommend.lfd/load-lfd in @*anime))
         lfd-airing (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model-airing"))]
-                     (aqua.recommend.lfd/load-lfd in))
+                     (aqua.recommend.lfd/load-lfd in @*anime))
         lfd-users (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-user-model"))]
                     (aqua.recommend.lfd/load-user-lfd in lfd users))]
     (reset! *users users)
@@ -51,12 +51,12 @@
         data-source @*data-source-ro
         cache (cf-rated-cache @*users)
         target @*users]
-    (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source aqua.web.globals/cf-parameters cache target))
+    (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source aqua.web.globals/cf-parameters cache target @*anime))
   (let [maldump-directory @*maldump-directory
         lfd (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model"))]
-              (aqua.recommend.lfd/load-lfd in))
+              (aqua.recommend.lfd/load-lfd in @*anime))
         lfd-airing (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model-airing"))]
-                     (aqua.recommend.lfd/load-lfd in))
+                     (aqua.recommend.lfd/load-lfd in @*anime))
         lfd-users (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-user-model"))]
                     (aqua.recommend.lfd/load-user-lfd in lfd @*users))]
     (reset! *lfd-users lfd-users)
