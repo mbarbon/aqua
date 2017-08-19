@@ -238,13 +238,25 @@
           (.add genres-list (genre-names (:genre_id item)))))
       genres-map)))
 
-(def ^:private select-anime-titles
-  "SELECT animedb_id, title FROM anime UNION SELECT animedb_id, title FROM anime_titles")
+(def ^:private select-non-hentai-anime-titles
+  (str "SELECT a.animedb_id AS animedb_id, a.title AS title"
+       "    FROM anime AS a"
+       "      LEFT JOIN anime_genres AS ag"
+       "        ON a.animedb_id = ag.animedb_id AND"
+       "           genre_id = 12"
+       "    WHERE sort_order IS NULL"
+       " UNION "
+       "SELECT at.animedb_id AS animedb_id, at.title AS title"
+       "    FROM anime_titles AS at"
+       "      LEFT JOIN anime_genres AS ag"
+       "        ON at.animedb_id = ag.animedb_id AND"
+       "           genre_id = 12"
+       "    WHERE sort_order IS NULL"))
 
-(defn load-anime-titles [data-source]
+(defn load-non-hentai-anime-titles [data-source]
     (with-open [connection (.getConnection data-source)
                 statement (.createStatement connection)
-                rs (.executeQuery statement select-anime-titles)]
+                rs (.executeQuery statement select-non-hentai-anime-titles)]
       (doall
         (for [item (resultset-seq rs)]
           [(:animedb_id item) (:title item)]))))

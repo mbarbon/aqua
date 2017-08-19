@@ -7,7 +7,9 @@
 (defn- rebuild-suggester []
   (log/info "Start loading suggester")
   (let [data-source @*data-source-ro
-        anime-titles (aqua.mal-local/load-anime-titles data-source)
+        ; nothing against hentai, just there is not enough data for
+        ; meaningful recommendations
+        anime-titles (aqua.mal-local/load-non-hentai-anime-titles data-source)
         anime-rank (aqua.mal-local/load-anime-rank data-source)
         suggest (aqua.search.autocomplete/prepare-suggest anime-titles anime-rank)]
     (log/info "Done loading suggester")
