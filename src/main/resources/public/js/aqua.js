@@ -1,6 +1,8 @@
 $(function () {
     'use strict';
 
+    ko.options.deferUpdates = true;
+
     ko.bindingHandlers.enterKey = {
         init: function (element, valueAccessor, allBindings, _, bindingContext) {
             var callback = valueAccessor();
@@ -103,6 +105,17 @@ $(function () {
 
         return "http://myanimelist.net/anime/" + self.animedbId;
     };
+    AnimeRecommendation.prototype.malLinkClick = function malLinkClick () {
+        var self = this;
+
+        ga('send', 'event', {
+            eventCategory: 'mal_link',
+            eventAction: 'click',
+            eventLabel: '' + self.animedbId,
+        });
+
+        return true;
+    };
 
     var ManualItem = function ManualItem(data) {
         var self = this;
@@ -123,6 +136,17 @@ $(function () {
         var self = this;
 
         return "http://myanimelist.net/anime/" + self.animedbId;
+    };
+    ManualItem.prototype.malLinkClick = function malLinkClick () {
+        var self = this;
+
+        ga('send', 'event', {
+            eventCategory: 'mal_link',
+            eventAction: 'click',
+            eventLabel: '' + self.animedbId,
+        });
+
+        return true;
     };
 
     var SearchModel = function SearchModel(localAnimeListModel) {
@@ -186,6 +210,7 @@ $(function () {
         });
         self.tagVisibility = { null: true };
         self.tagDescription = { null: '' };
+        self.currentGAPage = null;
     };
     LocalAnimeListModel.prototype.loadMalList = function loadMalList() {
         var self = this;
@@ -245,6 +270,7 @@ $(function () {
                 animeList[i].userStatus = 2; // completed
                 animeList[i].userRating = rating;
                 self.manualAnimeList(animeList);
+                self.trackLocalAnime(newItem, 'change');
                 return;
             }
         }
@@ -252,6 +278,7 @@ $(function () {
         newItem.userStatus = 2; // completed
         newItem.userRating = rating;
         self.manualAnimeList.unshift(newItem);
+        self.trackLocalAnime(newItem, 'add');
     };
     LocalAnimeListModel.prototype.removeItem = function removeItem(item) {
         var self = this;
@@ -260,6 +287,7 @@ $(function () {
         for (var i = 0; i < animeList.length; ++i) {
             if (animeList[i].animedbId == item.animedbId) {
                 self.manualAnimeList.splice(i, 1);
+                self.trackLocalAnime(item, 'remove');
                 return;
             }
         }
@@ -286,6 +314,9 @@ $(function () {
             self.isManualList(true);
             self.isManualEdit(false);
         }
+
+        // start tracking the page
+        self.trackCurrentPage = ko.computed(self.trackPage.bind(self));
     };
     LocalAnimeListModel.prototype.manualAnimeListUpdated = function () {
         var self = this;
@@ -344,6 +375,35 @@ $(function () {
         var self = this;
 
         self.removeItem(item);
+    };
+    LocalAnimeListModel.prototype.trackPage = function trackPage() {
+        var self = this;
+        var newPage = null;
+
+        var animeList = self.manualAnimeList();
+
+        if (!self.hasSource()) {
+            newPage = '/initial_page';
+        } else if (self.isManualEdit()) {
+            newPage = '/user_list';
+        } else if (self.isMalList()) {
+            newPage = '/mal_user';
+        } else if (self.isManualList()) {
+            newPage = '/anonymous_user';
+        }
+
+        if (newPage !== self.currentGAPage) {
+            ga('set', 'page', newPage);
+            ga('send', 'pageview');
+            self.currentGAPage = newPage;
+        }
+    };
+    LocalAnimeListModel.prototype.trackLocalAnime = function trackLocalAnime(item, action) {
+        ga('send', 'event', {
+            eventCategory: 'local_anime',
+            eventAction: action,
+            eventLabel: '' + item.animedbId,
+        });
     };
 
     var AnimeRecommendationModel = function AnimeRecommendationModel(localAnimeListModel) {
