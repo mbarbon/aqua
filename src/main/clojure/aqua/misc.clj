@@ -80,8 +80,8 @@
 (defn make-filter [user anime-map]
   (let [known-anime (set (all-but-planned user))
         is-known-anime (fn [^aqua.recommend.RecommendationItem rated]
-                         (or (known-anime (scored-animedb-id rated)))
-                             (.isHentai rated))
+                         (or (known-anime (scored-animedb-id rated))
+                             (.isHentai rated)))
         remove-known-anime (partial remove is-known-anime)]
     remove-known-anime))
 
