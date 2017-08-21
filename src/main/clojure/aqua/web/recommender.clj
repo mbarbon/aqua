@@ -5,6 +5,7 @@
                                       *data-source-ro
                                       *users
                                       *anime
+                                      *cf-parameters
                                       *lfd-users
                                       *lfd-anime
                                       *lfd-anime-airing]]
@@ -23,7 +24,7 @@
   (log/info "Start loading users")
   (let [maldump-directory @*maldump-directory
         data-source @*data-source-ro
-        users (aqua.mal-local/load-filtered-cf-users maldump-directory data-source aqua.web.globals/cf-parameters user-count @*anime)
+        users (aqua.mal-local/load-filtered-cf-users maldump-directory data-source @*cf-parameters user-count @*anime)
         lfd (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model"))]
               (aqua.recommend.lfd/load-lfd in @*anime))
         lfd-airing (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model-airing"))]
@@ -51,7 +52,7 @@
         data-source @*data-source-ro
         cache (cf-rated-cache @*users)
         target @*users]
-    (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source aqua.web.globals/cf-parameters cache target @*anime))
+    (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source @*cf-parameters cache target @*anime))
   (let [maldump-directory @*maldump-directory
         lfd (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model"))]
               (aqua.recommend.lfd/load-lfd in @*anime))

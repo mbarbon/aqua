@@ -3,6 +3,7 @@
   (:require aqua.web.recommender
             aqua.web.search
             aqua.web.globals
+            aqua.web.globals-init
             aqua.web.mal-proxy
             aqua.web.internal
             aqua.web.background
@@ -45,7 +46,7 @@
                                             "text/html"))
 
   (POST "/recommend" {:keys [body]}
-    (let [user (aqua.mal.Json/readCFUser aqua.web.globals/cf-parameters body)]
+    (let [user (aqua.mal.Json/readCFUser @aqua.web.globals/*cf-parameters body)]
       (ring.util.response/response
         (aqua.web.recommender/recommend user))))
 
@@ -86,7 +87,7 @@
       (.setLoggerName "access-logger"))))
 
 (defn init [options]
-  (aqua.web.globals/init (:mal-data-directory options)
+  (aqua.web.globals-init/init (:mal-data-directory options)
                          (:state-directory options))
   (aqua.web.mal-proxy/init)
   (aqua.web.search/init)
@@ -94,7 +95,7 @@
   (aqua.web.background/schedule reload "Reload user models" 43200 86400))
 
 (defn reload []
-  (aqua.web.globals/reload)
+  (aqua.web.globals-init/reload)
   (aqua.web.search/reload)
   (aqua.web.recommender/reload)
   (str true))
