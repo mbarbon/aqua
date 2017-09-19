@@ -85,7 +85,7 @@ public class Suggest {
             Map<Integer, Suggestion> thisPart = new HashMap<>();
             int firstIndex = findFirst(part, 0, entries.size());
 
-            for (;; ++firstIndex) {
+            for (; firstIndex < entries.size(); ++firstIndex) {
                 Entry entry = entries.get(firstIndex);
 
                 if (!entry.matchesStringPrefix(part))
