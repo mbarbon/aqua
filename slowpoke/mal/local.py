@@ -127,6 +127,9 @@ def _insert_user(c, user_id, username, changed):
         c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), strftime('%s', 'now'))", (user_id, username))
     else:
         c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), (SELECT last_change FROM users WHERE user_id = ?))", (user_id, username, user_id))
+    # apparently MAL reuses usernames from time to time, or it gets confused
+    # about ids
+    c.execute("DELETE FROM users WHERE username = ? AND user_id <> ?", (username, user_id))
 
 def _insert_user_stats(c, user_id, stats):
     values = tuple(stats[k] for k in STAT_KEYS)
