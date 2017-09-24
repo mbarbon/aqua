@@ -114,10 +114,42 @@ def create_tables(basedir):
         c.execute("CREATE TABLE IF NOT EXISTS anime_genre_names (genre INTEGER PRIMARY KEY, description VARCHAR(30))")
 
 def users_needing_update(basedir):
+    active_budget = 0.5
+    old_inactive_budget = 0.1
+    active_users_max_age = 7
+    inactive_users_max_age = 15
+    inactive_users_bucket_start = 2
+    inactive_users_bucket_exponent = 1.1
+    inactive_users_bucket_budget = 10
+    users = []
+
+    def concat_users(users, cursor):
+        return users + [user for (user,) in c.fetchall()]
+
     with _connection(basedir) as conn:
         c = conn.cursor()
-        c.execute("SELECT username FROM users WHERE (last_update < strftime('%s', 'now') - 86400 * 15 AND (last_change = 0 OR last_change > strftime('%s', 'now') - 86400 * 30)) OR last_update < strftime('%s', 'now') - 86400 * 60")
-        return [user for (user,) in c.fetchall()]
+
+        c.execute("SELECT (strftime('%s', 'now') - MIN(last_change)) / 86400 FROM users WHERE last_change > 1234567890")
+        min_inactive_user_change, = c.fetchone()
+
+        # users that were inactive last time we checked
+        bucket_size = inactive_users_bucket_start
+        bucket_start = inactive_users_max_age
+        while bucket_start < min_inactive_user_change:
+            c.execute("SELECT username FROM users WHERE last_change >= strftime('%s', 'now') - 86400 * ? AND last_change < strftime('%s', 'now') - 86400 * ? AND last_update < strftime('%s', 'now') - 86400 * ? ORDER BY last_update ASC LIMIT ?", (bucket_start + bucket_size, bucket_start, inactive_users_bucket_start, inactive_users_bucket_budget))
+            users = concat_users(users, c)
+            bucket_start += bucket_size
+            bucket_size *= inactive_users_bucket_exponent
+
+        # very old users or ones that failed to fetch
+        c.execute("SELECT username FROM users WHERE last_change < 1234567890 LIMIT ?", (math.floor(len(users) * old_inactive_budget),))
+        users = concat_users(users, c)
+
+        # users that were active last time we checked
+        c.execute("SELECT username FROM users WHERE last_update = last_change AND last_update < strftime('%s', 'now') - 86400 * ? ORDER BY last_update ASC LIMIT ?", (active_users_max_age, math.floor(len(users) * active_budget)))
+        users = concat_users(users, c)
+
+    return users
 
 def _mark_user_updated(c, username):
     c.execute("UPDATE users SET last_update = strftime('%s', 'now'), last_change = 1 WHERE username = ?", (username,))
