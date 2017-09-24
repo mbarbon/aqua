@@ -47,6 +47,7 @@
        "        ON uas.user_id = u.user_id"
        "    WHERE completed > 10 AND"
        "          completed < 100 AND"
+       "          username AND"
        "          u.user_id NOT IN ("
                   (clojure.string/join "," skip-ids)
        "          )"
@@ -106,7 +107,6 @@
                               (.setFetchSize 1000))
                 rs (.executeQuery statement)]
       (doall-rs rs loader))))
-
 
 (defn load-sampled-user-ids [directory size]
   (with-open [in (io/reader (io/file directory "user-sample"))]

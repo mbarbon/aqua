@@ -136,17 +136,17 @@ def users_needing_update(basedir):
         bucket_size = inactive_users_bucket_start
         bucket_start = inactive_users_max_age
         while bucket_start < min_inactive_user_change:
-            c.execute("SELECT username FROM users WHERE last_change >= strftime('%s', 'now') - 86400 * ? AND last_change < strftime('%s', 'now') - 86400 * ? AND last_update < strftime('%s', 'now') - 86400 * ? ORDER BY last_update ASC LIMIT ?", (bucket_start + bucket_size, bucket_start, inactive_users_bucket_start, inactive_users_bucket_budget))
+            c.execute("SELECT username FROM users WHERE last_change >= strftime('%s', 'now') - 86400 * ? AND last_change < strftime('%s', 'now') - 86400 * ? AND last_update < strftime('%s', 'now') - 86400 * ? AND username ORDER BY last_update ASC LIMIT ?", (bucket_start + bucket_size, bucket_start, inactive_users_bucket_start, inactive_users_bucket_budget))
             users = concat_users(users, c)
             bucket_start += bucket_size
             bucket_size *= inactive_users_bucket_exponent
 
         # very old users or ones that failed to fetch
-        c.execute("SELECT username FROM users WHERE last_change < 1234567890 LIMIT ?", (math.floor(len(users) * old_inactive_budget),))
+        c.execute("SELECT username FROM users WHERE last_change < 1234567890 AND username LIMIT ?", (math.floor(len(users) * old_inactive_budget),))
         users = concat_users(users, c)
 
         # users that were active last time we checked
-        c.execute("SELECT username FROM users WHERE last_update = last_change AND last_update < strftime('%s', 'now') - 86400 * ? ORDER BY last_update ASC LIMIT ?", (active_users_max_age, math.floor(len(users) * active_budget)))
+        c.execute("SELECT username FROM users WHERE last_update = last_change AND last_update < strftime('%s', 'now') - 86400 * ? AND username ORDER BY last_update ASC LIMIT ?", (active_users_max_age, math.floor(len(users) * active_budget)))
         users = concat_users(users, c)
 
     return users
@@ -161,7 +161,7 @@ def _insert_user(c, user_id, username, changed):
         c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), (SELECT last_change FROM users WHERE user_id = ?))", (user_id, username, user_id))
     # apparently MAL reuses usernames from time to time, or it gets confused
     # about ids
-    c.execute("DELETE FROM users WHERE username = ? AND user_id <> ?", (username, user_id))
+    c.execute("UPDATE users SET username = '' WHERE username = ? AND user_id <> ?", (username, user_id))
 
 def _insert_user_stats(c, user_id, stats):
     values = tuple(stats[k] for k in STAT_KEYS)

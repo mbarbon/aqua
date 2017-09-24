@@ -14,10 +14,13 @@
        "    WHERE sort_order IS NULL"))
 
 (def select-active-users
-  (str "SELECT user_id"
-       "    FROM user_anime_stats"
-       "    WHERE completed > 5 AND"
-       "          completed < 500"))
+  (str "SELECT uas.user_id"
+       "    FROM user_anime_stats AS uas"
+       "      INNER JOIN users AS u"
+       "        ON uas.user_id = u.user_id AND"
+       "           u.username"
+       "    WHERE uas.completed > 5 AND"
+       "          uas.completed < 500"))
 
 (defn- count-to-bucket [c]
   (int (* 4 (- (Math/log (* 10 c)) 2))))
