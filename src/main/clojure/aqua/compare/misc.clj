@@ -14,13 +14,14 @@
       (aqua.mal-local/load-cf-users-by-id data-source
                                           (aqua.recommend.CFParameters.)
                                           user-ids))
-    (let [sampled-ids (aqua.mal-local/load-sampled-user-ids directory max-count)
-          users (aqua.mal-local/load-test-cf-users data-source
-                                                   (aqua.recommend.CFParameters.)
-                                                   sampled-ids)
-          shuffled-users (stable-shuffle users)]
-      (spit file (clojure.string/join "\n" (map #(.userId %) shuffled-users)))
-      (take max-count shuffled-users))))
+    (let [user-ids (aqua.mal-local/load-test-cf-user-ids directory
+                                                         data-source
+                                                         100000)
+          shuffled-user-ids (stable-shuffle user-ids)]
+      (spit file (clojure.string/join "\n" shuffled-user-ids))
+      (aqua.mal-local/load-cf-users-by-id data-source
+                                          (aqua.recommend.CFParameters.)
+                                          (take max-count shuffled-user-ids)))))
 
 (defmacro timed-score [name scorer]
   `(let [start-time# (System/currentTimeMillis)
