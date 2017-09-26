@@ -47,7 +47,7 @@
        "        ON uas.user_id = u.user_id"
        "    WHERE completed > 10 AND"
        "          completed < 100 AND"
-       "          username AND"
+       "          username <> '' AND"
        "          u.user_id NOT IN ("
                   (clojure.string/join "," skip-ids)
        "          )"

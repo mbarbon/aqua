@@ -18,7 +18,7 @@
        "    FROM user_anime_stats AS uas"
        "      INNER JOIN users AS u"
        "        ON uas.user_id = u.user_id AND"
-       "           u.username"
+       "           u.username <> ''"
        "    WHERE uas.completed > 5 AND"
        "          uas.completed < 500"))
 
