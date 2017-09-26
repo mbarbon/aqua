@@ -377,6 +377,13 @@
        "    VALUES (?, ?, STRFTIME('%s', 'now'),"
        "            (SELECT last_change FROM users WHERE user_id = ?))"))
 
+; here we set username to '' because it's hard to make models cope
+; with users being deleted
+(def ^:private fix-changed-case-usernames
+  (str "UPDATE users SET username = '' WHERE username = ?"))
+(def ^:private fix-duplicated-usernames
+  (str "UPDATE users SET username = '' WHERE username = ? AND user_id <> ?"))
+
 (def ^:private select-anime-prefix
   (str "SELECT animedb_id, title, type, episodes, status, STRFTIME('%Y-%m-%d', start, 'unixepoch'), STRFTIME('%Y-%m-%d', end, 'unixepoch'), image"
        "    FROM anime"
@@ -489,7 +496,7 @@
        "    VALUES"
        "        (?, ?, ?, ?, ?, ?)"))
 
-(defn- insert-or-update-user [connection user anime-list-changed]
+(defn- insert-or-update-user [connection request-username user anime-list-changed]
   (if anime-list-changed
     (with-open [statement (doto (.prepareStatement connection update-changed-user)
                                 (.setInt 1 (.userId user))
@@ -500,6 +507,18 @@
                                 (.setString 2 (.username user))
                                 (.setInt 3 (.userId user)))]
       (.execute statement)))
+  ; It looks like that when usernames change case, a new user id is
+  ; created, or something like that, so when the requested and
+  ; received usernames
+  (when (not= (.username user) request-username)
+    (with-open [statement (doto (.prepareStatement connection fix-changed-case-usernames)
+                                (.setString 1 request-username))]
+      (.execute statement)))
+  ; This is to clear bed data caused by me not knowing about the above
+  (with-open [statement (doto (.prepareStatement connection fix-duplicated-usernames)
+                              (.setString 1 (.username user))
+                              (.setInt 2 (.userId user)))]
+    (.execute statement))
   ; 'changed' only tracks changes to completed/dropped
   (with-open [statement (doto (.prepareStatement connection update-user-stats)
                               (.setInt 1 (.userId user))
@@ -510,14 +529,14 @@
                               (.setInt 6 (.dropped user)))]
     (.execute statement)))
 
-(defn store-user-anime-list [data-source username mal-app-info]
+(defn store-user-anime-list [data-source request-username mal-app-info]
   (let [user (.user mal-app-info)
         anime (.anime mal-app-info)]
     (with-open [connection (.getConnection data-source)]
       (insert-or-update-anime connection anime)
 
       (when (or (= nil user) (= nil (.username user)))
-        (mark-user-updated connection username))
+        (mark-user-updated connection request-username))
 
       (let [anime-list-changed (insert-or-update-user-anime-list connection user anime)]
-        (insert-or-update-user connection user anime-list-changed)))))
+        (insert-or-update-user connection request-username user anime-list-changed)))))

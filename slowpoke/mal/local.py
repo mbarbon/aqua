@@ -50,7 +50,7 @@ def store_data(basedir, request_username, data):
             anime_list.append(_anime_item(animedb_id, anime, now_days))
 
         changed = _insert_anime_list(c, user_id, anime_list)
-        _insert_user(c, user_id, username, changed)
+        _insert_user(c, user_id, username, request_username, changed)
         _insert_user_stats(c, user_id, stats)
 
 def insert_anime_details(basedir, animedb_id, relations, genres, titles, scores):
@@ -89,6 +89,7 @@ def create_tables(basedir):
     with _connection(basedir) as conn:
         c = conn.cursor()
         c.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, username VARCHAR(20) NOT NULL, last_update INTEGER NOT NULL, last_change INTEGER NOT NULL)")
+        c.execute("CREATE INDEX IF NOT EXISTS username_index ON users (username)")
         c.execute("CREATE TABLE IF NOT EXISTS user_anime_stats (user_id INTEGER PRIMARY KEY, planned INTEGER NOT NULL, watching INTEGER NOT NULL, completed INTEGER NOT NULL, onhold INTEGER NOT NULL, dropped INTEGER NOT NULL)")
 
         c.execute("CREATE TABLE IF NOT EXISTS anime (animedb_id INTEGER PRIMARY KEY, title VARCHAR(255) NOT NULL, type INTEGER NOT NULL, episodes INTEGER NOT NULL, status INTEGER NOT NULL, start INTEGER, end INTEGER, image VARCHAR(255) NOT NULL)")
@@ -154,13 +155,20 @@ def users_needing_update(basedir):
 def _mark_user_updated(c, username):
     c.execute("UPDATE users SET last_update = strftime('%s', 'now'), last_change = 1 WHERE username = ?", (username,))
 
-def _insert_user(c, user_id, username, changed):
+def _insert_user(c, user_id, username, request_username, changed):
     if changed:
         c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), strftime('%s', 'now'))", (user_id, username))
     else:
         c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), (SELECT last_change FROM users WHERE user_id = ?))", (user_id, username, user_id))
-    # apparently MAL reuses usernames from time to time, or it gets confused
-    # about ids
+
+    # here we set username to '' because it's hard to make models cope with
+    # users being deleted
+
+    # It looks like that when usernames change case, a new user id is created,
+    # or something like that, so when the requested and received usernames
+    if username != request_username:
+        c.execute("UPDATE users SET username = '' WHERE username = ?", (request_username,))
+    # This is to clear bed data caused by me not knowing about the above
     c.execute("UPDATE users SET username = '' WHERE username = ? AND user_id <> ?", (username, user_id))
 
 def _insert_user_stats(c, user_id, stats):
