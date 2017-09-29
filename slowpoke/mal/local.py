@@ -143,7 +143,7 @@ def users_needing_update(basedir):
             bucket_size *= inactive_users_bucket_exponent
 
         # very old users or ones that failed to fetch
-        c.execute("SELECT username FROM users WHERE last_change < 1234567890 AND username <> '' LIMIT ?", (math.floor(len(users) * old_inactive_budget),))
+        c.execute("SELECT username FROM users WHERE last_change < 1234567890 AND username <> '' ORDER BY last_update ASC LIMIT ?", (math.floor(len(users) * old_inactive_budget),))
         users = concat_users(users, c)
 
         # users that were active last time we checked
