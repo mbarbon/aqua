@@ -229,21 +229,6 @@ def _insert_anime_list(c, user_id, data):
 
     return changed
 
-def fetch_anime_list(basedir, username):
-    with _connection(basedir) as conn:
-        c = conn.cursor()
-        c.execute('SELECT user_id FROM users WHERE username = ?', (username,))
-        (user_id,) = c.fetchone()
-        c.execute('SELECT anime_list FROM anime_list WHERE user_id = ?', (user_id,))
-        (blob,) = c.fetchone()
-        return _load_blob(blob)
-
-def count_to_bucket(count):
-    return int(4 * (math.log(count * 10) - 2))
-
-def bucket_to_count(bucket):
-    return math.floor(math.exp((bucket / 4.) + 2) / 10. + 0.5)
-
 def anime_needing_update(basedir):
     with _connection(basedir) as conn:
         c = conn.cursor()
