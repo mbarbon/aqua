@@ -417,9 +417,11 @@
       0)))
 
 (def ^:private select-anime-ids
-  (str "SELECT animedb_id, last_update"
-       "    FROM anime_details_update"
-       "    WHERE animedb_id > ?"
+  (str "SELECT a.animedb_id, COALESCE(adu.last_update, 1) AS last_update"
+       "    FROM anime AS a"
+       "      LEFT JOIN anime_details_update AS adu"
+       "        ON a.animedb_id = adu.animedb_id"
+       "    WHERE a.animedb_id > ?"
        "    LIMIT ?"))
 
 (defn all-anime-ids [data-source after-id limit]
@@ -471,9 +473,11 @@
       (doall (resultset-seq rs)))))
 
 (defn- select-changed-anime-ids [items]
-  (str "SELECT animedb_id, last_update"
-       "    FROM anime_details_update"
-       "    WHERE animedb_id IN (" (placeholders items) ")"))
+  (str "SELECT a.animedb_id, COALESCE(adu.last_update, 0) AS last_update"
+       "    FROM anime AS a"
+       "      LEFT JOIN anime_details_update AS adu"
+       "        ON a.animedb_id = adu.animedb_id"
+       "    WHERE a.animedb_id IN (" (placeholders items) ")"))
 
 (defn- select-anime-data [items]
   (str "SELECT a.animedb_id, a.title, a.type, a.episodes, a.status,"
@@ -827,13 +831,14 @@
   (execute connection
            sync-update-anime
            [animedb_id title type episodes status start end image])
-  (execute connection
-           update-anime-details
-           [animedb_id rank popularity score])
-  (store-anime-side-tables connection animedb_id genres titles relations)
-  (execute connection
-           sync-update-anime-details-update
-           [animedb_id last_update]))
+  (when-not (= last_update 1)
+    (execute connection
+             update-anime-details
+             [animedb_id rank popularity score])
+    (store-anime-side-tables connection animedb_id genres titles relations)
+    (execute connection
+             sync-update-anime-details-update
+             [animedb_id last_update])))
 
 (defn store-anime [data-source anime-list]
   (with-transaction data-source connection
