@@ -291,7 +291,7 @@
       (for [item (resultset-seq rs)]
         [(:genre item) (:description item)]))))
 
-(def ^:private select-anime-genres
+(def ^:private select-anime-genres-map
   "SELECT animedb_id, genre_id, sort_order FROM anime_genres ORDER BY animedb_id, sort_order")
 
 (defn- load-genres-map [data-source]
@@ -299,7 +299,7 @@
         genres-map (java.util.HashMap.)]
     (with-open [connection (.getConnection data-source)
                 statement (.createStatement connection)
-                rs (.executeQuery statement select-anime-genres)]
+                rs (.executeQuery statement select-anime-genres-map)]
       (doseq [item (resultset-seq rs)]
         (let [anime-id (:animedb_id item)
               is-first (= 0 (:sort_order item))
@@ -415,6 +415,134 @@
     (if (.next rs)
       (.getInt rs 1)
       0)))
+
+(def ^:private select-anime-ids
+  (str "SELECT animedb_id, last_update"
+       "    FROM anime_details_update"
+       "    WHERE animedb_id > ?"
+       "    LIMIT ?"))
+
+(defn all-anime-ids [data-source after-id limit]
+  (with-query data-source rs select-anime-ids [after-id limit]
+    (doall (into {} (map #(vector (:animedb_id %) (:last_update %))
+                         (resultset-seq rs))))))
+
+(def ^:private select-user-ids
+  (str "SELECT user_id, last_update FROM users WHERE user_id > ? LIMIT ?"))
+
+(defn all-user-ids [data-source after-id limit]
+  (with-query data-source rs select-user-ids [after-id limit]
+    (doall (into {} (map #(vector (:user_id %) (:last_update %))
+                         (resultset-seq rs))))))
+
+(defn- select-changed-user-ids [items]
+  (str "SELECT user_id, last_update"
+       "    FROM users"
+       "    WHERE user_id IN (" (placeholders items) ")"))
+
+(defn- select-user-data [items]
+  (str "SELECT u.user_id, u.username, u.last_update, u.last_change,"
+       "       uas.planned, uas.watching, uas.completed, uas.onhold, uas.dropped,"
+       "       al.anime_list"
+       "    FROM users AS u"
+       "      INNER JOIN user_anime_stats AS uas"
+       "        ON u.user_id = uas.user_id"
+       "      INNER JOIN anime_list AS al"
+       "        ON u.user_id = al.user_id"
+       "    WHERE u.user_id IN (" (placeholders items) ")"))
+
+(defn- filter-unchanged-items [rs id-key update-key id-to-time]
+  (->> (resultset-seq rs)
+       (filter #(< (id-to-time (str (id-key %)))
+                   (update-key %)))
+       (map id-key)))
+
+(defn select-changed-users [data-source user-id-to-time]
+  (let [; user ids updated after specified time
+        user-ids (with-query data-source
+                             rs
+                             (select-changed-user-ids user-id-to-time)
+                             (keys user-id-to-time)
+                   (doall (filter-unchanged-items rs
+                                                  :user_id
+                                                  :last_update
+                                                  user-id-to-time)))]
+    (with-query data-source rs (select-user-data user-ids) user-ids
+      (doall (resultset-seq rs)))))
+
+(defn- select-changed-anime-ids [items]
+  (str "SELECT animedb_id, last_update"
+       "    FROM anime_details_update"
+       "    WHERE animedb_id IN (" (placeholders items) ")"))
+
+(defn- select-anime-data [items]
+  (str "SELECT a.animedb_id, a.title, a.type, a.episodes, a.status,"
+       "       a.start, a.end, a.image,"
+       "       ad.rank, ad.popularity, ad.score,"
+       "       adu.last_update"
+       "    FROM anime AS a"
+       "      INNER JOIN anime_details AS ad"
+       "        ON a.animedb_id = ad.animedb_id"
+       "      INNER JOIN anime_details_update AS adu"
+       "        ON a.animedb_id = adu.animedb_id"
+       "    WHERE a.animedb_id IN (" (placeholders items) ")"))
+
+(defn- select-anime-titles [items]
+  (str "SELECT animedb_id, title"
+       "    FROM anime_titles"
+       "    WHERE animedb_id IN (" (placeholders items) ")"))
+
+(defn- select-anime-relations [items]
+  (str "SELECT animedb_id, related_id, relation"
+       "    FROM anime_relations"
+       "    WHERE animedb_id IN (" (placeholders items) ")"))
+
+(defn- select-anime-genres [items]
+  (str "SELECT ag.animedb_id, ag.genre_id, agn.description, ag.sort_order"
+       "    FROM anime_genres AS ag"
+       "      INNER JOIN anime_genre_names agn"
+       "        ON ag.genre_id = agn.genre"
+       "    WHERE animedb_id IN (" (placeholders items) ")"))
+
+(defn select-changed-anime [data-source anime-id-to-time]
+  (letfn [(fetch-anime-map [anime-ids]
+            (with-query data-source
+                        rs
+                        (select-anime-data anime-ids)
+                        anime-ids
+              (doall (into {} (for [anime (resultset-seq rs)]
+                                [(:animedb_id anime) anime])))))
+          (update-anime [fields into-field]
+            (fn [anime-map item]
+              (let [anime-id (:animedb_id item)
+                    anime (anime-map anime-id)
+                    value (if (keyword? fields)
+                            (item fields)
+                            (select-keys item fields))
+                    current (get anime into-field [])
+                    updated-anime (assoc anime
+                                    into-field (conj current value))]
+                (assoc anime-map anime-id updated-anime))))
+          (join-fields [anime-map query-builder fields into-field]
+            (let [query (query-builder anime-map)
+                  items (with-query data-source rs query (keys anime-map)
+                          (doall (resultset-seq rs)))]
+              (reduce (update-anime fields into-field) anime-map items)))]
+  (let [; anime ids updated after specified time
+        anime-ids (with-query data-source
+                              rs
+                              (select-changed-anime-ids anime-id-to-time)
+                              (keys anime-id-to-time)
+                    (doall (filter-unchanged-items rs
+                                                   :animedb_id
+                                                   :last_update
+                                                   anime-id-to-time)))
+        anime (fetch-anime-map anime-ids)]
+    (-> anime
+        (join-fields select-anime-titles :title :titles)
+        (join-fields select-anime-relations [:related_id :relation] :relations)
+        (join-fields select-anime-genres [:genre_id :description :sort_order] :genres)
+        vals))))
 
 ;
 ; writing
@@ -605,3 +733,109 @@
 
       (let [anime-list-changed (insert-or-update-user-anime-list connection user anime)]
         (insert-or-update-user connection request-username user anime-list-changed)))))
+
+(def ^:private sync-update-user
+  (str "INSERT OR REPLACE INTO users"
+       "       (user_id, username, last_update, last_change)"
+       "    VALUES"
+       "       (?,"
+       "        COALESCE((SELECT username FROM users WHERE user_id = ?), ?),"
+       "        ?,"
+       "        ?)"))
+
+(defn- update-user [connection
+                    {:strs [user_id username last_update last_change
+                            anime_list
+                            planned watching completed onhold dropped]}]
+  (execute connection
+           sync-update-user
+           [user_id user_id username last_update last_change])
+  (execute connection
+           update-user-stats
+           [user_id planned watching completed onhold dropped])
+  (execute connection
+           insert-anime-list
+           [user_id (.decode (com.google.common.io.BaseEncoding/base64) anime_list)]))
+
+(defn store-users [data-source users]
+  (with-transaction data-source connection
+    (doseq [user users]
+      (update-user connection user))))
+
+(def ^:private sync-update-anime
+  (str "INSERT OR REPLACE INTO anime"
+       "        (animedb_id, title, type, episodes, status, start, end, image)"
+       "    VALUES"
+       "        (?, ?, ?, ?, ?, ?, ?, ?)"))
+
+(def ^:private update-anime-details
+  (str "INSERT OR REPLACE INTO anime_details"
+       "        (animedb_id, rank, popularity, score)"
+       "    VALUES"
+       "        (?, ?, ?, ?)"))
+
+(def ^:private sync-update-anime-details-update
+  (str "INSERT OR REPLACE INTO anime_details_update"
+       "        (animedb_id, last_update)"
+       "    VALUES"
+       "        (?, ?)"))
+
+(def ^:private delete-anime-side-tables
+  ["DELETE FROM anime_relations WHERE animedb_id = ?"
+   "DELETE FROM anime_genres WHERE animedb_id = ?"
+   "DELETE FROM anime_titles WHERE animedb_id = ?"])
+
+(def ^:private update-anime-relations
+  (str "INSERT OR REPLACE INTO anime_relations"
+       "        (animedb_id, related_id, relation)"
+       "    VALUES"
+       "        (?, ?, ?)"))
+
+(def ^:private update-anime-titles
+  (str "INSERT OR REPLACE INTO anime_titles"
+       "        (animedb_id, title)"
+       "    VALUES"
+       "        (?, ?)"))
+
+(def ^:private update-anime-genres
+  (str "INSERT OR REPLACE INTO anime_genres"
+       "        (animedb_id, genre_id, sort_order)"
+       "    VALUES"
+       "        (?, ?, ?)"))
+
+(def ^:private update-anime-genre-names
+  (str "INSERT OR REPLACE INTO anime_genre_names"
+       "        (genre, description)"
+       "    VALUES"
+       "        (?, ?)"))
+
+(defn- store-anime-side-tables [connection animedb_id genres titles relations]
+  (doseq [query delete-anime-side-tables]
+    (execute connection query [animedb_id]))
+  (doseq [{:strs [genre_id description sort_order]} genres]
+    (execute connection update-anime-genre-names [genre_id description])
+    (execute connection update-anime-genres [animedb_id genre_id sort_order]))
+  (doseq [title titles]
+    (execute connection update-anime-titles [animedb_id title]))
+  (doseq [{:strs [related_id relation]} relations]
+    (execute connection update-anime-relations [animedb_id related_id relation])))
+
+(defn- update-anime [connection
+                    {:strs [animedb_id title type episodes status start end image
+                            rank popularity score
+                            last_update genres titles relations]}]
+  (execute connection
+           sync-update-anime
+           [animedb_id title type episodes status start end image])
+  (execute connection
+           update-anime-details
+           [animedb_id rank popularity score])
+  (store-anime-side-tables connection animedb_id genres titles relations)
+  (execute connection
+           sync-update-anime-details-update
+           [animedb_id last_update]))
+
+(defn store-anime [data-source anime-list]
+  (with-transaction data-source connection
+    (doseq [anime anime-list]
+      (update-anime connection anime))))

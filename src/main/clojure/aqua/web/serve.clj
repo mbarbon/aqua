@@ -7,6 +7,8 @@
             aqua.web.mal-proxy
             aqua.web.internal
             aqua.web.background
+            aqua.web.dump
+            cheshire.generate
             [compojure.core :refer :all]
             [compojure.route :as route]
             clojure.tools.cli
@@ -17,6 +19,11 @@
             ring.middleware.reload
             ring.middleware.stacktrace
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]))
+
+(defn- encode-binary [buffer ^com.fasterxml.jackson.core.JsonGenerator jsonGenerator]
+  (.writeBinary jsonGenerator buffer))
+
+(cheshire.generate/add-encoder (Class/forName "[B") encode-binary)
 
 (defn bad-request [body]
   (-> (ring.util.response/response body)
@@ -73,12 +80,33 @@
 
 (def reload)
 
+(defroutes service-app-json-routes
+  (POST "/sync/all-anime-ids" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/all-anime-ids body)))
+  (POST "/sync/all-user-ids" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/all-user-ids body)))
+  (POST "/sync/changed-users" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/changed-users body)))
+  (POST "/sync/changed-anime" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/changed-anime body)))
+  (POST "/sync/store-users" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/store-users body)))
+  (POST "/sync/store-anime" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/store-anime body))))
+
 (defroutes service-app-routes
   (GET "/_is_enabled" []
     (ring.util.response/response
       (str (aqua.web.internal/enabled-and-healthy))))
   (GET "/_reload_data" []
     (ring.util.response/response (reload)))
+  (ring.middleware.json/wrap-json-body service-app-json-routes)
   (route/not-found "Service endpoint not found"))
 
 (defn- configurator [jetty-server]
