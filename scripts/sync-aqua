@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import logging
+import sys
+import urllib, urllib.request
+import time
+
+LOGGER = logging.getLogger('sync-aqua')
+ANIME_BATCH = 100
+SMALL_ANIME_BATCH = 10
+USER_BATCH = 200
+SMALL_USER_BATCH = 20
+
+def make_url(base, path):
+    parts = urllib.parse.urlparse(base)
+    return urllib.parse.urlunparse((parts.scheme, parts.netloc, path, '', '', ''))
+
+def req_json(url, data):
+    json_data = json.dumps(data).encode('utf-8')
+    req = urllib.request.Request(
+        url, data=json_data,
+        headers={'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req) as res:
+        if res.getcode() != 200:
+            raise Exception('Error in response')
+        body = res.read()
+        if body:
+            return json.loads(body.decode('utf-8'))
+        else:
+            return None
+
+def check_health(base):
+    with urllib.request.urlopen(make_url(base, '/_is_enabled')) as res:
+        if res.getcode() == 200 and res.read() == b'true':
+            return True
+        else:
+            return False
+
+def fetch_ids(base, endpoint, start, size):
+    req = {'after_id': start, 'count': size}
+    return req_json(make_url(base, '/sync/' + endpoint), req)
+
+def fetch_changed_anime(base, id_map):
+    req = {'anime': id_map}
+    return req_json(make_url(base, '/sync/changed-anime'), req)
+
+def store_changed_anime(base, anime):
+    req = {'anime': anime}
+    return req_json(make_url(base, '/sync/store-anime'), req)
+
+def sync_aqua_anime(from_aqua, to_aqua, dry_run):
+    LOGGER.info('  Fetching source anime ids')
+    from_anime_ids = set()
+    anime_ids = fetch_ids(from_aqua, 'all-anime-ids', 0, ANIME_BATCH)
+    while anime_ids['anime']:
+        from_anime_ids = from_anime_ids | anime_ids['anime'].keys()
+        anime_ids = fetch_ids(from_aqua, 'all-anime-ids', anime_ids['last_page'], ANIME_BATCH)
+
+    LOGGER.info('  Starting sync')
+    total, synced, partial = 0, 0, time.time()
+    anime_ids = fetch_ids(to_aqua, 'all-anime-ids', 0, ANIME_BATCH)
+    while anime_ids['anime']:
+        from_anime_ids = from_anime_ids - anime_ids['anime'].keys()
+        changed_anime = fetch_changed_anime(from_aqua, anime_ids['anime'])
+        if not dry_run:
+            store_changed_anime(to_aqua, changed_anime)
+        total += len(anime_ids['anime'])
+        synced += len(changed_anime or [])
+        if time.time() - partial >= 60:
+            LOGGER.info('  Synced %d/%d anime', synced, total)
+            partial = time.time()
+        anime_ids = fetch_ids(to_aqua, 'all-anime-ids', anime_ids['last_page'], ANIME_BATCH)
+
+    missing = list(from_anime_ids)
+    while missing:
+        batch = missing[0:SMALL_ANIME_BATCH]
+        id_map = {k: 0 for k in batch}
+        changed_anime = fetch_changed_anime(from_aqua, id_map)
+        if not dry_run:
+            store_changed_anime(to_aqua, changed_anime)
+        total += len(id_map)
+        synced += len(changed_anime or [])
+        if time.time() - partial >= 60:
+            LOGGER.info('  Synced %d/%d anime', synced, total)
+            partial = time.time()
+        missing = missing[SMALL_ANIME_BATCH:]
+
+    LOGGER.info('  Synced %d/%d anime', synced, total)
+
+def fetch_changed_users(base, id_map):
+    req = {'users': id_map}
+    return req_json(make_url(base, '/sync/changed-users'), req)
+
+def store_changed_users(base, users):
+    req = {'users': users}
+    return req_json(make_url(base, '/sync/store-users'), req)
+
+def sync_aqua_users(from_aqua, to_aqua, dry_run):
+    LOGGER.info('  Fetching source user ids')
+    from_user_ids = set()
+    user_ids = fetch_ids(from_aqua, 'all-user-ids', 0, USER_BATCH)
+    while user_ids['users']:
+        from_user_ids = from_user_ids | user_ids['users'].keys()
+        user_ids = fetch_ids(from_aqua, 'all-user-ids', user_ids['last_page'], USER_BATCH)
+
+    LOGGER.info('  Starting sync')
+    total, synced, partial = 0, 0, time.time()
+    user_ids = fetch_ids(to_aqua, 'all-user-ids', 0, USER_BATCH)
+    while user_ids['users']:
+        from_user_ids = from_user_ids - user_ids['users'].keys()
+        changed_users = fetch_changed_users(from_aqua, user_ids['users'])
+        if not dry_run:
+            store_changed_users(to_aqua, changed_users)
+        total += len(user_ids['users'])
+        synced += len(changed_users or [])
+        if time.time() - partial >= 60:
+            LOGGER.info('  Synced %d/%d users', synced, total)
+            partial = time.time()
+        user_ids = fetch_ids(to_aqua, 'all-user-ids', user_ids['last_page'], USER_BATCH)
+
+    missing = list(from_user_ids)
+    while missing:
+        batch = missing[0:SMALL_USER_BATCH]
+        id_map = {k: 0 for k in batch}
+        changed_users = fetch_changed_users(from_aqua, id_map)
+        if not dry_run:
+            store_changed_users(to_aqua, changed_users)
+        total += len(id_map)
+        synced += len(changed_users or [])
+        if time.time() - partial >= 60:
+            LOGGER.info('  Synced %d/%d users', synced, total)
+            partial = time.time()
+        missing = missing[SMALL_USER_BATCH:]
+
+    LOGGER.info('  Synced %d/%d users', synced, total)
+
+def sync_aqua(from_aqua, to_aqua, dry_run):
+    LOGGER.info('Syncing anime %s -> %s', from_aqua, to_aqua)
+    sync_aqua_anime(from_aqua, to_aqua, dry_run=dry_run)
+    LOGGER.info('Syncing users %s -> %s', from_aqua, to_aqua)
+    sync_aqua_users(from_aqua, to_aqua, dry_run=dry_run)
+    LOGGER.info('Done')
+
+def main():
+    parser = argparse.ArgumentParser(description='Sync Aqua databases')
+    parser.add_argument('--pull', action='store_true',
+                            help='Pull data from remote into local')
+    parser.add_argument('--push', action='store_true',
+                            help='Push data from local into remote')
+    parser.add_argument('--dry-run', action='store_true',
+                            help='Don\'t perform the store operation')
+    parser.add_argument('local', help='Local Aqua instance')
+    parser.add_argument('remote', help='Remote Aqua instance')
+
+    args = parser.parse_args()
+
+    healthy_local = check_health(args.local)
+    healthy_remote = check_health(args.remote)
+    if not healthy_local:
+        print('Local endpoint %s is not healthy' % args.local)
+    if not healthy_remote:
+        print('Remote endpoint %s is not healthy' % args.remote)
+    if not (healthy_local and healthy_remote):
+        sys.exit(1)
+
+    if not (args.pull or args.push):
+        args.pull = args.push = True
+    if args.pull:
+        sync_aqua(args.remote, args.local, dry_run=args.dry_run)
+    if args.push:
+        sync_aqua(args.local, args.remote, dry_run=args.dry_run)
+
+if __name__ == '__main__':
+    logging.basicConfig(
+        level='INFO',
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    )
+    main()
