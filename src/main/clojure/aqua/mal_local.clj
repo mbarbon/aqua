@@ -147,11 +147,15 @@
         anime-list (Json/readCFRatedList al-data)]
     (dotimes [n (.size anime-list)]
       (let [^aqua.recommend.CFRated item (.get anime-list n)
+            item-id (.animedbId item)
             cached (if-let [existing (.get cache item)]
                      existing
                      (do
                        (if (and anime-map-to-filter-hentai
-                                (.isHentai (anime-map-to-filter-hentai (.animedbId item))))
+                                ; when we have an user referring to non-existing anime
+                                (if-let [in-map (anime-map-to-filter-hentai item-id)]
+                                  (.isHentai in-map)
+                                  false))
                          (.setHentai item))
                        (.put cache item item)
                        item))]
