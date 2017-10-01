@@ -1,5 +1,8 @@
 (ns aqua.cli.cf-recommend
-  (:require aqua.mal-local aqua.recommend.cosine aqua.misc))
+  (:require aqua.mal-local
+            aqua.recommend.cosine
+            aqua.recommend.user-sample
+            aqua.misc))
 
 (def user-count 20000)
 
@@ -27,7 +30,7 @@
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source username cf-parameters)
-        users (aqua.mal-local/load-filtered-cf-users directory data-source cf-parameters user-count)
+        users (aqua.recommend.user-sample/load-filtered-cf-users "maldump/user-sample" data-source cf-parameters user-count)
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)]
     (println "Running recommender")

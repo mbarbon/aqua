@@ -12,6 +12,7 @@
             aqua.recommend.cosine
             aqua.recommend.lfd
             aqua.recommend.lfd-cf
+            aqua.recommend.user-sample
             aqua.misc
             [clojure.tools.logging :as log]))
 
@@ -25,9 +26,8 @@
 
 (defn- load-users []
   (log/info "Start loading users")
-  (let [maldump-directory @*maldump-directory
-        data-source @*data-source-ro
-        users (aqua.mal-local/load-filtered-cf-users maldump-directory data-source @*cf-parameters user-count @*anime)
+  (let [data-source @*data-source-ro
+        users (aqua.recommend.user-sample/load-filtered-cf-users (model-path "user-sample") data-source @*cf-parameters user-count @*anime)
         lfd (aqua.recommend.lfd/load-lfd (model-path "lfd-model") @*anime)
         lfd-airing (aqua.recommend.lfd/load-lfd (model-path "lfd-model-airing") @*anime)
         lfd-users (aqua.recommend.lfd/load-user-lfd (model-path "lfd-user-model") lfd users)]
@@ -48,11 +48,10 @@
   (log/info "Start reloading users")
   ; so users are garbage collected
   (reset! *lfd-users nil)
-  (let [maldump-directory @*maldump-directory
-        data-source @*data-source-ro
+  (let [data-source @*data-source-ro
         cache (cf-rated-cache @*users)
         target @*users]
-    (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source @*cf-parameters cache target @*anime))
+    (aqua.recommend.user-sample/load-filtered-cf-users-into (model-path "user-sample") data-source @*cf-parameters cache target @*anime))
   (let [lfd (aqua.recommend.lfd/load-lfd (model-path "lfd-model") @*anime)
         lfd-airing (aqua.recommend.lfd/load-lfd (model-path "lfd-model-airing") @*anime)
         lfd-users (aqua.recommend.lfd/load-user-lfd (model-path "lfd-user-model") lfd @*users)]

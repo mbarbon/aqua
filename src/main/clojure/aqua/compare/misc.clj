@@ -1,11 +1,17 @@
 (ns aqua.compare.misc
-  (require aqua.mal-local))
+  (require aqua.recommend.user-sample
+           aqua.mal-local))
 
 (defn stable-shuffle [^java.util.Collection items]
   (let [rnd (java.util.Random. 1643789325)
         lst (java.util.ArrayList. items)]
     (java.util.Collections/shuffle lst rnd)
     lst))
+
+(defn- load-stable-user-sample-from-db [directory data-source max-count]
+  (let [path (str directory "/" "user-sample")
+        user-ids (aqua.recommend.user-sample/load-user-sample path (* 2 max-count))]
+    (aqua.mal-local/load-test-cf-user-ids data-source user-ids max-count)))
 
 (defn load-stable-user-sample [directory data-source max-count file]
   (if (.exists (clojure.java.io/as-file file))

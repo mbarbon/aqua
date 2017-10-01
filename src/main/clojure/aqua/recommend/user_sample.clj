@@ -1,6 +1,7 @@
 (ns aqua.recommend.user-sample
   (:require clojure.set
             aqua.misc
+            aqua.recommend.model-files
             aqua.mal-local))
 
 ; nothing against hentai, just there is not enough data for meaningful
@@ -156,3 +157,29 @@
       (binding [*out* out]
         (doseq [user-id users]
           (println user-id))))))
+
+(defn load-user-sample [path size]
+  (aqua.recommend.model-files/with-open-model path 1 in version
+    (doall (take size (for [line (line-seq in)]
+                        (Integer/valueOf line))))))
+
+; the only purpose of this function is to avoid doubling memory usage
+; while users are reloaded: old users become garbage while new users are loaded
+(defn load-filtered-cf-users-into [path data-source cf-parameters cache target anime-map-to-filter-hentai]
+  (aqua.mal-local/load-filtered-cf-users-into data-source
+                                              (load-user-sample path (count target))
+                                              cf-parameters
+                                              cache
+                                              target
+                                              anime-map-to-filter-hentai))
+
+(defn- load-filtered-cf-users-helper [path data-source cf-parameters max-count anime-map-to-filter-hentai]
+  (let [cache (java.util.HashMap.)
+        target (java.util.ArrayList. (repeat max-count nil))]
+    (load-filtered-cf-users-into path data-source cf-parameters cache target anime-map-to-filter-hentai)))
+
+(defn load-filtered-cf-users
+  ([path data-source cf-parameters max-count]
+    (load-filtered-cf-users-helper path data-source cf-parameters max-count nil))
+  ([path data-source cf-parameters max-count anime-map-to-filter-hentai]
+    (load-filtered-cf-users-helper path data-source cf-parameters max-count anime-map-to-filter-hentai)))

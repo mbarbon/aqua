@@ -4,6 +4,7 @@
             aqua.compare.recall
             aqua.compare.diversification
             aqua.recommend.rp-similar-anime
+            aqua.recommend.user-sample
             aqua.mal-local
             aqua.misc))
 
@@ -13,7 +14,7 @@
   (let [directory "maldump"
         compare-count 40
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
-        sampled-ids (aqua.mal-local/load-sampled-user-ids directory user-count)
+        sampled-ids (aqua.recommend.user-sample/load-user-sample "maldump/user-sample" user-count)
         cf-parameters-std (aqua.recommend.CFParameters.)
         users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
         lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model")

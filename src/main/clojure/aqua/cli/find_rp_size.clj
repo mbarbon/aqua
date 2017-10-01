@@ -2,6 +2,7 @@
   (:require aqua.mal-local
             aqua.misc
             aqua.recommend.rp-similar-anime
+            aqua.recommend.user-sample
             clojure.set))
 
 (def iterations 5)
@@ -37,7 +38,7 @@
 (defn -main [& projection-sizes]
   (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        users (aqua.mal-local/load-filtered-cf-users "maldump" data-source cf-parameters user-count)
+        users (aqua.recommend.user-sample/load-filtered-cf-users "maldump/user-sample" data-source cf-parameters user-count)
         anime (aqua.mal-local/load-anime data-source)
         similar-count 30
         anime-sample (take 1000 (shuffle (keys anime)))]

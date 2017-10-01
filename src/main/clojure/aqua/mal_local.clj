@@ -177,11 +177,6 @@
                 rs (.executeQuery statement)]
       (doall-rs rs loader))))
 
-(defn load-sampled-user-ids [directory size]
-  (with-open [in (io/reader (io/file directory "user-sample"))]
-    (doall (take size (for [line (line-seq in)]
-                        (Integer/valueOf line))))))
-
 (defn- selected-cf-user-ids [connection max-count query]
   (with-open [statement (doto (.prepareStatement connection query
                                                  java.sql.ResultSet/TYPE_FORWARD_ONLY
@@ -197,31 +192,18 @@
     (select-users-by-id connection ids
                         (partial load-cf-users-from-rs cf-parameters))))
 
-(defn load-test-cf-user-ids [directory data-source max-count]
+(defn load-test-cf-user-ids [data-source user-ids max-count]
   (with-open [connection (.getConnection data-source)]
-    (let [query (select-test-user-ids (load-sampled-user-ids directory 1000000))]
+    (let [query (select-test-user-ids user-ids)]
       (selected-cf-user-ids connection max-count query))))
 
-; the only purpose of this function is to avoid doubling memory usage
-; while users are reloaded: old users become garbage while new users are loaded
-(defn load-filtered-cf-users-into [directory data-source cf-parameters cache target anime-map-to-filter-hentai]
+(defn load-filtered-cf-users-into [data-source user-ids cf-parameters cache target anime-map-to-filter-hentai]
   (with-open [connection (.getConnection data-source)]
     ; this allocates and throws away an ArrayList, it's fine
     (select-users-by-id connection
-                        (load-sampled-user-ids directory (count target))
+                        user-ids
                         (partial load-filtered-cf-users-from-rs cf-parameters cache target anime-map-to-filter-hentai))
     target))
-
-(defn- load-filtered-cf-users-helper [directory data-source cf-parameters max-count anime-map-to-filter-hentai]
-  (let [cache (java.util.HashMap.)
-        target (java.util.ArrayList. (repeat max-count nil))]
-    (load-filtered-cf-users-into directory data-source cf-parameters cache target anime-map-to-filter-hentai)))
-
-(defn load-filtered-cf-users
-  ([directory data-source cf-parameters max-count]
-    (load-filtered-cf-users-helper directory data-source cf-parameters max-count nil))
-  ([directory data-source cf-parameters max-count anime-map-to-filter-hentai]
-    (load-filtered-cf-users-helper directory data-source cf-parameters max-count anime-map-to-filter-hentai)))
 
 (def ^:private select-user
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
