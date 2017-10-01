@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import gzip
 import json
 import logging
 import sys
-import urllib, urllib.request
 import time
+import urllib, urllib.request
 
 LOGGER = logging.getLogger('sync-aqua')
 ANIME_BATCH = 100
@@ -19,14 +20,24 @@ def make_url(base, path):
 
 def req_json(url, data):
     json_data = json.dumps(data).encode('utf-8')
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept-Encoding': 'gzip',
+    }
+    if len(json_data) > 1024:
+        json_data = gzip.compress(json_data)
+        headers['Content-Encoding'] = 'gzip'
     req = urllib.request.Request(
         url, data=json_data,
-        headers={'Content-Type': 'application/json'})
+        headers=headers)
     with urllib.request.urlopen(req) as res:
         if res.getcode() != 200:
             raise Exception('Error in response')
         body = res.read()
         if body:
+            compression = res.getheader('Content-Encoding')
+            if compression == 'gzip':
+                body = gzip.decompress(body)
             return json.loads(body.decode('utf-8'))
         else:
             return None
