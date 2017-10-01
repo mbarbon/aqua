@@ -4,6 +4,7 @@ import argparse
 import gzip
 import json
 import logging
+import os
 import sys
 import time
 import urllib, urllib.request
@@ -110,6 +111,14 @@ class AquaSync(object):
     def store_changed_anime(self, anime):
         req = {'anime': anime}
         return self.req_json('/sync/store-anime', req)
+
+    def upload_model(self, path, model_name):
+        with open(path, 'rb') as fh:
+            blob = fh.read()
+        return self.req_binary('/sync/upload-model/' + model_name, blob)
+
+    def commit_models(self):
+        return self.req_json('/sync/commit-models', {})
 
 def sync_aqua_anime(from_aqua, to_aqua, dry_run):
     LOGGER.info('  Fetching source anime ids')
@@ -220,6 +229,29 @@ def cmd_sync_db(args):
     LOGGER.info("%s: sent %.02f MB, received %.02f MB",
                     remote.base, remote.mbytes_sent(), remote.mbytes_received())
 
+def push_aqua_models(directory, to_aqua, dry_run):
+    LOGGER.info('Sending models')
+    for model in ['lfd-model', 'lfd-model-airing', 'lfd-user-model',
+                      'user-sample']:
+        source = os.path.join(directory, model)
+        LOGGER.info('  Sending model %s', model)
+        to_aqua.upload_model(source, model)
+    LOGGER.info('Committing')
+    to_aqua.commit_models()
+
+def cmd_push_models(args):
+    remote = AquaSync(args.remote)
+    healthy_remote = remote.check_health()
+    if not healthy_remote:
+        print('Remote endpoint %s is not healthy' % args.remote)
+    if not healthy_remote:
+        sys.exit(1)
+
+    push_aqua_models('maldump', remote, dry_run=args.dry_run)
+
+    LOGGER.info("%s: sent %.02f MB, received %.02f MB",
+                    remote.base, remote.mbytes_sent(), remote.mbytes_received())
+
 def main():
     parser = argparse.ArgumentParser(description='Sync Aqua instances')
     def cmd_help(args):
@@ -238,6 +270,12 @@ def main():
     sync.add_argument('local', help='Local Aqua instance')
     sync.add_argument('remote', help='Remote Aqua instance')
     sync.set_defaults(execute=cmd_sync_db)
+
+    push_models = subparsers.add_parser('push-models', help='Push Aqua models')
+    push_models.add_argument('--dry-run', action='store_true',
+                                 help='Don\'t perform the commit operation')
+    push_models.add_argument('remote', help='Remote Aqua instance')
+    push_models.set_defaults(execute=cmd_push_models)
 
     args = parser.parse_args()
     args.execute(args)
