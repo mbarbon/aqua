@@ -27,6 +27,7 @@ def req_json(url, data):
     if len(json_data) > 1024:
         json_data = gzip.compress(json_data)
         headers['Content-Encoding'] = 'gzip'
+    bytes_sent = len(json_data)
     req = urllib.request.Request(
         url, data=json_data,
         headers=headers)
@@ -34,17 +35,26 @@ def req_json(url, data):
         if res.getcode() != 200:
             raise Exception('Error in response')
         body = res.read()
+        bytes_received = len(body)
         if body:
             compression = res.getheader('Content-Encoding')
             if compression == 'gzip':
                 body = gzip.decompress(body)
-            return json.loads(body.decode('utf-8'))
+            return json.loads(body.decode('utf-8')), bytes_sent, bytes_received
         else:
-            return None
+            return None, bytes_sent, 0
 
 class AquaSync(object):
     def __init__(self, base):
         self.base = base
+        self.bytes_sent = 0
+        self.bytes_received = 0
+
+    def mbytes_sent(self):
+        return self.bytes_sent / 1024. / 1024.
+
+    def mbytes_received(self):
+        return self.bytes_received / 1024. / 1024.
 
     def check_health(self):
         with urllib.request.urlopen(make_url(self.base, '/_is_enabled')) as res:
@@ -55,7 +65,10 @@ class AquaSync(object):
 
     def req_json(self, endpoint, *args):
         url = make_url(self.base, endpoint)
-        return req_json(url, *args)
+        res, bytes_sent, bytes_received = req_json(url, *args)
+        self.bytes_sent += bytes_sent
+        self.bytes_received += bytes_received
+        return res
 
     def fetch_user_ids(self, start, size):
         req = {'after_id': start, 'count': size}
@@ -196,6 +209,11 @@ def main():
         sync_aqua(remote, local, dry_run=args.dry_run)
     if args.push:
         sync_aqua(local, remote, dry_run=args.dry_run)
+
+    LOGGER.info("%s: sent %.02f MB, received %.02f MB",
+                    local.base, local.mbytes_sent(), local.mbytes_received())
+    LOGGER.info("%s: sent %.02f MB, received %.02f MB",
+                    remote.base, remote.mbytes_sent(), remote.mbytes_received())
 
 if __name__ == '__main__':
     logging.basicConfig(
