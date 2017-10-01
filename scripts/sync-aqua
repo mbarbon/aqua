@@ -172,26 +172,14 @@ def sync_aqua_users(from_aqua, to_aqua, dry_run):
 
     LOGGER.info('  Synced %d/%d users', synced, total)
 
-def sync_aqua(from_aqua, to_aqua, dry_run):
+def sync_aqua_db(from_aqua, to_aqua, dry_run):
     LOGGER.info('Syncing anime %s -> %s', from_aqua.base, to_aqua.base)
     sync_aqua_anime(from_aqua, to_aqua, dry_run=dry_run)
     LOGGER.info('Syncing users %s -> %s', from_aqua.base, to_aqua.base)
     sync_aqua_users(from_aqua, to_aqua, dry_run=dry_run)
     LOGGER.info('Done')
 
-def main():
-    parser = argparse.ArgumentParser(description='Sync Aqua databases')
-    parser.add_argument('--pull', action='store_true',
-                            help='Pull data from remote into local')
-    parser.add_argument('--push', action='store_true',
-                            help='Push data from local into remote')
-    parser.add_argument('--dry-run', action='store_true',
-                            help='Don\'t perform the store operation')
-    parser.add_argument('local', help='Local Aqua instance')
-    parser.add_argument('remote', help='Remote Aqua instance')
-
-    args = parser.parse_args()
-
+def cmd_sync_db(args):
     local = AquaSync(args.local)
     remote = AquaSync(args.remote)
     healthy_local = local.check_health()
@@ -206,14 +194,37 @@ def main():
     if not (args.pull or args.push):
         args.pull = args.push = True
     if args.pull:
-        sync_aqua(remote, local, dry_run=args.dry_run)
+        sync_aqua_db(remote, local, dry_run=args.dry_run)
     if args.push:
-        sync_aqua(local, remote, dry_run=args.dry_run)
+        sync_aqua_db(local, remote, dry_run=args.dry_run)
 
     LOGGER.info("%s: sent %.02f MB, received %.02f MB",
                     local.base, local.mbytes_sent(), local.mbytes_received())
     LOGGER.info("%s: sent %.02f MB, received %.02f MB",
                     remote.base, remote.mbytes_sent(), remote.mbytes_received())
+
+def main():
+    parser = argparse.ArgumentParser(description='Sync Aqua instances')
+    def cmd_help(args):
+        parser.print_help()
+        print()
+    parser.set_defaults(execute=cmd_help)
+    subparsers = parser.add_subparsers(help='Functions')
+
+    sync = subparsers.add_parser('sync-db', help='Sync Aqua databases')
+    sync.add_argument('--pull', action='store_true',
+                          help='Pull data from remote into local')
+    sync.add_argument('--push', action='store_true',
+                          help='Push data from local into remote')
+    sync.add_argument('--dry-run', action='store_true',
+                          help='Don\'t perform the store operation')
+    sync.add_argument('local', help='Local Aqua instance')
+    sync.add_argument('remote', help='Remote Aqua instance')
+    sync.set_defaults(execute=cmd_sync_db)
+
+    args = parser.parse_args()
+    args.execute(args)
+    sys.exit(0)
 
 if __name__ == '__main__':
     logging.basicConfig(
