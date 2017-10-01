@@ -26,5 +26,6 @@
   :jar-exclusions [#"^public/cdn-libs/"]
   :target-path "target/%s"
   :profiles {:serve {:jvm-opts ["-Xms100M" "-Xmx100M" "-XX:+PrintGCDateStamps" "-XX:+PrintGCDetails"]}
+             :repl {:global-vars {*warn-on-reflection* true}}
              :uberjar {:aot  :all
                        :main aqua.web.serve}})
