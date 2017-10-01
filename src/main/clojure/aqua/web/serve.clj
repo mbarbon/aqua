@@ -110,6 +110,12 @@
   (route/not-found "Service endpoint not found"))
 
 (defn- configurator [jetty-server]
+  (.setHandler jetty-server
+    (doto (io.dropwizard.jetty.BiDiGzipHandler.)
+          (.setIncludedMimeTypes (into-array ["application/json"]))
+          (.setIncludedMethods (into-array String ["GET" "POST"]))
+          (.setMinGzipSize 1024)
+          (.setHandler (.getHandler jetty-server))))
   (.setRequestLog jetty-server
     (doto (org.eclipse.jetty.server.Slf4jRequestLog.)
       (.setLoggerName "access-logger"))))
@@ -192,7 +198,8 @@
                            service-handler
                            {:port (+ 1 (:port options))
                             :host         "127.0.0.1"
-                            :join?        false})]
+                            :join?        false
+                            :configurator configurator})]
       (.join main-server)
       (.join service-server))))
 
