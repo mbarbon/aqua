@@ -98,7 +98,13 @@
       (aqua.web.dump/store-users body)))
   (POST "/sync/store-anime" {:keys [body]}
     (ring.util.response/response
-      (aqua.web.dump/store-anime body))))
+      (aqua.web.dump/store-anime body)))
+  (POST "/sync/upload-model/:model-name" {{:keys [model-name]} :params body :body}
+    (ring.util.response/response
+      (aqua.web.dump/upload-model model-name body)))
+  (POST "/sync/commit-models" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/commit-models))))
 
 (defroutes service-app-routes
   (GET "/_is_enabled" []

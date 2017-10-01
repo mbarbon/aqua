@@ -1,6 +1,12 @@
 (ns aqua.web.dump
   (:require aqua.mal-local
-            [aqua.web.globals :refer [*data-source-ro *data-source-rw]]))
+            [clojure.java.io :as io]
+            [aqua.web.globals :refer [*maldump-directory
+                                      *data-source-ro
+                                      *data-source-rw]]))
+
+(def ^:private model-names
+  ["lfd-model" "lfd-model-airing" "lfd-user-model" "user-sample"])
 
 (defn- to-page [key id-map]
   {key id-map
@@ -25,3 +31,25 @@
 
 (defn store-anime [{anime "anime"}]
   (aqua.mal-local/store-anime @*data-source-rw anime))
+
+(defn upload-model [model-name body]
+  (let [destdir (io/as-file @*maldump-directory)
+        target-file (io/file @*maldump-directory (str model-name ".new"))
+        temp-file (java.io.File/createTempFile "model-name" "temp" destdir)]
+    (.deleteOnExit temp-file)
+    (try
+      (with-open [out (io/output-stream temp-file)]
+        (com.google.common.io.ByteStreams/copy body out))
+      (if-not (.renameTo temp-file target-file)
+        (throw (Exception. (str "Error renaming " temp-file " to " target-file))))
+      nil ; result
+      (catch Exception e
+        (.delete temp-file)))))
+
+(defn commit-models []
+  (doseq [model-name model-names]
+    (let [temp-file (io/file @*maldump-directory (str model-name ".new"))
+          target-file (io/file @*maldump-directory model-name)]
+      (if-not (.renameTo temp-file target-file)
+        (throw (Exception. (str "Error renaming " temp-file " to " target-file))))))
+  nil) ; result
