@@ -1,5 +1,5 @@
 (ns aqua.recommend.rp-similar-anime
-  )
+  (:require aqua.recommend.model-files))
 
 (defn create-rp-similarity [user-list anime-map rank similar-count]
   (let [anime-index-map (java.util.HashMap.)
@@ -36,7 +36,7 @@
       (.printArray writer similar-ids)
       (.printArray writer similar-scores))))
 
-(defn load-rp-similarity [in]
+(defn- load-rp-similarity-v1 [in]
   (let [read-int (fn [] (Integer/valueOf (read-line)))
         reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)]
     (binding [*in* in]
@@ -51,3 +51,7 @@
         (aqua.recommend.RPSimilarAnime. anime-indices similar-count
                                         similar-ids
                                         similar-scores)))))
+
+(defn load-rp-similarity [path]
+  (aqua.recommend.model-files/with-open-model path 1 in version
+    (load-rp-similarity-v1 in)))

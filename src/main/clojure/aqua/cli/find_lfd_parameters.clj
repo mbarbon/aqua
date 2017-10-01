@@ -4,6 +4,7 @@
             aqua.compare.recall-planned
             aqua.compare.recall
             aqua.compare.estimated-scores
+            aqua.recommend.rp-similar-anime
             aqua.mal-local
             aqua.misc
             aqua.recommend.lfd))
@@ -61,7 +62,7 @@
                                                                      (* 10 compare-count)
                                                                      "test-users.txt")
         anime-map (aqua.mal-local/load-anime data-source)
-        rp-model (aqua.compare.diversification/load-rp-model)]
+        rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model-unfiltered")]
     (aqua.misc/normalize-all-ratings users 0.1 -0.1)
     (aqua.misc/normalize-all-ratings test-users-sample 0.1 -0.1)
     (doseq [rank (split-ints ranks)]

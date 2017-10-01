@@ -3,6 +3,7 @@
             aqua.compare.recall-planned
             aqua.compare.recall
             aqua.compare.diversification
+            aqua.recommend.rp-similar-anime
             aqua.mal-local
             aqua.misc))
 
@@ -15,16 +16,14 @@
         sampled-ids (aqua.mal-local/load-sampled-user-ids directory user-count)
         cf-parameters-std (aqua.recommend.CFParameters.)
         users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
-        lfd (with-open [in (clojure.java.io/reader "maldump/lfd-model")]
-              (aqua.recommend.lfd/load-lfd in))
-        lfd-users (with-open [in (clojure.java.io/reader "maldump/lfd-user-model")]
-                    (aqua.recommend.lfd/load-user-lfd in lfd users))
+        lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model")
+        lfd-users (aqua.recommend.lfd/load-user-lfd "maldump/lfd-user-model" lfd users)
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory
                                                                      data-source
                                                                      (* 10 compare-count)
                                                                      "test-users.txt")
         anime-map (aqua.mal-local/load-anime data-source)]
-    (let [rp-model (aqua.compare.diversification/load-rp-model)
+    (let [rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model-unfiltered")
           score-pearson (aqua.compare.diversification/make-score-pearson rp-model users 20)
           score-cosine (aqua.compare.diversification/make-score-cosine rp-model users)
           score-lfd (aqua.compare.diversification/make-score-lfd rp-model lfd)

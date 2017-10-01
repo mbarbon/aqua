@@ -1,5 +1,5 @@
 (ns aqua.recommend.lfd
-  )
+  (:require aqua.recommend.model-files))
 
 (defn prepare-lfd-decompositor [user-list anime-map rank lambda]
   (let [anime-index-map (java.util.HashMap.)
@@ -65,7 +65,7 @@
       (.printArray writer anime-indices)
       (.printArray writer (.getData anime-factors)))))
 
-(defn- load-lfd-helper [in anime-map-to-filter-hentai]
+(defn- load-lfd-v1 [in anime-map-to-filter-hentai]
   (let [read-int (fn [] (Integer/valueOf (read-line)))
         read-double (fn [] (Double/valueOf (read-line)))
         reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)]
@@ -85,9 +85,14 @@
                                                    anime-indices
                                                    (no.uib.cipr.matrix.DenseMatrix. rows cols factors-data false))))))
 
+(defn- load-lfd-helper [path anime-map-to-filter-hentai]
+  (aqua.recommend.model-files/with-open-model path 1 in version
+    (load-lfd-v1 in anime-map-to-filter-hentai)))
+
 (defn load-lfd
   ([in] (load-lfd in nil))
-  ([in anime-map-to-filter-hentai] (load-lfd-helper in anime-map-to-filter-hentai)))
+  ([in anime-map-to-filter-hentai]
+     (load-lfd-helper in anime-map-to-filter-hentai)))
 
 (defn store-user-lfd [out ^aqua.recommend.LatentFactorDecompositionUsers user-lfd]
   (let [user-map (map #(.userId %) (.userMap user-lfd))
@@ -99,7 +104,7 @@
       (.printArray writer (into-array Integer/TYPE user-map))
       (.printArray writer (into-array Double/TYPE (.userFactors user-lfd))))))
 
-(defn load-user-lfd [in lfd users]
+(defn- load-user-lfd-v1 [in lfd users]
   (let [read-int (fn [] (Integer/valueOf (read-line)))
         reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)
         user-map (into {} (for [user users] [(.userId user) user]))]
@@ -114,6 +119,10 @@
                                                         (into-array aqua.recommend.CFUser (map user-map user-int-map))
                                                         user-factors
                                                         (into-array Integer/TYPE (filter some? (map-indexed #(if (get user-map %2) %1 nil) user-int-map))))))))
+
+(defn load-user-lfd [path lfd users]
+  (aqua.recommend.model-files/with-open-model path 1 in version
+    (load-user-lfd-v1 in lfd users)))
 
 (defn get-recommendations [user
                            ^aqua.recommend.LatentFactorDecomposition lfd

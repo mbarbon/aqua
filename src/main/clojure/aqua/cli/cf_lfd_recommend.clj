@@ -30,10 +30,8 @@
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source username cf-parameters)
         users (aqua.mal-local/load-filtered-cf-users directory data-source cf-parameters user-count)
-        lfd (with-open [in (clojure.java.io/reader "maldump/lfd-model")]
-              (aqua.recommend.lfd/load-lfd in))
-        lfd-users (with-open [in (clojure.java.io/reader "maldump/lfd-user-model")]
-                    (aqua.recommend.lfd/load-user-lfd in lfd users))
+        lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model")
+        lfd-users (aqua.recommend.lfd/load-user-lfd "maldump/lfd-user-model" lfd users)
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)]
     (println "Running recommender")

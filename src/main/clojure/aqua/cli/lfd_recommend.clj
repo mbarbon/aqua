@@ -26,10 +26,8 @@
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source username cf-parameters)
-        lfd (with-open [in (clojure.java.io/reader "maldump/lfd-model")]
-              (aqua.recommend.lfd/load-lfd in))
-        lfd-airing (with-open [in (clojure.java.io/reader "maldump/lfd-model-airing")]
-                     (aqua.recommend.lfd/load-lfd in))
+        lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model")
+        lfd-airing (aqua.recommend.lfd/load-lfd "maldump/lfd-model-airing")
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)]
     (println "Running recommender")

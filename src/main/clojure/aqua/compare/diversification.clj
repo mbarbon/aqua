@@ -4,7 +4,6 @@
             aqua.recommend.lfd-cf
             aqua.recommend.cosine
             aqua.recommend.pearson
-            aqua.recommend.rp-similar-anime
             clojure.java.io))
 
 ; Compare diversification using intra-list similarity
@@ -13,10 +12,6 @@
 ; a score of 1 would mean all users scored both anime in the exact same way
 ;
 ; The ILS score is averaged over the recommendation list length
-
-(defn load-rp-model []
-  (with-open [in (clojure.java.io/reader "maldump/rp-model-unfiltered")]
-    (aqua.recommend.rp-similar-anime/load-rp-similarity in)))
 
 (defn- similarity-score [rp-model first-item rest-items]
   (let [similar-list (.similarAnime rp-model (.animedbId first-item))

@@ -20,17 +20,17 @@
                                  :cf-lfd
                                  :lfd])
 
+(defn- model-path [file]
+  (str @*maldump-directory "/" file))
+
 (defn- load-users []
   (log/info "Start loading users")
   (let [maldump-directory @*maldump-directory
         data-source @*data-source-ro
         users (aqua.mal-local/load-filtered-cf-users maldump-directory data-source @*cf-parameters user-count @*anime)
-        lfd (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model"))]
-              (aqua.recommend.lfd/load-lfd in @*anime))
-        lfd-airing (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model-airing"))]
-                     (aqua.recommend.lfd/load-lfd in @*anime))
-        lfd-users (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-user-model"))]
-                    (aqua.recommend.lfd/load-user-lfd in lfd users))]
+        lfd (aqua.recommend.lfd/load-lfd (model-path "lfd-model") @*anime)
+        lfd-airing (aqua.recommend.lfd/load-lfd (model-path "lfd-model-airing") @*anime)
+        lfd-users (aqua.recommend.lfd/load-user-lfd (model-path "lfd-user-model") lfd users)]
     (reset! *users users)
     (reset! *lfd-users lfd-users)
     (reset! *lfd-anime lfd)
@@ -53,13 +53,9 @@
         cache (cf-rated-cache @*users)
         target @*users]
     (aqua.mal-local/load-filtered-cf-users-into maldump-directory data-source @*cf-parameters cache target @*anime))
-  (let [maldump-directory @*maldump-directory
-        lfd (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model"))]
-              (aqua.recommend.lfd/load-lfd in @*anime))
-        lfd-airing (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-model-airing"))]
-                     (aqua.recommend.lfd/load-lfd in @*anime))
-        lfd-users (with-open [in (clojure.java.io/reader (str maldump-directory "/" "lfd-user-model"))]
-                    (aqua.recommend.lfd/load-user-lfd in lfd @*users))]
+  (let [lfd (aqua.recommend.lfd/load-lfd (model-path "lfd-model") @*anime)
+        lfd-airing (aqua.recommend.lfd/load-lfd (model-path "lfd-model-airing") @*anime)
+        lfd-users (aqua.recommend.lfd/load-user-lfd (model-path "lfd-user-model") lfd @*users)]
     (reset! *lfd-users lfd-users)
     (reset! *lfd-anime lfd)
     (reset! *lfd-anime-airing lfd-airing))
