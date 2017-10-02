@@ -54,7 +54,7 @@
 (defn -main [ranks lambdas iteration-counts]
   (let [directory "maldump"
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
-        sampled-ids (aqua.mal-local/load-sampled-user-ids directory user-count)
+        sampled-ids (aqua.recommend.user-sample/load-user-sample "maldump/user-sample" user-count)
         cf-parameters-std (aqua.misc/make-cf-parameters 0 0)
         users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory
