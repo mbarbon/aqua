@@ -65,6 +65,9 @@ public class MalAppInfo {
 
         @JsonProperty("my_status")
         public byte userStatus;
+
+        @JsonProperty("my_last_updated")
+        public long lastUpdated;
     }
 
     @JsonProperty("myinfo")

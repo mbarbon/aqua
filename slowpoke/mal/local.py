@@ -31,6 +31,7 @@ def has_user(basedir, username):
 
 def store_data(basedir, request_username, data):
     now_days = _epoch_days()
+    change_time = 0
 
     with _connection(basedir) as conn:
         c = conn.cursor()
@@ -46,11 +47,12 @@ def store_data(basedir, request_username, data):
                 continue
 
             animedb_id = _int_text(anime, 'series_animedb_id')
+            change_time = max(change_time, _int_text(anime, 'my_last_updated'))
             _insert_anime(c, animedb_id, anime)
             anime_list.append(_anime_item(animedb_id, anime, now_days))
 
-        changed = _insert_anime_list(c, user_id, anime_list)
-        _insert_user(c, user_id, username, request_username, changed)
+        _insert_anime_list(c, user_id, anime_list)
+        _insert_user(c, user_id, username, request_username, change_time)
         _insert_user_stats(c, user_id, stats)
 
 def insert_anime_details(basedir, animedb_id, relations, genres, titles, scores):
@@ -155,9 +157,9 @@ def users_needing_update(basedir):
 def _mark_user_updated(c, username):
     c.execute("UPDATE users SET last_update = strftime('%s', 'now'), last_change = 1 WHERE username = ?", (username,))
 
-def _insert_user(c, user_id, username, request_username, changed):
-    if changed:
-        c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), strftime('%s', 'now'))", (user_id, username))
+def _insert_user(c, user_id, username, request_username, change_time):
+    if change_time:
+        c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), ?)", (user_id, username, change_time))
     else:
         c.execute("INSERT OR REPLACE INTO users VALUES (?, ?, strftime('%s', 'now'), (SELECT last_change FROM users WHERE user_id = ?))", (user_id, username, user_id))
 
@@ -226,8 +228,6 @@ def _insert_anime_list(c, user_id, data):
     json_blob = json.dumps(data).encode()
     compressed_blob = gzip.compress(json_blob, compresslevel=6)
     c.execute('INSERT OR REPLACE INTO anime_list VALUES (?, ?)', (user_id, compressed_blob))
-
-    return changed
 
 def anime_needing_update(basedir):
     with _connection(basedir) as conn:

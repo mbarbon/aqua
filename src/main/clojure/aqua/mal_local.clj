@@ -552,7 +552,7 @@
 (def ^:private update-changed-user
   (str "INSERT OR REPLACE INTO users"
        "        (user_id, username, last_update, last_change)"
-       "    VALUES (?, ?, STRFTIME('%s', 'now'), STRFTIME('%s', 'now'))"))
+       "    VALUES (?, ?, STRFTIME('%s', 'now'), ?)"))
 
 (def ^:private update-unchanged-user
   (str "INSERT OR REPLACE INTO users"
@@ -671,7 +671,7 @@
                                     (.setInt 1 (.userId user))
                                     (.setBytes 2 (.toByteArray sink)))]
           (.execute statement))))
-    changed))
+    nil))
 
 (def ^:private update-user-stats
   (str "INSERT OR REPLACE INTO user_anime_stats"
@@ -681,10 +681,10 @@
 
 (defn- insert-or-update-user [connection request-username
                               ^aqua.mal.data.MalAppInfo$UserInfo user
-                              anime-list-changed]
-  (if anime-list-changed
+                              change-time]
+  (if (not= change-time 0)
     (execute connection update-changed-user
-             [(.userId user) (.username user)])
+             [(.userId user) (.username user) change-time])
     (execute connection update-unchanged-user
              [(.userId user) (.username user) (.userId user)]))
 
@@ -698,22 +698,24 @@
   (execute connection fix-duplicated-usernames
            [(.username user) (.userId user)])
 
-  ; 'changed' only tracks changes to completed/dropped
   (execute connection update-user-stats
            [(.userId user) (.plantowatch user) (.watching user)
             (.completed user) (.onhold user) (.dropped user)]))
 
 (defn store-user-anime-list [data-source request-username mal-app-info]
   (let [user (.user mal-app-info)
-        anime (.anime mal-app-info)]
+        anime-list (.anime mal-app-info)]
     (with-open [connection (.getConnection data-source)]
-      (insert-or-update-anime connection anime)
+      (insert-or-update-anime connection anime-list)
 
       (when (or (= nil user) (= nil (.username user)))
         (mark-user-updated connection request-username))
 
-      (let [anime-list-changed (insert-or-update-user-anime-list connection user anime)]
-        (insert-or-update-user connection request-username user anime-list-changed)))))
+      (insert-or-update-user-anime-list connection user anime-list)
+
+      (let [change-time (reduce max (for [anime anime-list]
+                                      (.lastUpdated anime)))]
+        (insert-or-update-user connection request-username user change-time)))))
 
 (def ^:private sync-update-user
   (str "INSERT OR REPLACE INTO users"
