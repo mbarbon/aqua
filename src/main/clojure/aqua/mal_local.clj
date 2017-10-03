@@ -679,38 +679,29 @@
        "    VALUES"
        "        (?, ?, ?, ?, ?, ?)"))
 
-(defn- insert-or-update-user [connection request-username user anime-list-changed]
+(defn- insert-or-update-user [connection request-username
+                              ^aqua.mal.data.MalAppInfo$UserInfo user
+                              anime-list-changed]
   (if anime-list-changed
-    (with-open [statement (doto (.prepareStatement connection update-changed-user)
-                                (.setInt 1 (.userId user))
-                                (.setString 2 (.username user)))]
-      (.execute statement))
-    (with-open [statement (doto (.prepareStatement connection update-unchanged-user)
-                                (.setInt 1 (.userId user))
-                                (.setString 2 (.username user))
-                                (.setInt 3 (.userId user)))]
-      (.execute statement)))
+    (execute connection update-changed-user
+             [(.userId user) (.username user)])
+    (execute connection update-unchanged-user
+             [(.userId user) (.username user) (.userId user)]))
+
   ; It looks like that when usernames change case, a new user id is
   ; created, or something like that, so when the requested and
   ; received usernames
   (when (not= (.username user) request-username)
-    (with-open [statement (doto (.prepareStatement connection fix-changed-case-usernames)
-                                (.setString 1 request-username))]
-      (.execute statement)))
+    (execute connection fix-changed-case-usernames [request-username]))
+
   ; This is to clear bed data caused by me not knowing about the above
-  (with-open [statement (doto (.prepareStatement connection fix-duplicated-usernames)
-                              (.setString 1 (.username user))
-                              (.setInt 2 (.userId user)))]
-    (.execute statement))
+  (execute connection fix-duplicated-usernames
+           [(.username user) (.userId user)])
+
   ; 'changed' only tracks changes to completed/dropped
-  (with-open [statement (doto (.prepareStatement connection update-user-stats)
-                              (.setInt 1 (.userId user))
-                              (.setInt 2 (.plantowatch user))
-                              (.setInt 3 (.watching user))
-                              (.setInt 4 (.completed user))
-                              (.setInt 5 (.onhold user))
-                              (.setInt 6 (.dropped user)))]
-    (.execute statement)))
+  (execute connection update-user-stats
+           [(.userId user) (.plantowatch user) (.watching user)
+            (.completed user) (.onhold user) (.dropped user)]))
 
 (defn store-user-anime-list [data-source request-username mal-app-info]
   (let [user (.user mal-app-info)
