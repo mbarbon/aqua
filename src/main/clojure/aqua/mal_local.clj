@@ -416,15 +416,15 @@
                          (resultset-seq rs))))))
 
 (def ^:private select-user-ids
-  (str "SELECT user_id, last_update FROM users WHERE user_id > ? LIMIT ?"))
+  (str "SELECT user_id, last_change FROM users WHERE user_id > ? LIMIT ?"))
 
 (defn all-user-ids [data-source after-id limit]
   (with-query data-source rs select-user-ids [after-id limit]
-    (doall (into {} (map #(vector (:user_id %) (:last_update %))
+    (doall (into {} (map #(vector (:user_id %) (:last_change %))
                          (resultset-seq rs))))))
 
 (defn- select-changed-user-ids [items]
-  (str "SELECT user_id, last_update"
+  (str "SELECT user_id, last_change"
        "    FROM users"
        "    WHERE user_id IN (" (placeholders items) ")"))
 
@@ -453,7 +453,7 @@
                              (keys user-id-to-time)
                    (doall (filter-unchanged-items rs
                                                   :user_id
-                                                  :last_update
+                                                  :last_change
                                                   user-id-to-time)))]
     (with-query data-source rs (select-user-data user-ids) user-ids
       (doall (resultset-seq rs)))))
