@@ -9,6 +9,7 @@
                  [com.fasterxml.jackson.dataformat/jackson-dataformat-xml "2.8.7"]
                  [com.google.guava/guava "21.0"]
                  [com.googlecode.matrix-toolkits-java/mtj "1.0.2"]
+                 [org.jsoup/jsoup "1.10.3"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.eclipse.jetty/jetty-server "9.3.18.v20170406"]
@@ -27,6 +28,7 @@
   :jar-exclusions [#"^public/cdn-libs/"]
   :target-path "target/%s"
   :profiles {:serve {:jvm-opts ["-Xms100M" "-Xmx100M" "-XX:+PrintGCDateStamps" "-XX:+PrintGCDetails"]}
+             :dev {:resource-paths ["src/test/resources"]}
              :repl {:global-vars {*warn-on-reflection* true}}
              :uberjar {:aot  :all
                        :main aqua.web.serve}})
