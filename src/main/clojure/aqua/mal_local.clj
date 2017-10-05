@@ -1,6 +1,7 @@
 (ns aqua.mal-local
   (:require [clojure.java.io :as io]
-            clojure.string)
+             clojure.string
+             aqua.db-schema)
   (:import (aqua.mal Json)))
 
 (def ^:private byte-array-class  (Class/forName "[B"))
@@ -80,21 +81,10 @@
     (.setReadOnly data-source true)
     data-source))
 
-(def ^:private create-refresh-queue
-  (str "CREATE TABLE IF NOT EXISTS user_refresh_queue ("
-       "    username VARCHAR(20) PRIMARY KEY,"
-       "    insert_time INTEGER NOT NULL,"
-       "    status INTEGER NOT NULL,"
-       "    attempts INTEGER NOT NULL,"
-       "    status_change INTEGER NOT NULL"
-       ")"))
-
-(defn setup-tables [data-source]
+(defn setup-tables [^javax.sql.DataSource data-source]
   (with-open [connection (.getConnection data-source)]
-    (let [run-create (fn [statement]
-                       (with-open [statement (.prepareStatement connection statement)]
-                         (.execute statement)))]
-      (run-create create-refresh-queue))))
+    (doseq [statement aqua.db-schema/statements]
+      (execute connection statement []))))
 
 (defn- doall-rs [^java.sql.ResultSet rs func]
   (let [result (java.util.ArrayList.)]
