@@ -92,6 +92,7 @@ def create_tables(basedir):
         c = conn.cursor()
         c.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, username VARCHAR(20) NOT NULL, last_update INTEGER NOT NULL, last_change INTEGER NOT NULL)")
         c.execute("CREATE INDEX IF NOT EXISTS username_index ON users (username)")
+        c.execute("CREATE INDEX IF NOT EXISTS users_last_change_index ON users (last_change)")
         c.execute("CREATE TABLE IF NOT EXISTS user_anime_stats (user_id INTEGER PRIMARY KEY, planned INTEGER NOT NULL, watching INTEGER NOT NULL, completed INTEGER NOT NULL, onhold INTEGER NOT NULL, dropped INTEGER NOT NULL)")
 
         c.execute("CREATE TABLE IF NOT EXISTS anime (animedb_id INTEGER PRIMARY KEY, title VARCHAR(255) NOT NULL, type INTEGER NOT NULL, episodes INTEGER NOT NULL, status INTEGER NOT NULL, start INTEGER, end INTEGER, image VARCHAR(255) NOT NULL)")
