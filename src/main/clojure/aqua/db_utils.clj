@@ -64,3 +64,8 @@
        (.setAutoCommit ~connection-name false)
        ~@body
        (.commit ~connection-name))))
+
+(defmacro with-connection [data-source connection-name & body]
+  (let [connection (get-connection-helper data-source)]
+    `(with-open [~connection-name ~connection]
+       ~@body)))

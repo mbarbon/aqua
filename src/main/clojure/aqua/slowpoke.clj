@@ -1,7 +1,8 @@
 (ns aqua.slowpoke
   (:require [clojure.tools.logging :as log]
             aqua.mal-local
-            aqua.mal-web))
+            aqua.mal-web)
+  (:use aqua.db-utils))
 
 (def ^:private queue-status-new 0)
 (def ^:private queue-status-processing 1)
@@ -45,25 +46,16 @@
        "    )"))
   
 (defn enqueue-user-refresh [data-source username]
-  (with-open [connection (.getConnection data-source)
-              statement (doto (.prepareStatement connection insert-user-refresh)
-                              (.setString 1 username)
-                              (.setInt 2 queue-status-new))
-              query (doto (.prepareStatement connection get-queue-position)
-                          (.setString 1 username))]
-    (.execute statement)
-    (with-open [rs (.executeQuery query)]
-      (if (.next rs)
-        (.getInt rs 1)
-        1))))
+  (with-connection data-source connection
+    (execute connection insert-user-refresh [username queue-status-new]))
+  (with-query data-source rs get-queue-position [username]
+    (if (.next rs)
+      (.getInt rs 1)
+      1)))
 
 (defn- set-user-refresh-status [data-source username queue-status inc-attempts]
-  (with-open [connection (.getConnection data-source)
-              statement (doto (.prepareStatement connection update-user-refresh)
-                              (.setString 3 username)
-                              (.setInt 1 queue-status)
-                              (.setInt 2 inc-attempts))]
-    (.execute statement)))
+  (with-connection data-source connection
+    (execute connection update-user-refresh [queue-status inc-attempts username])))
 
 (defn- fetch-and-update-user-anime-list [data-source username]
   (let [update-user (fn [queue-status inc-attempts]
@@ -97,17 +89,11 @@
         (log/warn t "Error in background task " name)))))
 
 (defn- clean-refresh-queue [data-source-rw]
-  (with-open [connection (.getConnection data-source-rw)
-              statement (.prepareStatement connection clean-expired-user-refresh)]
-    (.execute statement)))
+  (with-connection data-source-rw connection
+    (execute connection clean-expired-user-refresh [])))
 
 (defn- process-refresh-queue [data-source-rw data-source-ro]
-  (with-open [connection (.getConnection data-source-ro)
-              statement (doto (.prepareStatement connection select-next-user-refresh)
-                                (.setInt 1 queue-status-new)
-                                (.setInt 2 queue-status-failed)
-                                (.setInt 3 120))
-              rs (.executeQuery statement)]
+  (with-query data-source-ro rs select-next-user-refresh [queue-status-new queue-status-failed 120]
     (when (.next rs)
       (let [username (.getString rs 1)]
         (log/info "Refreshing user data for" username)
