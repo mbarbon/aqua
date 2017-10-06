@@ -67,3 +67,31 @@
     (is (= 8 (.score anime)))
     (is (= 2 (.userStatus anime)))
     (is (= 1471101172 (.lastUpdated anime)))))
+
+(deftest parse-malappinfo-manga
+  (let [data (aqua.mal.Json/readMalAppInfo (test-resource "malappinfo.manga.xml"))
+        user (.user data)
+        manga-list (.manga data)
+        manga (first manga-list)]
+    (is (= 5621220 (.userId user)))
+    (is (= "mattia_y" (.username user)))
+    (is (= 8 (.reading user)))
+    (is (= 12 (.completed user)))
+    (is (= 0 (.onhold user)))
+    (is (= 5 (.dropped user)))
+    (is (= 9 (.plantoread user)))
+
+    (is (= 34 (count manga-list)))
+
+    (is (= 3468 (.mangadbId manga)))
+    (is (= "Usagi Drop" (.title manga)))
+    (is (= 1 (.seriesType manga)))
+    (is (= 62 (.chapters manga)))
+    (is (= 10 (.volumes manga)))
+    (is (= 2 (.seriesStatus manga)))
+    (is (= "2005-10-08" (.start manga)))
+    (is (= "2011-12-08" (.end manga)))
+    (is (= "https://myanimelist.cdn-dena.com/images/manga/1/122689.jpg" (.image manga)))
+    (is (= 8 (.score manga)))
+    (is (= 2 (.userStatus manga)))
+    (is (= 1480719007 (.lastUpdated manga)))))
