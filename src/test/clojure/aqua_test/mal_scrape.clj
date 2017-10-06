@@ -40,3 +40,30 @@
            titles))
     (is (= {:score 902, :rank 14, :popularity 88}
            scores))))
+
+(deftest parse-malappinfo-anime
+  (let [data (aqua.mal.Json/readMalAppInfo (test-resource "malappinfo.anime.xml"))
+        user (.user data)
+        anime-list (.anime data)
+        anime (first anime-list)]
+    (is (= 5621220 (.userId user)))
+    (is (= "mattia_y" (.username user)))
+    (is (= 8 (.watching user)))
+    (is (= 230 (.completed user)))
+    (is (= 0 (.onhold user)))
+    (is (= 25 (.dropped user)))
+    (is (= 232 (.plantowatch user)))
+
+    (is (= 495 (count anime-list)))
+
+    (is (= 1 (.animedbId anime)))
+    (is (= "Cowboy Bebop" (.title anime)))
+    (is (= 1 (.seriesType anime)))
+    (is (= 26 (.episodes anime)))
+    (is (= 2 (.seriesStatus anime)))
+    (is (= "1998-04-03" (.start anime)))
+    (is (= "1999-04-24" (.end anime)))
+    (is (= "https://myanimelist.cdn-dena.com/images/anime/4/19644.jpg" (.image anime)))
+    (is (= 8 (.score anime)))
+    (is (= 2 (.userStatus anime)))
+    (is (= 1471101172 (.lastUpdated anime)))))
