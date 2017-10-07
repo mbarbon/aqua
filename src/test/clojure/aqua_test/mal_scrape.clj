@@ -41,6 +41,23 @@
     (is (= {:score 902, :rank 14, :popularity 88}
            scores))))
 
+(deftest parse-manga
+  (let [manga-data (aqua.mal-scrape/parse-manga-page (test-resource "k-on.main.html"))
+        {:keys [relations genres titles scores]} manga-data]
+    (is (= {51855 3
+            51857 3}
+           relations))
+    (is (= [[4 "Comedy"]
+            [19 "Music"]
+            [23 "School"]
+            [36 "Slice of Life"]]
+           genres))
+    (is (= #{"Keion"
+             "K-On!"}
+           titles))
+    (is (= {:score 789, :rank 1224, :popularity 269}
+           scores))))
+
 (deftest parse-malappinfo-anime
   (let [data (aqua.mal.Json/readMalAppInfo (test-resource "malappinfo.anime.xml"))
         user (.user data)

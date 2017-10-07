@@ -7,6 +7,7 @@
 
 (def ^:private users-base "https://myanimelist.net/users.php")
 (def ^:private anime-base "https://myanimelist.net/anime/318/Hand_Maid_May")
+(def ^:private manga-base "https://myanimelist.net/manga/318/Futari_Ecchi")
 
 (def ^:private relation-names
   {"Side story:" 1
@@ -24,34 +25,51 @@
     (for-soup [user users]
       (.substring (.attr user "href") 9))))
 
-(defn- parse-relation-links [links relation]
+(defn- parse-relation-links [link-regexp links relation]
   (for-soup [link links]
-    (let [[_ ^String anime-id] (re-find #"^/anime/(\d+)/" (.attr link "href"))]
+    (let [[_ ^String anime-id] (re-find link-regexp (.attr link "href"))]
       [(Integer/valueOf anime-id) relation])))
 
-(defn- fold-relations [{:keys [relations relation]}
+(defn- fold-relations [link-selector
+                       link-regexp
+                       {:keys [relations relation]}
                        ^org.jsoup.nodes.Element cell]
   (let [new-relation-id (relation-names (.text cell))
-        links (.select cell "a[href~=^/anime/\\d+/]")]
+        links (.select cell link-selector)]
   (cond
     new-relation-id
       {:relations relations :relation new-relation-id}
     (and relation (seq links))
       {:relation nil
-       :relations (reduce conj relations (parse-relation-links links relation))}
+       :relations (reduce conj relations (parse-relation-links link-regexp
+                                                               links
+                                                               relation))}
     :else
       {:relations relations :relation relation})))
 
 (defn- parse-anime-relations [^org.jsoup.nodes.Document doc]
   (let [relations (.select doc "table.anime_detail_related_anime td")]
-    (:relations (reduce fold-relations {:relations {}} relations))))
+    (:relations (reduce (partial fold-relations "a[href~=^/anime/\\d+/]"
+                                                #"^/anime/(\d+)/")
+                        {:relations {}} relations))))
+
+(defn- parse-manga-relations [^org.jsoup.nodes.Document doc]
+  (let [relations (.select doc "table.anime_detail_related_anime td")]
+    (:relations (reduce (partial fold-relations "a[href~=^/manga/\\d+/]"
+                                                #"^/manga/(\d+)/")
+                        {:relations {}} relations))))
 
 (defn- parse-anime-genres [^org.jsoup.nodes.Document doc]
   (for-soup [genre (.select doc "span:containsOwn(Genres:) ~ a[href~=/anime/genre/\\d+/]")]
     (let [[_ ^String genre-id] (re-find #"/anime/genre/(\d+)/" (.attr genre "href"))]
       [(Integer/valueOf genre-id) (.text genre)])))
 
-(defn- parse-anime-titles [^org.jsoup.nodes.Document doc]
+(defn- parse-manga-genres [^org.jsoup.nodes.Document doc]
+  (for-soup [genre (.select doc "span:containsOwn(Genres:) ~ a[href~=/manga/genre/\\d+/]")]
+    (let [[_ ^String genre-id] (re-find #"/manga/genre/(\d+)/" (.attr genre "href"))]
+      [(Integer/valueOf genre-id) (.text genre)])))
+
+(defn- parse-titles [^org.jsoup.nodes.Document doc]
   (reduce clojure.set/union
     (for-soup [span (.select doc "h2:containsOwn(Alternative Titles) ~ div > span:matchesOwn(English:|Synonyms:)")]
       (if-let [^org.jsoup.nodes.TextNode text-node (.nextSibling span)]
@@ -75,7 +93,7 @@
       (assoc scores :popularity (Integer/valueOf value)))
     scores))
 
-(defn- parse-anime-stats [^org.jsoup.nodes.Document doc]
+(defn- parse-stats [^org.jsoup.nodes.Document doc]
   (let [scores {:score 0 :rank 0 :popularity 0}]
     (if-let [stats (first (.select doc "div.stats-block"))]
        (-> scores
@@ -88,8 +106,19 @@
   (let [doc (org.jsoup.Jsoup/parse stream "utf-8" anime-base)
         relations (parse-anime-relations doc)
         genres (parse-anime-genres doc)
-        titles (parse-anime-titles doc)
-        scores (parse-anime-stats doc)]
+        titles (parse-titles doc)
+        scores (parse-stats doc)]
+    {:relations relations
+     :genres genres
+     :titles titles
+     :scores scores}))
+
+(defn parse-manga-page [stream]
+  (let [doc (org.jsoup.Jsoup/parse stream "utf-8" manga-base)
+        relations (parse-manga-relations doc)
+        genres (parse-manga-genres doc)
+        titles (parse-titles doc)
+        scores (parse-stats doc)]
     {:relations relations
      :genres genres
      :titles titles
