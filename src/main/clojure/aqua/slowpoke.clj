@@ -133,15 +133,23 @@
           (if-let [mal-app-info @(aqua.mal-web/fetch-anime-list username)]
             (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info)))))))
 
+(def ^:private old-inactive-budget-fraction 0.1)
+(def ^:private old-inactive-budget-min 20)
+(def ^:private users-max-age 10)
+(def ^:private users-bucket-start 2)
+(def ^:private users-bucket-exponent 1.1)
+(def ^:private users-bucket-budget 10)
+(def ^:private old-inactive-threshold (* 6 30 86400))
+
 (def ^:private query-min-last-change
   (str "SELECT (strftime('%s', 'now') - MIN(last_change)) / 86400 AS min_change"
        "    FROM users"
-       "    WHERE last_change > 1234567890"))
+       "    WHERE last_change > strftime('%s', 'now') - " old-inactive-threshold))
 
 (def ^:private query-old-failed-update-bucket
   (str "SELECT username"
        "    FROM users"
-       "    WHERE last_change < 1234567890 AND"
+       "    WHERE last_change < strftime('%s', 'now') - " old-inactive-threshold " AND"
        "          username <> ''"
        "    ORDER BY last_update ASC"
        "    LIMIT ?"))
@@ -156,12 +164,6 @@
        "    ORDER BY last_update ASC"
        "    LIMIT ?"))
 
-(def ^:private old-inactive-budget 0.1)
-(def ^:private users-max-age 10)
-(def ^:private users-bucket-start 2)
-(def ^:private users-bucket-exponent 1.1)
-(def ^:private users-bucket-budget 10)
-
 (defn- user-update-buckets [min-last-change]
   (take-while #(< % min-last-change)
     (drop 1 (map #(+ users-max-age
@@ -175,7 +177,7 @@
               (doall (map :username (resultset-seq rs)))))
           (fetch-old-users [users-count]
             (with-query data-source-ro rs query-old-failed-update-bucket
-                        [(Math/floor (* users-count old-inactive-budget))]
+                        [(max old-inactive-budget-min (* users-count old-inactive-budget-fraction))]
               (doall (map :username (resultset-seq rs)))))]
     (let [min-last-change (with-query data-source-ro rs query-min-last-change []
                             (:min_change (first (resultset-seq rs))))
