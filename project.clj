@@ -15,7 +15,7 @@
                  [org.eclipse.jetty/jetty-server "9.3.18.v20170406"]
                  [javax.servlet/javax.servlet-api "4.0.0"]
                  [ch.qos.logback/logback-classic "1.2.2"]
-                 [http-kit "2.2.0"]
+                 [org.asynchttpclient/async-http-client "2.0.37"]
                  [ring "1.5.0"]
                  [compojure "1.5.1"]
                  [ring/ring-json "0.4.0"]

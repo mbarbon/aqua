@@ -1,17 +1,13 @@
 (ns aqua.mal-web
-  (:require org.httpkit.client
-            clojure.set
+  (:require clojure.set
             [clojure.tools.logging :as log]
             aqua.mal-scrape))
 
-(defn- mal-fetch [path query-params callback]
-  (let [http-options {:timeout 10000
-                      :as :stream
-                      :query-params query-params
-                      :headers {"Accept-Encoding" "gzip"}}]
-    (org.httpkit.client/get (str "http://myanimelist.net" path)
-                            http-options
-                            callback)))
+(defn mal-fetch [path query-params callback]
+  (aqua.mal.Http/get (str "https://myanimelist.net" path)
+                     query-params
+                     5000
+                     callback))
 
 (defn- log-error [error status activity]
   (if error
@@ -23,7 +19,7 @@
   (mal-fetch "/malappinfo.php" {"u" username
                                 "type" "anime"
                                 "status" "all"}
-    (fn [{:keys [status headers body error]}]
+    (fn [error status body]
       (try
         (if error
           (callback nil error)
@@ -32,7 +28,7 @@
 
 (defn fetch-anime-details [animedb-id title]
   (mal-fetch (str "/anime/" animedb-id) {}
-    (fn [{:keys [status body error]}]
+    (fn [error status body]
       (case status
         200 (let [details (aqua.mal-scrape/parse-anime-page body)
                   titles (:titles details)
@@ -44,7 +40,7 @@
 
 (defn fetch-active-users []
   (mal-fetch "/users.php" {}
-    (fn [{:keys [status body error]}]
+    (fn [error status body]
       (case status
         200 (aqua.mal-scrape/parse-users-page body)
         (log-error error status "fetching user sample")))))
@@ -53,7 +49,7 @@
   (mal-fetch "/malappinfo.php" {"u" username
                                 "type" "anime"
                                 "status" "all"}
-    (fn [{:keys [status body error]}]
+    (fn [error status body]
       (case status
         200 (aqua.mal.Json/readMalAppInfo body)
         (log-error error status (str "fetching anime list for " username))))))
