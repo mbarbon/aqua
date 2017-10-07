@@ -7,7 +7,8 @@
 (defn- mal-fetch [path query-params callback]
   (let [http-options {:timeout 10000
                       :as :stream
-                      :query-params query-params}]
+                      :query-params query-params
+                      :headers {"Accept-Encoding" "gzip"}}]
     (org.httpkit.client/get (str "http://myanimelist.net" path)
                             http-options
                             callback)))
