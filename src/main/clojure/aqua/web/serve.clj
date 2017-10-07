@@ -128,11 +128,11 @@
 
 (defn init [options]
   (aqua.web.globals-init/init (:mal-data-directory options)
-                         (:state-directory options))
-  (aqua.web.mal-proxy/init)
+                              (:state-directory options))
   (aqua.web.search/init)
   (aqua.web.recommender/init)
-  (aqua.web.background/schedule reload "Reload user models" 43200 86400))
+  (aqua.web.background/schedule reload "Reload user models" 43200 86400)
+  (aqua.web.mal-proxy/init))
 
 (defn reload []
   (aqua.web.globals-init/reload)

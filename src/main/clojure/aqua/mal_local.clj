@@ -719,7 +719,7 @@
        "    VALUES"
        "        (?, ?)"))
 
-(defn- store-anime-side-tables [connection animedb_id genres titles relations]
+(defn- store-anime-side-tables-sync [connection animedb_id genres titles relations]
   (doseq [query delete-anime-side-tables]
     (execute connection query [animedb_id]))
   (doseq [{:strs [genre_id description sort_order]} genres]
@@ -741,7 +741,7 @@
     (execute connection
              update-anime-details
              [animedb_id rank popularity score])
-    (store-anime-side-tables connection animedb_id genres titles relations)
+    (store-anime-side-tables-sync connection animedb_id genres titles relations)
     (execute connection
              sync-update-anime-details-update
              [animedb_id last_update])))
@@ -750,3 +750,29 @@
   (with-transaction data-source connection
     (doseq [anime anime-list]
       (update-anime connection anime))))
+
+(defn- store-anime-side-tables-scraped [connection animedb_id genres titles relations]
+  (doseq [query delete-anime-side-tables]
+    (execute connection query [animedb_id]))
+  (doseq [[genre_id description sort_order] (map conj genres (range))]
+    (execute connection update-anime-genre-names [genre_id description])
+    (execute connection update-anime-genres [animedb_id genre_id sort_order]))
+  (doseq [title titles]
+    (execute connection update-anime-titles [animedb_id title]))
+  (doseq [[related_id relation] relations]
+    (execute connection update-anime-relations [animedb_id related_id relation])))
+
+(def ^:private update-anime-details-update
+  (str "INSERT OR REPLACE INTO anime_details_update"
+       "    (animedb_id, last_update)"
+       "        VALUES"
+       "    (?, strftime('%s', 'now'))"))
+
+(defn store-anime-details [data-source animedb-id title
+                           {:keys [relations genres titles scores]}]
+  (with-transaction data-source connection
+    (store-anime-side-tables-scraped connection animedb-id genres titles relations)
+    (execute connection
+             update-anime-details
+             [animedb-id (:rank scores) (:popularity scores) (:score scores)])
+    (execute connection update-anime-details-update [animedb-id])))

@@ -10,6 +10,7 @@
     (instance? Integer arg) (.setInt statement index arg)
     (instance? String arg) (.setString statement index arg)
     (instance? byte-array-class arg) (.setBytes statement index arg)
+    (instance? Double arg) (.setDouble statement index arg)
     :else (throw (Exception. (str "Can't handle class " (type arg) " " arg)))))
 
 (defn- make-set-args [args]
