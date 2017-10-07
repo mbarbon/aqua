@@ -504,13 +504,14 @@
        "        (animedb_id, title, type, episodes, status, start, end, image)"
        "    VALUES (?, ?, ?, ?, ?, STRFTIME('%s', ?), STRFTIME('%s', ?), ?)"))
 
-(defn- adjust-date [date-string]
+(defn- adjust-date [^String date-string]
   (cond
     (= "0000-00-00" date-string) nil
     (.endsWith date-string "-00") (str (subs date-string 0 7) "-01")
     :else date-string))
 
-(defn- anime-equals [anime rs]
+(defn- anime-equals [^aqua.mal.data.MalAppInfo$RatedAnime anime
+                     ^java.sql.ResultSet rs]
   (and (= (.getString rs 2) (.title anime))
        (= (.getInt rs 3) (.seriesType anime))
        (= (.getInt rs 4) (.episodes anime))
@@ -519,13 +520,24 @@
        (= (.getString rs 7) (adjust-date (.end anime)))
        (= (.getString rs 8) (.image anime))))
 
+(defn- make-malappinfo-hash ^java.util.HashMap [rated-list]
+  (let [hash (java.util.HashMap.)]
+    (doseq [^aqua.mal.data.MalAppInfo$RatedAnime rated rated-list]
+      (.put hash (.animedbId rated) rated))
+    hash))
+
+(defn- make-rated-hash ^java.util.HashMap [rated-list]
+  (let [hash (java.util.HashMap.)]
+    (doseq [^aqua.mal.data.RatedBase rated rated-list]
+      (.put hash (.animedbId rated) rated))
+    hash))
+
 (defn- insert-or-update-anime [connection mal-app-info-anime]
-  (let [anime-map (java.util.HashMap. (into {} (for [anime mal-app-info-anime]
-                                        [(.animedbId anime) anime])))
+  (let [anime-map (make-malappinfo-hash mal-app-info-anime)
         id-csv (clojure.string/join "," (keys anime-map))
         select-anime (str select-anime-prefix " (" id-csv ")")]
     (with-open [statement (.createStatement connection)
-                rs (.executeQuery statement select-anime)]
+                ^java.sql.ResultSet rs (.executeQuery statement select-anime)]
       (while (.next rs)
         (let [animedb-id (.getInt rs 1)
               anime (.get anime-map animedb-id)]
@@ -533,8 +545,8 @@
             (.remove anime-map animedb-id)))))
 
     (with-open [statement (.prepareStatement connection insert-anime)]
-      (doseq [anime (vals anime-map)]
-        (doto statement
+      (doseq [^aqua.mal.data.MalAppInfo$RatedAnime anime (vals anime-map)]
+        (doto ^java.sql.PreparedStatement statement
           (.setInt 1 (.animedbId anime))
           (.setString 2 (.title anime))
           (.setInt 3 (.seriesType anime))
@@ -546,7 +558,8 @@
           (.addBatch)))
       (.executeBatch statement))))
 
-(defn- maybe-copy-completed [new-rated old-rated]
+(defn- maybe-copy-completed [^aqua.mal.data.Rated new-rated
+                             ^aqua.mal.data.Rated old-rated]
   (let [status-new (.status new-rated)]
     (if (and (= status-new (.status old-rated))
              (or (= status-new aqua.mal.data.Rated/COMPLETED)
@@ -555,10 +568,10 @@
 
 (defn- merge-anime-list [connection user new-rated-list]
   (if-let [current-user (load-user-from-connection connection (.username user))]
-    (let [old-rated-map (into {} (for [rated (.animeList current-user)]
-                                   [(.animedbId rated) rated]))
-          process-item (fn [changed new-rated]
-                         (if-let [old-rated (old-rated-map (.animedbId new-rated))]
+    (let [old-rated-map (make-rated-hash (.animeList current-user))
+          process-item (fn [changed ^aqua.mal.data.RatedBase new-rated]
+                         (if-let [^aqua.mal.data.RatedBase old-rated
+                                      (.get old-rated-map (.animedbId new-rated))]
                            (do
                              (maybe-copy-completed new-rated old-rated)
                              (cond
@@ -583,7 +596,7 @@
 
 (defn- insert-or-update-user-anime-list [connection user anime-list]
   (let [today (today-epoch-day)
-        new-rated-list (for [anime anime-list]
+        new-rated-list (for [^aqua.mal.data.MalAppInfo$RatedAnime anime anime-list]
                          (aqua.mal.data.Rated. (.animedbId anime)
                                                (.userStatus anime)
                                                (.score anime)
