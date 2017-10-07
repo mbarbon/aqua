@@ -634,13 +634,13 @@
         anime-list (.anime mal-app-info)]
     (with-open [connection (.getConnection data-source)]
       (if (or (= nil user) (= nil (.username user)))
-        (mark-user-updated connection request-username))
+        (mark-user-updated connection request-username)
         (do
           (insert-or-update-anime connection anime-list)
           (insert-or-update-user-anime-list connection user anime-list)
-          (let [change-time (reduce max (for [anime anime-list]
-                                          (.lastUpdated anime)))]
-            (insert-or-update-user connection request-username user change-time))))))
+          (let [change-time (reduce max 0 (for [anime anime-list]
+                                            (.lastUpdated anime)))]
+            (insert-or-update-user connection request-username user change-time)))))))
 
 (def ^:private sync-update-user
   (str "INSERT OR REPLACE INTO users"
