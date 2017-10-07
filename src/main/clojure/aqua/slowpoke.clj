@@ -70,26 +70,20 @@
 (defn- fetch-and-update-user-anime-list [data-source username]
   (let [update-user (fn [queue-status inc-attempts]
                       (set-user-refresh-status data-source username queue-status inc-attempts))
-        completion-promise (promise)
-        resolve-promise (fn [] (deliver completion-promise nil))
         response-callback (fn [mal-app-info error]
                             (try
                               (if error
                                 (do
                                   (log/info error "Error while downloading anime list for " username)
-                                  (update-user queue-status-failed 0)
-                                  (resolve-promise))
+                                  (update-user queue-status-failed 0))
                                 (do
                                   (aqua.mal-local/store-user-anime-list data-source username mal-app-info)
-                                  (update-user queue-status-complete 0)
-                                  (resolve-promise)))
+                                  (update-user queue-status-complete 0)))
                               (catch Exception e (do
                                                    (log/info e "Error while downloading anime list for " username)
-                                                   (update-user queue-status-failed 0)
-                                                   (resolve-promise)))))]
+                                                   (update-user queue-status-failed 0)))))]
     (update-user queue-status-processing 1)
-    (aqua.mal-web/fetch-anime-list-cb username response-callback)
-    completion-promise))
+    (aqua.mal-web/fetch-anime-list-cb username response-callback)))
 
 (def ^:private anime-needing-update
   (str "SELECT a.animedb_id, a.title"

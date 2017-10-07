@@ -19,23 +19,16 @@
     (log/warn (str "HTTP error " status " while " activity)))
   nil)
 
-(defn- handle-malappinfo-response [callback {:keys [status headers body error]}]
-  (try
-    (if error
-      (callback nil error)
-      (callback (aqua.mal.Json/readMalAppInfo body) nil))
-    (catch Exception e (callback nil e))))
-
 (defn fetch-anime-list-cb [username callback]
-  (let [http-options {:timeout 10000
-                      :as :stream
-                      :query-params {"u" username
-                                     "type" "anime"
-                                     "status" "all"}}
-        http-handler (fn [& rest] (apply handle-malappinfo-response callback rest))]
-    (org.httpkit.client/get "http://myanimelist.net/malappinfo.php"
-                            http-options
-                            http-handler)))
+  (mal-fetch "/malappinfo.php" {"u" username
+                                "type" "anime"
+                                "status" "all"}
+    (fn [{:keys [status headers body error]}]
+      (try
+        (if error
+          (callback nil error)
+          (callback (aqua.mal.Json/readMalAppInfo body) nil))
+        (catch Exception e (callback nil e))))))
 
 (defn fetch-anime-details [animedb-id title]
   (mal-fetch (str "/anime/" animedb-id) {}
