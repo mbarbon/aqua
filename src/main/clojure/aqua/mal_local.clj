@@ -80,7 +80,8 @@
                      (do
                        (if (and anime-map-to-filter-hentai
                                 ; when we have an user referring to non-existing anime
-                                (if-let [in-map (anime-map-to-filter-hentai item-id)]
+                                (if-let [^aqua.mal.data.Anime in-map
+                                          (anime-map-to-filter-hentai item-id)]
                                   (.isHentai in-map)
                                   false))
                          (.setHentai item))
@@ -95,13 +96,9 @@
     ; result list
     nil))
 
-(defn- select-users-by-id [connection ids loader]
+(defn- select-users-by-id [data-source ids loader]
   (let [query (str select-users "(" (clojure.string/join "," ids) ")")]
-    (with-open [statement (doto (.prepareStatement connection query
-                                                   java.sql.ResultSet/TYPE_FORWARD_ONLY
-                                                   java.sql.ResultSet/CONCUR_READ_ONLY)
-                              (.setFetchSize 1000))
-                rs (.executeQuery statement)]
+    (with-query data-source rs query []
       (doall-rs rs loader))))
 
 (defn- selected-cf-user-ids [connection max-count query]
@@ -115,9 +112,8 @@
       ids)))
 
 (defn load-cf-users-by-id [data-source cf-parameters ids]
-  (with-open [connection (.getConnection data-source)]
-    (select-users-by-id connection ids
-                        (partial load-cf-users-from-rs cf-parameters))))
+  (select-users-by-id data-source ids
+                      (partial load-cf-users-from-rs cf-parameters)))
 
 (defn load-test-cf-user-ids [data-source user-ids max-count]
   (with-open [connection (.getConnection data-source)]
@@ -125,12 +121,11 @@
       (selected-cf-user-ids connection max-count query))))
 
 (defn load-filtered-cf-users-into [data-source user-ids cf-parameters cache target anime-map-to-filter-hentai]
-  (with-open [connection (.getConnection data-source)]
-    ; this allocates and throws away an ArrayList, it's fine
-    (select-users-by-id connection
-                        user-ids
-                        (partial load-filtered-cf-users-from-rs cf-parameters cache target anime-map-to-filter-hentai))
-    target))
+  ; this allocates and throws away an ArrayList, it's fine
+  (select-users-by-id data-source
+                      user-ids
+                      (partial load-filtered-cf-users-from-rs cf-parameters cache target anime-map-to-filter-hentai))
+  target)
 
 (def ^:private select-user
   "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
