@@ -6,7 +6,9 @@
        "    user_id INTEGER PRIMARY KEY,"
        "    username VARCHAR(20) NOT NULL,"
        "    last_update INTEGER NOT NULL,"
-       "    last_change INTEGER NOT NULL"
+       "    last_change INTEGER NOT NULL,",
+       "    last_anime_change INTEGER NOT NULL,",
+       "    last_manga_change INTEGER NOT NULL",
        ")"))
 
 (def ^:private create-users-username-index
@@ -17,11 +19,29 @@
   (str "CREATE INDEX IF NOT EXISTS users_last_change_index"
        "    ON users (last_change)"))
 
-(def ^:private create-user-anime-state
+(def ^:private create-users-last-anime-change-index
+  (str "CREATE INDEX IF NOT EXISTS users_last_anime_change_index"
+       "    ON users (last_anime_change)"))
+
+(def ^:private create-users-last-manga-change-index
+  (str "CREATE INDEX IF NOT EXISTS users_last_manga_change_index"
+       "    ON users (last_manga_change)"))
+
+(def ^:private create-user-anime-stats
   (str "CREATE TABLE IF NOT EXISTS user_anime_stats ("
        "    user_id INTEGER PRIMARY KEY,"
        "    planned INTEGER NOT NULL,"
        "    watching INTEGER NOT NULL,"
+       "    completed INTEGER NOT NULL,"
+       "    onhold INTEGER NOT NULL,"
+       "    dropped INTEGER NOT NULL"
+       ")"))
+
+(def ^:private create-user-manga-stats
+  (str "CREATE TABLE IF NOT EXISTS user_manga_stats ("
+       "    user_id INTEGER PRIMARY KEY,"
+       "    planned INTEGER NOT NULL,"
+       "    reading INTEGER NOT NULL,"
        "    completed INTEGER NOT NULL,"
        "    onhold INTEGER NOT NULL,"
        "    dropped INTEGER NOT NULL"
@@ -87,6 +107,66 @@
        "    anime_list_format INTEGER NOT NULL DEFAULT 0"
        ")"))
 
+(def ^:private create-manga
+  (str "CREATE TABLE IF NOT EXISTS manga ("
+       "    mangadb_id INTEGER PRIMARY KEY,"
+       "    title VARCHAR(255) NOT NULL,"
+       "    type INTEGER NOT NULL,"
+       "    chapters INTEGER NOT NULL,"
+       "    volumes INTEGER NOT NULL,"
+       "    status INTEGER NOT NULL,"
+       "    start INTEGER, end INTEGER,"
+       "    image VARCHAR(255) NOT NULL"
+       ")"))
+
+(def ^:private create-manga-details
+  (str "CREATE TABLE IF NOT EXISTS manga_details ("
+       "    mangadb_id INTEGER PRIMARY KEY,"
+       "    rank INTEGER NOT NULL,"
+       "    popularity INTEGER NOT NULL,"
+       "    score INTEGER NOT NULL"
+       ")"))
+
+(def ^:private create-manga-relations
+  (str "CREATE TABLE IF NOT EXISTS manga_relations ("
+       "    mangadb_id INTEGER NOT NULL,"
+       "    related_id INTEGER NOT NULL,"
+       "    relation INTEGER NOT NULL"
+       ")"))
+
+(def ^:private create-manga-relations-index
+  (str "CREATE UNIQUE INDEX IF NOT EXISTS manga_relations_index"
+       "    ON manga_relations (mangadb_id, related_id)"))
+
+(def ^:private create-manga-genres
+  (str "CREATE TABLE IF NOT EXISTS manga_genres ("
+       "    mangadb_id INTEGER NOT NULL,"
+       "    genre_id INTEGER NOT NULL,"
+       "    sort_order INTEGER NOT NULL"
+       ")"))
+
+(def ^:private create-manga-titles
+  (str "CREATE TABLE IF NOT EXISTS manga_titles ("
+       "    mangadb_id INTEGER NOT NULL,"
+       "    title VARCHAR(255) NOT NULL"
+       ")"))
+
+(def ^:private create-manga-genres-index
+  (str "CREATE UNIQUE INDEX IF NOT EXISTS manga_genres_index"
+       "    ON manga_genres (mangadb_id, genre_id)"))
+
+(def ^:private create-manga-details-update
+  (str "CREATE TABLE IF NOT EXISTS manga_details_update ("
+       "    mangadb_id INTEGER PRIMARY KEY,"
+       "    last_update INTEGER NOT NULL"
+       ")"))
+
+(def ^:private create-manga-list
+  (str "CREATE TABLE IF NOT EXISTS manga_list ("
+       "    user_id INTEGER NOT NULL PRIMARY KEY,"
+       "    manga_list BLOB NOT NULL"
+       ")"))
+
 (def ^:private create-relation-names
   (str "CREATE TABLE IF NOT EXISTS relation_names ("
        "    relation INTEGER PRIMARY KEY,"
@@ -114,6 +194,12 @@
        "    description VARCHAR(30)"
        ")"))
 
+(def ^:private create-manga-genre-names
+  (str "CREATE TABLE IF NOT EXISTS manga_genre_names ("
+       "    genre INTEGER PRIMARY KEY,"
+       "    description VARCHAR(30)"
+       ")"))
+
 (def ^:private create-refresh-queue
   (str "CREATE TABLE IF NOT EXISTS user_refresh_queue ("
        "    username VARCHAR(20) PRIMARY KEY,"
@@ -127,7 +213,8 @@
   create-users
   create-users-username-index
   create-users-last-change-index
-  create-user-anime-state
+  create-user-anime-stats
+  create-user-manga-stats
   create-anime
   create-anime-details
   create-anime-relations
@@ -137,6 +224,15 @@
   create-anime-genres-index
   create-anime-details-update
   create-anime-list
+  create-manga
+  create-manga-details
+  create-manga-relations
+  create-manga-relations-index
+  create-manga-genres
+  create-manga-titles
+  create-manga-genres-index
+  create-manga-details-update
+  create-manga-list
   create-relation-names
   insert-relation-name-1
   insert-relation-name-2
@@ -146,4 +242,5 @@
   insert-relation-name-6
   insert-relation-name-7
   create-anime-genre-names
+  create-manga-genre-names
   create-refresh-queue]))
