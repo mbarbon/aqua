@@ -3,7 +3,7 @@
              clojure.string
              aqua.db-schema)
   (:use aqua.db-utils)
-  (:import (aqua.mal Json)))
+  (:import (aqua.mal Serialize)))
 
 (defn open-sqlite-rw [directory file]
   (let [data-source (org.sqlite.SQLiteDataSource.)]
@@ -51,7 +51,7 @@
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setAnimeList user (Json/readRatedList al-data))
+    (.setAnimeList user (Serialize/readRatedList al-data))
     user))
 
 (defn- load-cf-users-from-rs [cf-parameters ^java.sql.ResultSet rs]
@@ -60,7 +60,7 @@
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setAnimeList user cf-parameters (Json/readCFRatedList al-data))
+    (.setAnimeList user cf-parameters (Serialize/readCFRatedList al-data))
     user))
 
 (defn- load-filtered-cf-users-from-rs [cf-parameters
@@ -71,7 +71,7 @@
   (let [user (aqua.recommend.CFUser.)
         al-data (java.util.zip.GZIPInputStream.
                   (io/input-stream (.getBinaryStream rs 3)))
-        anime-list (Json/readCFRatedList al-data)]
+        anime-list (Serialize/readCFRatedList al-data)]
     (dotimes [n (.size anime-list)]
       (let [^aqua.recommend.CFRated item (.get anime-list n)
             item-id (.animedbId item)
@@ -600,7 +600,7 @@
     (when changed
       (let [sink (java.io.ByteArrayOutputStream.)
             compress (java.util.zip.GZIPOutputStream. sink)]
-        (Json/writeRatedList compress new-rated-list)
+        (Serialize/writeRatedList compress new-rated-list)
         (.finish compress)
         (with-open [statement (doto (.prepareStatement connection insert-anime-list)
                                     (.setInt 1 (.userId user))

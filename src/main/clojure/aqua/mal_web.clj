@@ -23,7 +23,7 @@
       (try
         (if error
           (callback nil error)
-          (callback (aqua.mal.Json/readMalAppInfo body) nil))
+          (callback (aqua.mal.Serialize/readMalAppInfo body) nil))
         (catch Exception e (callback nil e))))))
 
 (defn fetch-anime-details [animedb-id title]
@@ -51,5 +51,5 @@
                                 "status" "all"}
     (fn [error status body]
       (case status
-        200 (aqua.mal.Json/readMalAppInfo body)
+        200 (aqua.mal.Serialize/readMalAppInfo body)
         (log-error error status (str "fetching anime list for " username))))))

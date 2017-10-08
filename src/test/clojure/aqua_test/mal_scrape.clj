@@ -4,7 +4,7 @@
 
 (defn test-resource [name]
   (let [resource-name (str "/parsing/" name ".gz")
-        resource (.getResourceAsStream aqua.mal.Json resource-name)]
+        resource (.getResourceAsStream aqua.mal.Serialize resource-name)]
     (java.util.zip.GZIPInputStream. resource)))
 
 (deftest parse-users
@@ -59,7 +59,7 @@
            scores))))
 
 (deftest parse-malappinfo-anime
-  (let [data (aqua.mal.Json/readMalAppInfo (test-resource "malappinfo.anime.xml"))
+  (let [data (aqua.mal.Serialize/readMalAppInfo (test-resource "malappinfo.anime.xml"))
         user (.user data)
         anime-list (.anime data)
         anime (first anime-list)]
@@ -86,7 +86,7 @@
     (is (= 1471101172 (.lastUpdated anime)))))
 
 (deftest parse-malappinfo-manga
-  (let [data (aqua.mal.Json/readMalAppInfo (test-resource "malappinfo.manga.xml"))
+  (let [data (aqua.mal.Serialize/readMalAppInfo (test-resource "malappinfo.manga.xml"))
         user (.user data)
         manga-list (.manga data)
         manga (first manga-list)]

@@ -53,7 +53,7 @@
                                             "text/html"))
 
   (POST "/recommend" {:keys [body]}
-    (let [user (aqua.mal.Json/readCFUser @aqua.web.globals/*cf-parameters body)]
+    (let [user (aqua.mal.Serialize/readCFUser @aqua.web.globals/*cf-parameters body)]
       (ring.util.response/response
         (aqua.web.recommender/recommend user))))
 

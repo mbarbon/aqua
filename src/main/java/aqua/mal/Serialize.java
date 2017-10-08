@@ -27,7 +27,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 
-public class Json {
+public class Serialize {
     private static class RatedDeserializer extends JsonDeserializer<Rated> {
         @Override
         public Rated deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonParseException {
