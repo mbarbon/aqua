@@ -20,9 +20,9 @@
       (aqua.mal-local/load-cf-users-by-id data-source
                                           (aqua.recommend.CFParameters.)
                                           user-ids))
-    (let [user-ids (aqua.mal-local/load-test-cf-user-ids directory
-                                                         data-source
-                                                         100000)
+    (let [user-ids (load-stable-user-sample-from-db directory
+                                                    data-source
+                                                    100000)
           shuffled-user-ids (stable-shuffle user-ids)]
       (spit file (clojure.string/join "\n" shuffled-user-ids))
       (aqua.mal-local/load-cf-users-by-id data-source
