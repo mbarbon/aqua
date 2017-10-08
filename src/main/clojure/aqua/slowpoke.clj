@@ -14,6 +14,15 @@
            (if (> remaining# 0)
              (Thread/sleep remaining#)))))))
 
+(defmacro with-web-result [args body]
+  `(try
+     (if-let ~args
+       ~body)
+     (catch java.util.concurrent.ExecutionException e#
+       ; should probably just ignore all ExecutionExceptions
+       (if-not (instance? java.util.concurrent.TimeoutException (.getCause e#))
+         (throw e#)))))
+
 (def ^:private queue-status-new 0)
 (def ^:private queue-status-processing 1)
 (def ^:private queue-status-failed 2)
@@ -102,7 +111,7 @@
     (if (seq anime-to-refresh)
       (doseq-slowly 8700 [{:keys [animedb_id title]} anime-to-refresh]
         (log/info "Fetching new anime details for" title)
-        (if-let [details @(aqua.mal-web/fetch-anime-details animedb_id title)]
+        (with-web-result [details @(aqua.mal-web/fetch-anime-details animedb_id title)]
           (aqua.mal-local/store-anime-details data-source-rw animedb_id title details))))))
 
 (defn ^:private already-existing-users [users]
@@ -114,7 +123,7 @@
 
 (defn- fetch-new-users [data-source-rw data-source-ro]
   (log/info "Fetching new user sample")
-  (if-let [user-sample @(aqua.mal-web/fetch-active-users)]
+  (with-web-result [user-sample @(aqua.mal-web/fetch-active-users)]
     (let [existing-users (with-query data-source-ro rs
                                      (already-existing-users user-sample)
                                      user-sample
@@ -124,7 +133,7 @@
         (log/info "No new users found")
         (doseq-slowly 1200 [username new-users]
           (log/info "Fetching user data for" username)
-          (if-let [mal-app-info @(aqua.mal-web/fetch-anime-list username)]
+          (with-web-result [mal-app-info @(aqua.mal-web/fetch-anime-list username)]
             (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info)))))))
 
 (def ^:private old-inactive-budget-fraction 0.1)
@@ -187,7 +196,7 @@
       (log/info "No users to refresh")
       (doseq-slowly 2300 [user users]
         (log/info "Refreshing user data for" user)
-        (if-let [mal-app-info @(aqua.mal-web/fetch-anime-list user)]
+        (with-web-result [mal-app-info @(aqua.mal-web/fetch-anime-list user)]
           (aqua.mal-local/store-user-anime-list data-source-rw user mal-app-info))))))
 
 (defn- clean-refresh-queue [data-source-rw]
