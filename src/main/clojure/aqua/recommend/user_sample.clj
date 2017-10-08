@@ -6,7 +6,7 @@
 
 ; nothing against hentai, just there is not enough data for meaningful
 ; recommendations
-(def select-non-hentai-anime
+(def ^:private select-non-hentai-anime
   (str "SELECT a.animedb_id AS animedb_id"
        "    FROM anime AS a"
        "      LEFT JOIN anime_genres AS ag"
@@ -14,8 +14,8 @@
        "           genre_id = 12"
        "    WHERE sort_order IS NULL"))
 
-(def select-active-users
-  (str "SELECT uas.user_id, uas.completed + uas.dropped as anime_count"
+(def ^:private select-active-users
+  (str "SELECT uas.user_id, uas.completed as anime_count"
        "    FROM user_anime_stats AS uas"
        "      INNER JOIN users AS u"
        "        ON uas.user_id = u.user_id AND"
@@ -23,11 +23,15 @@
        "    WHERE uas.completed > 5 AND"
        "          uas.completed < 500"))
 
-(defn- count-to-bucket [c]
-  (int (* 4 (- (Math/log (* 10 c)) 2))))
+(defn count-to-bucket [c]
+  (if (< c 180)
+    (int (/ c 15))
+    (+ 8 (int (/ c 45)))))
 
-(defn- bucket-to-count [b]
-  (Math/floor (+ 0.5 (/ (Math/exp (+ (/ b 4) 2)) 10))))
+(defn bucket-to-count [b]
+  (if (< b 12)
+    (* b 15)
+    (* 45 (- b 8))))
 
 (defn- non-hentai-anime [data-source]
   (with-open [connection (.getConnection data-source)
@@ -52,12 +56,13 @@
     bitset))
 
 (defn- batched-user-loader [data-source bucketed-users]
-  (let [ cf-parameters (aqua.misc/make-cf-parameters 0 0)]
+  (let [cf-parameters (aqua.misc/make-cf-parameters 0 0)]
     (apply concat
       (for [batch (partition-all 1000 (map first bucketed-users))]
-        (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-users-by-id data-source cf-parameters batch)]
-          (let [ids (.completedAndDroppedIds cf-user)]
-            [(.userId cf-user) (make-bitset ids) (count ids)]))))))
+        (remove #(= 0 (% 2))
+          (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-users-by-id data-source cf-parameters batch)]
+            (let [ids (.completedAndDroppedIds cf-user)]
+              [(.userId cf-user) (make-bitset ids) (count ids)])))))))
 
 (defn- fresh-user-cluster []
   {:user-ids [] :anime-ids (java.util.BitSet.) :anime-count 0})
@@ -66,7 +71,8 @@
   {:anime-count anime-count
    :user-ids (count user-ids)})
 
-(defn- add-user-to-cluster [; cluster
+(defn- add-user-to-cluster [insertion-condition
+                            ; cluster
                             {user-ids :user-ids
                              ^java.util.BitSet anime-ids :anime-ids
                              anime-count :anime-count}
@@ -79,25 +85,39 @@
                 (.or completed-and-dropped))
         union-cardinality (.cardinality union)
         added (- union-cardinality anime-count)]
-    (if (> added (max 4 (* 0.03 completed-and-dropped-count)))
+    (if (insertion-condition added completed-and-dropped-count)
       {:user-ids (conj user-ids user-id)
        :anime-ids union
        :anime-count union-cardinality})))
 
 (defn- add-user-to-cluster-sequence [is-complete new-in-progress in-progress user]
-  (if-not (seq in-progress)
-    (if-let [inserted (add-user-to-cluster (fresh-user-cluster) user)]
-      [(conj new-in-progress inserted) nil]
-      [new-in-progress nil])
-    (let [progress-head (first in-progress)
-          progress-tail (rest in-progress)]
-      (if-let [inserted (add-user-to-cluster progress-head user)]
-        (cond
-          (is-complete inserted)
-            [(concat new-in-progress progress-tail) inserted]
-          :else
-            [(concat new-in-progress [inserted] progress-tail) nil])
-        (recur is-complete (conj new-in-progress progress-head) progress-tail user)))))
+  (letfn [(insertion-condition [added anime-count]
+            (let [cluster-index (count new-in-progress)
+                  absolute-threshold (min (* 0.5 anime-count)
+                                          (- (+ 20 1) cluster-index))
+                  relative-threshold (- 0.33 (* 0.3 (/ cluster-index 20)))]
+              (> added (max absolute-threshold
+                            (* relative-threshold anime-count)))))]
+    (if-not (seq in-progress)
+      (if (< (count new-in-progress) 20)
+        (if-let [inserted (add-user-to-cluster insertion-condition
+                                               (fresh-user-cluster)
+                                               user)]
+          [(conj new-in-progress inserted) nil]
+          (throw (Exception. (str "Can't fill empty cluster at index "
+                                   (count new-in-progress) " for user " user))))
+        [new-in-progress nil])
+      (let [progress-head (first in-progress)
+            progress-tail (rest in-progress)]
+        (if-let [inserted (add-user-to-cluster insertion-condition
+                                               progress-head
+                                               user)]
+          (cond
+            (is-complete inserted)
+              [(concat new-in-progress progress-tail) inserted]
+            :else
+              [(concat new-in-progress [inserted] progress-tail) nil])
+          (recur is-complete (conj new-in-progress progress-head) progress-tail user))))))
 
 (defn- cluster-users-helper [; aggregation status
                              {in-progress :in-progress
@@ -110,17 +130,18 @@
           users-tail (rest users)
           [new-in-progress complete-cluster] (add-user-to-cluster-sequence is-complete [] in-progress users-head)
           new-state (conj state [:in-progress new-in-progress])]
+      ; (doseq [ip new-in-progress]
+      ;   (print (pretty-print-user-cluster ip)))
+      ; (println)
       (if complete-cluster
         (cons complete-cluster (lazy-seq (cluster-users-helper new-state users-tail)))
         (recur new-state users-tail)))))
 
 (defn- cluster-users [bucket anime-ids users]
   (let [bucket-count (bucket-to-count bucket)
-        complete-anime (* (/ 2 3) (count anime-ids))
-        complete-user 500
+        complete-anime (* 0.95 (count anime-ids))
         is-complete (fn [cluster]
-                      (or (> (count (:user-ids cluster)) complete-user)
-                          (> (:anime-count cluster) complete-anime)))
+                      (> (:anime-count cluster) complete-anime))
         start-state {:in-progress [] :is-complete is-complete :bucket bucket}]
     (cluster-users-helper start-state users)))
 
@@ -181,8 +202,19 @@
         target (java.util.ArrayList. (repeat max-count nil))]
     (load-filtered-cf-users-into path data-source cf-parameters cache target anime-map-to-filter-hentai)))
 
+; those produce a lot of garbage, should not be used in web code
 (defn load-filtered-cf-users
   ([path data-source cf-parameters max-count]
     (load-filtered-cf-users-helper path data-source cf-parameters max-count nil))
   ([path data-source cf-parameters max-count anime-map-to-filter-hentai]
     (load-filtered-cf-users-helper path data-source cf-parameters max-count anime-map-to-filter-hentai)))
+
+(defn load-filtered-cf-user-ids [data-source cf-parameters user-ids anime-map-to-filter-hentai]
+  (let [cache (java.util.HashMap.)
+        target (java.util.ArrayList. (repeat (count user-ids) nil))]
+    (aqua.mal-local/load-filtered-cf-users-into data-source
+                                                user-ids
+                                                cf-parameters
+                                                cache
+                                                target
+                                                anime-map-to-filter-hentai)))
