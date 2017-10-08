@@ -42,7 +42,9 @@
                           (make-set-args args)
                           `[(impl-runtime-set-args ~args)])]
       `(with-open [connection# ~connection
-                   ~statement-sym (doto (.prepareStatement connection# ~query)
+                   ~statement-sym (doto (.prepareStatement connection# ~query
+                                                           java.sql.ResultSet/TYPE_FORWARD_ONLY
+                                                           java.sql.ResultSet/CONCUR_READ_ONLY)
                                         ~@set-args-list)
                    ~rs-name (.executeQuery ~statement-sym)]
         ~@body)))
