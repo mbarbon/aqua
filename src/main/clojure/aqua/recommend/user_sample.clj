@@ -146,6 +146,9 @@
       (.addAll target (:user-ids (first cluster-seq)))
       (recur (rest cluster-seq) target max-users))))
 
+(defn count-to-bucket-count [n]
+  (bucket-to-count (count-to-bucket n)))
+
 (defn recompute-user-sample [sample-count model-path]
   (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
         anime-ids (non-hentai-anime data-source)
