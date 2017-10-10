@@ -83,7 +83,8 @@
 (def ^:private create-anime-list
   (str "CREATE TABLE IF NOT EXISTS anime_list ("
        "    user_id INTEGER NOT NULL PRIMARY KEY,"
-       "    anime_list BLOB NOT NULL"
+       "    anime_list BLOB NOT NULL,"
+       "    anime_list_format INTEGER NOT NULL DEFAULT 0"
        ")"))
 
 (def ^:private create-relation-names

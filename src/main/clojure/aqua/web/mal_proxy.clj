@@ -24,12 +24,30 @@
     (aqua.slowpoke/make-process-refresh-queue @*data-source-rw @*data-source-ro)
     1 5 java.util.concurrent.TimeUnit/SECONDS))
 
-(defn fetch-user [username decompress]
+(def ^:private ct-pb "application/x-protobuf")
+(def ^:private ct-json "application/json")
+(def ^:private ce-gzip "gzip")
+(def ^:private ce-id "identity")
+
+(defn- pb-to-json [stream]
+  (let [decompressed (java.util.zip.GZIPInputStream. stream)
+        rated-list (aqua.mal.Serialize/readRatedProtobuf decompressed)
+        byte-out (java.io.ByteArrayOutputStream.)]
+    (aqua.mal.Serialize/writeRatedList byte-out rated-list)
+    (java.io.ByteArrayInputStream. (.toByteArray byte-out))))
+
+(defn fetch-user [username accepts-gzip accepts-protobuf]
   (let [last-user-update (aqua.mal-local/last-user-update @*data-source-ro username)]
     (if (> last-user-update (- (/ (System/currentTimeMillis) 1000) (* 3600 6)))
-      (let [bytes (aqua.mal-local/load-user-anime-list @*data-source-ro username)]
-        (let [stream (java.io.ByteArrayInputStream. bytes)]
-          (if decompress
-            [(java.util.zip.GZIPInputStream. stream) -1]
-            [stream -1])))
-      [nil (aqua.slowpoke/enqueue-user-refresh @*data-source-rw username)])))
+      (let [[bytes blob-type] (aqua.mal-local/load-user-anime-list @*data-source-ro username)
+            stream (java.io.ByteArrayInputStream. bytes)]
+        (cond
+          (= 0 blob-type)
+            (throw (Exception. "Due to refresh rules, the blob here must be Protobuf"))
+          (and accepts-protobuf accepts-gzip)
+            [stream ct-pb ce-gzip -1]
+          accepts-protobuf
+            [(java.util.zip.GZIPInputStream. stream) ct-pb ce-id -1]
+          :else
+            [(pb-to-json stream) ct-json ce-id -1]))
+      [nil nil nil (aqua.slowpoke/enqueue-user-refresh @*data-source-rw username)])))

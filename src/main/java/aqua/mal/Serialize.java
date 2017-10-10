@@ -21,6 +21,13 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
+import io.protostuff.CodedInput;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtobufIOUtil;
+import io.protostuff.Schema;
+import io.protostuff.Tag;
+import io.protostuff.runtime.RuntimeSchema;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -61,12 +68,40 @@ public class Serialize {
         }
     }
 
+    private static class RatedProtostuff {
+        @Tag(1)
+        public List<Rated> rated;
+
+        public RatedProtostuff() {}
+        public RatedProtostuff(List<Rated> rated) { this.rated = rated; }
+    }
+
+    private static class CFRatedProtostuff {
+        @Tag(1)
+        public List<CFRated> rated;
+
+        public CFRatedProtostuff() {}
+        public CFRatedProtostuff(List<CFRated> rated) { this.rated = rated; }
+    }
+
+    private static final ThreadLocal<LinkedBuffer> LINKED_BUFFER =
+        new ThreadLocal<LinkedBuffer>() {
+            @Override
+            protected LinkedBuffer initialValue() {
+                return LinkedBuffer.allocate();
+            }
+        };
+
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final ObjectMapper XML_MAPPER = new XmlMapper();
     private static final TypeReference RATED_LIST =
         new TypeReference<List<Rated>>() {};
     private static final TypeReference CFRATED_LIST =
         new TypeReference<List<CFRated>>() {};
+    private static final Schema<RatedProtostuff> RATED_SCHEMA_LIST = RuntimeSchema.getSchema(RatedProtostuff.class);
+    private static final Schema<CFRatedProtostuff> CFRATED_SCHEMA_LIST = RuntimeSchema.getSchema(CFRatedProtostuff.class);
+    private static final Schema<Rated> RATED_SCHEMA = RuntimeSchema.getSchema(Rated.class);
+    private static final Schema<CFRated> CFRATED_SCHEMA = RuntimeSchema.getSchema(CFRated.class);
 
     static {
         SimpleModule malDecoder = new SimpleModule();
@@ -83,12 +118,43 @@ public class Serialize {
         return rated;
     }
 
+    public static List<Rated> readRatedProtobuf(InputStream is) throws IOException {
+        List<Rated> rated = new java.util.ArrayList<>();
+        CodedInput parser = CodedInput.newInstance(is);
+        while ((parser.readTag() >>> 3) == 1) {
+            rated.add(parser.mergeObject(new Rated(), RATED_SCHEMA));
+        }
+        rated.sort(Rated::compareTo);
+        return rated;
+    }
+
     public static void writeRatedList(OutputStream os, List<Rated> rated) throws IOException {
         JSON_MAPPER.writeValue(os, rated);
     }
 
+    public static void writeRatedProtobuf(OutputStream os, List<Rated> rated) throws IOException {
+        LinkedBuffer linkedBuffer = LINKED_BUFFER.get();
+        linkedBuffer.clear();
+        ProtobufIOUtil.writeTo(
+            os,
+            new RatedProtostuff(rated),
+            RATED_SCHEMA_LIST,
+            linkedBuffer
+        );
+    }
+
     public static List<CFRated> readCFRatedList(InputStream is) throws IOException {
         List<CFRated> rated = JSON_MAPPER.readValue(is, CFRATED_LIST);
+        rated.sort(CFRated::compareTo);
+        return rated;
+    }
+
+    public static List<CFRated> readCFRatedProtobuf(InputStream is) throws IOException {
+        List<CFRated> rated = new java.util.ArrayList<>();
+        CodedInput parser = CodedInput.newInstance(is);
+        while ((parser.readTag() >>> 3) == 1) {
+            rated.add(parser.mergeObject(new CFRated(), CFRATED_SCHEMA));
+        }
         rated.sort(CFRated::compareTo);
         return rated;
     }
@@ -99,7 +165,7 @@ public class Serialize {
         return user;
     }
 
-    public static CFUser readCFUser(CFParameters cfParameters, InputStream is) throws IOException {
+    public static CFUser readPartialCFUser(CFParameters cfParameters, InputStream is) throws IOException {
         CFUser user = JSON_MAPPER.readValue(is, CFUser.class);
         Arrays.sort(user.animeList, CFRated::compareTo);
         user.processAfterDeserialize(cfParameters);

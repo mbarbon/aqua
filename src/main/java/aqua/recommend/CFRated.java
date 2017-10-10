@@ -5,6 +5,10 @@ import aqua.mal.data.RatedBase;
 import java.lang.Comparable;
 
 public class CFRated extends RatedBase implements Comparable<CFRated>, RecommendationItem {
+    // for deserialization
+    public CFRated() {
+    }
+
     public CFRated(int animedbId, byte status, byte rating) {
         this.animedbId = animedbId;
         this.status = status;

@@ -30,7 +30,13 @@
     result))
 
 (def ^:private select-users
-  "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.user_id IN ")
+  (str "SELECT u.user_id AS user_id, u.username AS username,"
+       "       al.anime_list AS anime_list,"
+       "       al.anime_list_format AS anime_list_format"
+       "    FROM users AS u"
+       "      INNER JOIN anime_list AS al"
+       "        ON u.user_id = al.user_id"
+       "    WHERE u.user_id IN "))
 
 (defn- select-test-user-ids [skip-ids]
   (str "SELECT u.user_id"
@@ -51,7 +57,9 @@
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setAnimeList user (Serialize/readRatedList al-data))
+    (.setAnimeList user (if (= 1 (.getInt rs 4))
+                          (Serialize/readRatedProtobuf al-data)
+                          (Serialize/readRatedList al-data)))
     user))
 
 (defn- load-cf-users-from-rs [cf-parameters ^java.sql.ResultSet rs]
@@ -60,7 +68,9 @@
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setAnimeList user cf-parameters (Serialize/readCFRatedList al-data))
+    (.setAnimeList user cf-parameters (if (= 1 (.getInt rs 4))
+                                        (Serialize/readCFRatedProtobuf al-data)
+                                        (Serialize/readCFRatedList al-data)))
     user))
 
 (defn- load-filtered-cf-users-from-rs [cf-parameters
@@ -71,7 +81,9 @@
   (let [user (aqua.recommend.CFUser.)
         al-data (java.util.zip.GZIPInputStream.
                   (io/input-stream (.getBinaryStream rs 3)))
-        anime-list (Serialize/readCFRatedList al-data)]
+        anime-list (if (= 1 (.getInt rs 4))
+                     (Serialize/readCFRatedProtobuf al-data)
+                     (Serialize/readCFRatedList al-data))]
     (dotimes [n (.size anime-list)]
       (let [^aqua.recommend.CFRated item (.get anime-list n)
             item-id (.animedbId item)
@@ -128,7 +140,13 @@
   target)
 
 (def ^:private select-user
-  "SELECT u.user_id AS user_id, u.username AS username, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
+  (str "SELECT u.user_id AS user_id, u.username AS username,"
+       "       al.anime_list AS anime_list,"
+       "       al.anime_list_format AS anime_list_format"
+       "    FROM users AS u"
+       "      INNER JOIN anime_list AS al"
+       "        ON u.user_id = al.user_id"
+       "    WHERE u.username = ?"))
 
 (defn- load-user-from-connection [connection username]
   (with-open [statement (doto (.prepareStatement connection select-user)
@@ -144,19 +162,22 @@
     (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters)))))
 
 (def ^:private select-user-blob
-  "SELECT LENGTH(al.anime_list) AS blob_length, al.anime_list AS anime_list FROM users AS u INNER JOIN anime_list AS al ON u.user_id = al.user_id WHERE u.username = ?")
+  (str "SELECT LENGTH(al.anime_list) AS blob_length,"
+       "       al.anime_list AS anime_list,"
+       "       al.anime_list_format AS anime_list_format"
+       "    FROM users AS u"
+       "      INNER JOIN anime_list AS al"
+       "        ON u.user_id = al.user_id"
+       "    WHERE u.username = ?"))
 
 (defn load-user-anime-list [data-source username]
-  (with-open [connection (.getConnection data-source)
-              statement (doto (.prepareStatement connection select-user-blob)
-                              (.setString 1 username))
-              rs (.executeQuery statement)]
+  (with-query data-source rs select-user-blob [username]
     (if (.next rs)
       (let [byte-size (.getInt rs 1)
             is (.getBinaryStream rs 2)
             bytes (make-array Byte/TYPE byte-size)]
         (.read is bytes)
-        bytes))))
+        [bytes (.getInt rs 3)]))))
 
 ; relations should be reflexive, but not all of them are in the scraped DB
 ; (e.g. the page failed to parse)
@@ -353,7 +374,7 @@
 (defn- select-user-data [items]
   (str "SELECT u.user_id, u.username, u.last_update, u.last_change,"
        "       uas.planned, uas.watching, uas.completed, uas.onhold, uas.dropped,"
-       "       al.anime_list"
+       "       al.anime_list, al.anime_list_format"
        "    FROM users AS u"
        "      INNER JOIN user_anime_stats AS uas"
        "        ON u.user_id = uas.user_id"
@@ -582,9 +603,9 @@
 
 (def ^:private insert-anime-list
   (str "INSERT OR REPLACE INTO anime_list"
-       "        (user_id, anime_list)"
+       "        (user_id, anime_list, anime_list_format)"
        "    VALUES"
-       "        (?, ?)"))
+       "        (?, ?, ?)"))
 
 (defn- today-epoch-day []
   (.toEpochDay (java.time.LocalDate/now)))
@@ -600,12 +621,10 @@
     (when changed
       (let [sink (java.io.ByteArrayOutputStream.)
             compress (java.util.zip.GZIPOutputStream. sink)]
-        (Serialize/writeRatedList compress new-rated-list)
+        (Serialize/writeRatedProtobuf compress new-rated-list)
         (.finish compress)
-        (with-open [statement (doto (.prepareStatement connection insert-anime-list)
-                                    (.setInt 1 (.userId user))
-                                    (.setBytes 2 (.toByteArray sink)))]
-          (.execute statement))))
+        (execute connection insert-anime-list
+                 [(.userId user) (.toByteArray sink) 1])))
     nil))
 
 (def ^:private update-user-stats
@@ -659,9 +678,11 @@
        "        ?,"
        "        ?)"))
 
+(def ^:private guava-base64 (com.google.common.io.BaseEncoding/base64))
+
 (defn- update-user [connection
                     {:strs [user_id username last_update last_change
-                            anime_list
+                            anime_list anime_list_format
                             planned watching completed onhold dropped]}]
   (execute connection
            sync-update-user
@@ -671,7 +692,7 @@
            [user_id planned watching completed onhold dropped])
   (execute connection
            insert-anime-list
-           [user_id (.decode (com.google.common.io.BaseEncoding/base64) anime_list)]))
+           [user_id (.decode guava-base64 anime_list) anime_list_format]))
 
 (defn store-users [data-source users]
   (with-transaction data-source connection

@@ -1,10 +1,11 @@
 package aqua.mal.data;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.protostuff.Tag;
 
 import java.lang.Comparable;
 
 public class Rated extends RatedBase implements Comparable<Rated> {
+    @Tag(4)
     public short completedDay;
 
     public Rated() {

@@ -29,19 +29,36 @@
   (-> (ring.util.response/response body)
       (ring.util.response/status 400)))
 
+(defn- parse-header [value]
+  (let [parts (clojure.string/split value #",\s*")]
+    (for [part parts]
+      (let [[name parameter] (clojure.string/split part #";" 2)]
+        name))))
+
+(defn- accepts-gzip [headers]
+  (if-let [accept-encoding (get headers "accept-encoding")]
+    (let [encodings (parse-header accept-encoding)
+          has-deflate (.contains encodings "gzip")]
+      has-deflate)))
+
+(defn- accepts-protobuf [headers]
+  (if-let [accept (get headers "accept")]
+    (let [encodings (parse-header accept)
+          has-protobuf (.contains encodings "application/x-protobuf")]
+      has-protobuf)))
+
 (defroutes raw-routes
   (GET "/list/anime/:username" [username :as {headers :headers}]
-    (let [compressed (if-let [accept-encoding (get headers "accept-encoding")]
-                       (let [encodings (clojure.string/split accept-encoding #",\s*")
-                             has-deflate (.contains encodings "gzip")]
-                         has-deflate))
-          [response-data queue-position] (aqua.web.mal-proxy/fetch-user username (not compressed))]
+    (let [accepts-gzip (accepts-gzip headers)
+          accepts-protobuf (accepts-protobuf headers)
+          [response-data content-type content-encoding queue-position]
+            (aqua.web.mal-proxy/fetch-user username accepts-gzip accepts-protobuf)]
       (if response-data
-        {:status 200,
-         :headers {"Content-Type" "application/json"
-                   "Content-Encoding" (if compressed "gzip" "identity")}
+        {:status 200
+         :headers {"Content-Type" content-type
+                   "Content-Encoding" content-encoding}
          :body response-data}
-        {:status 200,
+        {:status 200
          :headers {"Content-Type" "application/json"}
          :body (str "{\"queue-position\":" queue-position "}")}))))
 
@@ -52,8 +69,8 @@
                                             {:root "public"})
                                             "text/html"))
 
-  (POST "/recommend" {:keys [body]}
-    (let [user (aqua.mal.Serialize/readCFUser @aqua.web.globals/*cf-parameters body)]
+  (POST "/recommend" {:keys [body headers]}
+    (let [user (aqua.mal.Serialize/readPartialCFUser @aqua.web.globals/*cf-parameters body)]
       (ring.util.response/response
         (aqua.web.recommender/recommend user))))
 
