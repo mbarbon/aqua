@@ -42,8 +42,10 @@
       (let [[bytes blob-type] (aqua.mal-local/load-user-anime-list @*data-source-ro username)
             stream (java.io.ByteArrayInputStream. bytes)]
         (cond
+          (and (= 0 blob-type) accepts-gzip)
+            [stream ct-json ce-gzip -1]
           (= 0 blob-type)
-            (throw (Exception. "Due to refresh rules, the blob here must be Protobuf"))
+            [(java.util.zip.GZIPInputStream. stream) ct-json ce-gzip -1]
           (and accepts-protobuf accepts-gzip)
             [stream ct-pb ce-gzip -1]
           accepts-protobuf
