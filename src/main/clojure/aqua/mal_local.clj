@@ -148,12 +148,6 @@
        "        ON u.user_id = al.user_id"
        "    WHERE u.username = ?"))
 
-(defn- load-user-from-connection [connection username]
-  (with-open [statement (doto (.prepareStatement connection select-user)
-                              (.setString 1 username))
-              rs (.executeQuery statement)]
-    (first (doall-rs rs (partial load-users-from-rs)))))
-
 (defn load-cf-user [data-source username cf-parameters]
   (with-open [connection (.getConnection data-source)
               statement (doto (.prepareStatement connection select-user)
@@ -542,12 +536,6 @@
       (.put hash (.animedbId rated) rated))
     hash))
 
-(defn- make-rated-hash ^java.util.HashMap [rated-list]
-  (let [hash (java.util.HashMap.)]
-    (doseq [^aqua.mal.data.RatedBase rated rated-list]
-      (.put hash (.animedbId rated) rated))
-    hash))
-
 (defn- insert-or-update-anime [connection mal-app-info-anime]
   (let [anime-map (make-malappinfo-hash mal-app-info-anime)
         id-csv (clojure.string/join "," (keys anime-map))
@@ -574,57 +562,24 @@
           (.addBatch)))
       (.executeBatch statement))))
 
-(defn- maybe-copy-completed [^aqua.mal.data.Rated new-rated
-                             ^aqua.mal.data.Rated old-rated]
-  (let [status-new (.status new-rated)]
-    (if (and (= status-new (.status old-rated))
-             (or (= status-new aqua.mal.data.Rated/COMPLETED)
-                 (= status-new aqua.mal.data.Rated/DROPPED)))
-      (set! (.status new-rated) (.status old-rated)))))
-
-(defn- merge-anime-list [connection user new-rated-list]
-  (if-let [current-user (load-user-from-connection connection (.username user))]
-    (let [old-rated-map (make-rated-hash (.animeList current-user))
-          process-item (fn [changed ^aqua.mal.data.RatedBase new-rated]
-                         (if-let [^aqua.mal.data.RatedBase old-rated
-                                      (.get old-rated-map (.animedbId new-rated))]
-                           (do
-                             (maybe-copy-completed new-rated old-rated)
-                             (cond
-                               (not= (.status old-rated) (.status new-rated)) true
-                               (not= (.rating old-rated) (.rating new-rated)) true
-                               :else changed))
-                           ; no old rated: definitely a change
-                           true))]
-      ; not a purely-functional reduce
-      (reduce process-item false new-rated-list))
-    ; no old user: definitely a change
-    true))
-
 (def ^:private insert-anime-list
   (str "INSERT OR REPLACE INTO anime_list"
        "        (user_id, anime_list, anime_list_format)"
        "    VALUES"
        "        (?, ?, ?)"))
 
-(defn- today-epoch-day []
-  (.toEpochDay (java.time.LocalDate/now)))
-
 (defn- insert-or-update-user-anime-list [connection user anime-list]
-  (let [today (today-epoch-day)
-        new-rated-list (for [^aqua.mal.data.MalAppInfo$RatedAnime anime anime-list]
+  (let [new-rated-list (for [^aqua.mal.data.MalAppInfo$RatedAnime anime anime-list]
                          (aqua.mal.data.Rated. (.animedbId anime)
                                                (.userStatus anime)
                                                (.score anime)
-                                               today))
-        changed (merge-anime-list connection user new-rated-list)]
-    (when changed
-      (let [sink (java.io.ByteArrayOutputStream.)
-            compress (java.util.zip.GZIPOutputStream. sink)]
-        (Serialize/writeRatedProtobuf compress new-rated-list)
-        (.finish compress)
-        (execute connection insert-anime-list
-                 [(.userId user) (.toByteArray sink) 1])))
+                                               (int (/ (.lastUpdated anime) 86400))))]
+    (let [sink (java.io.ByteArrayOutputStream.)
+          compress (java.util.zip.GZIPOutputStream. sink)]
+      (Serialize/writeRatedProtobuf compress new-rated-list)
+      (.finish compress)
+      (execute connection insert-anime-list
+               [(.userId user) (.toByteArray sink) 1]))
     nil))
 
 (def ^:private update-user-stats
