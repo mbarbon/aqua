@@ -18,6 +18,7 @@
 
 (defn init []
   (aqua.mal-local/setup-tables @*data-source-rw)
+  (aqua.mal.Http/init)
   (init-slowpoke)
   (.scheduleWithFixedDelay
     @*background

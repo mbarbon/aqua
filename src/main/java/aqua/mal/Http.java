@@ -42,8 +42,13 @@ public class Http {
         new DefaultAsyncHttpClientConfig.Builder()
             .setCompressionEnforced(true)
             .build();
-    private static final AsyncHttpClient CLIENT =
-        new DefaultAsyncHttpClient(CONFIG);
+    private static AsyncHttpClient CLIENT;
+
+    public static synchronized void init() {
+        if (CLIENT == null) {
+            CLIENT = new DefaultAsyncHttpClient(CONFIG);
+        }
+    }
 
     public static Future<Object> get(String url, int timeout, IFn callback) {
         return get(url, ImmutableMap.of(), timeout, callback);

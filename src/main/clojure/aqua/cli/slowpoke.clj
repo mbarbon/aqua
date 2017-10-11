@@ -7,6 +7,7 @@
   (.scheduleWithFixedDelay executor function 1 interval java.util.concurrent.TimeUnit/SECONDS))
 
 (defn -main []
+  (aqua.mal.Http/init)
   (let [data-source-rw (aqua.mal-local/open-sqlite-rw "maldump" "maldump.sqlite")
         data-source-ro (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
         scheduler (java.util.concurrent.Executors/newScheduledThreadPool 3)]
