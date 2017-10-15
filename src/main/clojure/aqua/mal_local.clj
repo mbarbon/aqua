@@ -285,7 +285,7 @@
         (:animedb_id item)))))
 
 (def ^:private select-anime
-  "SELECT animedb_id, title, status, episodes, start, end, image FROM anime")
+  "SELECT animedb_id, title, status, episodes, start, end, image, type FROM anime")
 
 (defn- load-anime-list [data-source]
   (let [hentai-id-set (set (load-hentai-anime-ids data-source))
@@ -307,6 +307,7 @@
             (set! (.status anime) (:status item))
             (set! (.title anime) (:title item))
             (set! (.image anime) (:image item))
+            (set! (.seriesType anime) (:type item))
             (set! (.episodes anime) (:episodes item))
             (set! (.startedAiring anime) (if-let [start (:start item)] start 0))
             (set! (.endedAiring anime) (if-let [end (:end item)] end 0))

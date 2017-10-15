@@ -27,6 +27,7 @@
              (format-season (.startedAiring anime))
              "Unknown season")
    :tags tags
+   :seriesType (.seriesType anime)
    :status (.status anime)})
 
 (defn rewrite-resources [response]

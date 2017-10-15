@@ -11,6 +11,7 @@ public class Anime {
     public String title;
     public String image;
     public int status;
+    public int seriesType;
     public Franchise franchise;
     public int episodes;
     public List<String> genres;
