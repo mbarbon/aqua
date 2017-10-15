@@ -180,7 +180,7 @@
               (doall (map :username (resultset-seq rs)))))
           (fetch-old-users [users-count]
             (with-query data-source-ro rs query-old-failed-update-bucket
-                        [(max old-inactive-budget-min (* users-count old-inactive-budget-fraction))]
+                        [(max old-inactive-budget-min (int (* users-count old-inactive-budget-fraction)))]
               (doall (map :username (resultset-seq rs)))))]
     (let [min-last-change (with-query data-source-ro rs query-min-last-change []
                             (:min_change (first (resultset-seq rs))))
