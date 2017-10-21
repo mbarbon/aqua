@@ -1,0 +1,10 @@
+{
+  // For prettier
+  "editor.formatOnSave": true,
+  "javascript.format.enable": false,
+  "prettier.eslintIntegration": true,
+
+  // for Flow
+  "flow.runOnEdit": true,
+  "javascript.validate.enable": false
+}

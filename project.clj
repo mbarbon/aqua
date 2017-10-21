@@ -22,7 +22,6 @@
                  [compojure "1.5.1"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.2.1"]]
-;  :global-vars {*warn-on-reflection* true}
   :source-paths ["src/main/clojure"]
   :resource-paths ["src/main/resources"]
   :java-source-paths ["src/main/java"]
@@ -37,4 +36,5 @@
              :dev {:resource-paths ["src/test/resources"]}
              :repl {:global-vars {*warn-on-reflection* true}}
              :uberjar {:aot  :all
+                       :resource-paths ["build"]
                        :main aqua.web.serve}})
