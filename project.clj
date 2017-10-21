@@ -29,7 +29,11 @@
   :test-paths ["test" "src/test/clojure"]
   :jar-exclusions [#"^public/cdn-libs/"]
   :target-path "target/%s"
-  :profiles {:serve {:jvm-opts ["-Xms100M" "-Xmx100M" "-XX:+PrintGCDateStamps" "-XX:+PrintGCDetails"]}
+  :profiles {:serve-jvm8 {:jvm-opts ["-Xms100M" "-Xmx100M"
+                                     "-XX:+PrintGCDateStamps"
+                                     "-XX:+PrintGCDetails"]}
+             :serve-jvm9 {:jvm-opts ["-Xms100M" "-Xmx100M"
+                                     "-Xlog:gc:stdout:time"]}
              :dev {:resource-paths ["src/test/resources"]}
              :repl {:global-vars {*warn-on-reflection* true}}
              :uberjar {:aot  :all
