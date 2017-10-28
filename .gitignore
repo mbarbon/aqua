@@ -5,7 +5,6 @@
 /target/
 /sample-users.txt
 /test-users.txt
-/src/main/resources/public/cdn-libs/
 *.pyc
 /node_modules/
 /coverage/
