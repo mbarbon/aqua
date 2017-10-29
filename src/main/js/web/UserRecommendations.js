@@ -8,6 +8,7 @@ import {
   aquaAutocomplete
 } from '../shared/state/Globals'
 import Header from './Header'
+import AquaButton from './components/AquaButton'
 
 import type { Anime, Recommendations } from '../shared/backend/types'
 import type {
@@ -120,11 +121,11 @@ export default class UserRecommendations extends Component<Props, State> {
     for (let i = 0; i < this.state.showHideTags.length; ++i) {
       let showHide = this.state.showHideTags[i]
       result.push(
-        <div className='aqua-button' key={'showHide.' + i}>
-          <a href='#' onClick={this.toggleStatusFilter.bind(this, i)}>
-            {showHide.statusDescription()}
-          </a>
-        </div>
+        <AquaButton
+          key={'showHide.' + i}
+          onClick={this.toggleStatusFilter.bind(this, i)}
+          label={showHide.statusDescription()}
+        />
       )
     }
     return result
@@ -173,22 +174,24 @@ export default class UserRecommendations extends Component<Props, State> {
           {isMal && this.renderStatusFilters()}
           {isLocal &&
             hasLocalList && (
-              <div className='aqua-button'>
-                <a href='#' onClick={this.toggleEditLocal.bind(this)}>
-                  {this.state.manualEditMode
+              <AquaButton
+                onClick={this.toggleEditLocal.bind(this)}
+                label={
+                  this.state.manualEditMode
                     ? 'See recommendations'
-                    : 'Modify your anime list'}
-                </a>
-              </div>
+                    : 'Modify your anime list'
+                }
+              />
             )}
           {this.props.recommendations && (
-            <div className='aqua-button'>
-              <a href='#' onClick={this.toggleShowAiring.bind(this)}>
-                {this.state.showAiring
+            <AquaButton
+              onClick={this.toggleShowAiring.bind(this)}
+              label={
+                this.state.showAiring
                   ? 'Hide airing anime'
-                  : 'Show airing anime'}
-              </a>
-            </div>
+                  : 'Show airing anime'
+              }
+            />
           )}
         </div>
         {this.props.autocompleteAnime && (

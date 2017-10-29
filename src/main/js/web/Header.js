@@ -1,6 +1,7 @@
 // @flow
 import React, { PureComponent } from 'react'
 import { aquaAutocomplete, localState } from '../shared/state/Globals'
+import AquaButton from './components/AquaButton'
 
 export default class Header extends PureComponent<{
   userMode: string,
@@ -8,8 +9,7 @@ export default class Header extends PureComponent<{
   queuePosition: ?number,
   canRefresh: boolean
 }> {
-  changeUser (e: SyntheticEvent<>) {
-    e.preventDefault()
+  changeUser () {
     localState.resetUserMode()
   }
 
@@ -33,37 +33,36 @@ export default class Header extends PureComponent<{
       <div className='main-page-head aqua-body' id='main-page-head'>
         <div className='main-page-head-actions'>
           {this.props.userMode === 'local' && (
-            <div className='aqua-button inline-aqua-button'>
-              <a href='#' onClick={this.changeUser.bind(this)}>
-                Use a MAL account
-              </a>
-              <br />
-            </div>
+            <AquaButton
+              inline
+              onClick={this.changeUser.bind(this)}
+              label='Use a MAL account'
+            />
           )}
           {isMal && <b>{this.props.malUsername}</b>}
           {this.props.queuePosition &&
             `(position in queue ${this.props.queuePosition}`}
           {this.props.canRefresh &&
             !this.props.queuePosition && (
-              <div className='aqua-button inline-aqua-button small-aqua-button'>
-                <a
-                  href='#'
-                  onClick={
-                    isMal
-                      ? this.refreshMalList.bind(this)
-                      : this.refreshLocalRecommendations.bind(this)
-                  }
-                >
-                  Refresh
-                </a>
-              </div>
+              <AquaButton
+                inline
+                small
+                onClick={
+                  isMal
+                    ? this.refreshMalList.bind(this)
+                    : this.refreshLocalRecommendations.bind(this)
+                }
+                label='Refresh'
+              />
             )}{' '}
           {this.props.userMode === 'mal' && (
-            <div className='aqua-button inline-aqua-button small-aqua-button'>
-              <a href='change-user' onClick={this.changeUser.bind(this)}>
-                Change user
-              </a>
-            </div>
+            <AquaButton
+              inline
+              small
+              href='change-user'
+              onClick={this.changeUser.bind(this)}
+              label='Change user'
+            />
           )}
         </div>
         <div className='main-page-logo'>
