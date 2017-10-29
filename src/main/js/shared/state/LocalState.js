@@ -1,6 +1,8 @@
 // @flow
 import { AsyncStorage } from './AsyncStorage'
 import { aquaRecommendations, localAnimeList } from './Globals'
+import type { Anime, Rating, Recommendations } from '../backend/types'
+import type { FilterState, LocalAnime, StorageType } from './types'
 
 const malUsernameKey = '@Aqua:mal:username'
 const userModeKey = '@Aqua:userMode'
@@ -22,6 +24,8 @@ function removeObjectionableContent (animeList) {
 }
 
 export default class LocalState {
+  currentFilterState: FilterState
+
   constructor () {
     this.currentFilterState = {}
   }
@@ -45,7 +49,7 @@ export default class LocalState {
     })
   }
 
-  setMalUsernameAndLoadRecommendations (username) {
+  setMalUsernameAndLoadRecommendations (username: string) {
     AsyncStorage.multiSet([
       [malUsernameKey, username],
       [userModeKey, 'mal']
@@ -55,7 +59,7 @@ export default class LocalState {
     })
   }
 
-  loadMalRecommendations (username: string) {
+  loadMalRecommendations (username: string): Promise<void> {
     return aquaRecommendations
       .loadMalAnimeList()
       .then(animeList => {
@@ -73,7 +77,7 @@ export default class LocalState {
     this._loadLocalAnimeList(true)
   }
 
-  loadUserMode (maxXyz) {
+  loadUserMode (recommendationExpiration: number) {
     return AsyncStorage.multiGet([
       userModeKey,
       malUsernameKey,
@@ -98,14 +102,14 @@ export default class LocalState {
 
       if (
         recommendationMode === userMode &&
-        now - recommendationRefresh < maxXyz
+        now - recommendationRefresh < recommendationExpiration
       ) {
         let loadLocal
         if (userMode === 'mal') {
           aquaRecommendations.setMalUsername(username)
         } else if (userMode === 'local') {
           aquaRecommendations.setLocalUser()
-          loadLocal = this._loadLocalAnimeList()
+          loadLocal = this._loadLocalAnimeList(false)
         }
         let cachedRecommendations = AsyncStorage.getItem(
           cachedRecommendationsKey
@@ -137,7 +141,7 @@ export default class LocalState {
     })
   }
 
-  _loadLocalAnimeList (reloadRecommendations: boolean) {
+  _loadLocalAnimeList (reloadRecommendations: boolean): Promise<void> {
     return AsyncStorage.multiGet([
       localAnimeListKey,
       localListChangedKey
@@ -155,7 +159,7 @@ export default class LocalState {
     })
   }
 
-  setLocalAnimeList (animeList) {
+  setLocalAnimeList (animeList: Array<LocalAnime>) {
     let listString = JSON.stringify(animeList)
     return AsyncStorage.multiSet([
       [localAnimeListKey, listString],
@@ -163,12 +167,16 @@ export default class LocalState {
     ]).then(() => localAnimeList.setAnimeList(animeList, false, true))
   }
 
-  setMalAnimeList (animeList) {
+  setMalAnimeList (animeList: Array<Rating>) {
     let listString = JSON.stringify(animeList)
     return AsyncStorage.setItem(malAnimeListKey, listString)
   }
 
-  setCachedRecommendations (recommendations, updateTime, userMode) {
+  setCachedRecommendations (
+    recommendations: Recommendations,
+    updateTime: number,
+    userMode: StorageType
+  ) {
     return AsyncStorage.multiSet([
       [cachedRecommendationsKey, JSON.stringify(recommendations)],
       [cachedRecommendationsTimeKey, updateTime.toString()],
@@ -176,7 +184,7 @@ export default class LocalState {
     ])
   }
 
-  setRecommendationFilterState (filterState) {
+  setRecommendationFilterState (filterState: FilterState) {
     let jsonString = JSON.stringify(filterState)
     this.currentFilterState = JSON.parse(jsonString)
     return AsyncStorage.setItem(filterStateKey, jsonString)

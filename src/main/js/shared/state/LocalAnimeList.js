@@ -1,45 +1,46 @@
 // @flow
 import { localState } from './Globals'
-import PubSub from '../helpers/PubSub'
+import { PubSub3 } from '../helpers/PubSub'
 
-import type { PubSub3 } from '../helpers/PubSub'
 import type { Anime } from '../backend/types'
+import type { LocalAnime } from './types'
 
 export default class LocalAnimeList {
-  animeList: Array<Anime>
+  animeList: Array<LocalAnime>
   pubSub: {
-    animeList: PubSub3<Array<Anime>, boolean, boolean>
+    animeList: PubSub3<Array<LocalAnime>, boolean, boolean>
   }
 
   constructor () {
     this.animeList = []
     this.pubSub = {
-      animeList: new PubSub()
+      animeList: new PubSub3()
     }
   }
 
   addRating (item: Anime, rating: number) {
-    item.userRating = rating
-    item.userStatus = 2
+    let itemCopy = {
+      ...item,
+      userRating: rating,
+      userStatus: 2
+    }
 
     let newRatings = this.animeList.slice()
     for (let i = 0; i < newRatings.length; ++i) {
       if (newRatings[i].animedbId === item.animedbId) {
-        newRatings[i] = item
+        newRatings[i] = itemCopy
         return localState.setLocalAnimeList(newRatings)
       }
     }
 
-    newRatings.unshift(item)
+    newRatings.unshift(itemCopy)
     return localState.setLocalAnimeList(newRatings)
   }
 
-  removeRating (item: Anime) {
+  removeRating (item: Anime): Promise<void> {
     let newRatings = this.animeList.slice()
     for (let i = 0; i < newRatings.length; ++i) {
       if (newRatings[i].animedbId === item.animedbId) {
-        delete item.userRating
-        delete item.userStatus
         newRatings.splice(i, 1)
         return localState.setLocalAnimeList(newRatings)
       }
@@ -48,7 +49,7 @@ export default class LocalAnimeList {
   }
 
   setAnimeList (
-    animeList: Array<Anime>,
+    animeList: Array<LocalAnime>,
     reloadRecommendations: boolean,
     hasChanges: boolean
   ) {

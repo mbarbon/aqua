@@ -4,6 +4,7 @@ import StarRating from 'react-star-rating-component'
 import './AnimeListItem.css'
 
 import type { Anime } from '../../shared/backend/types'
+import type { LocalAnime } from '../../shared/state/types'
 
 const coverWidth = 84
 const coverHeight = 114
@@ -37,9 +38,9 @@ type Props = {
   onRemove?: ?AnimeListItem_onRemove
 }
 
-export default class AnimeListItem extends PureComponent<Props> {
+class AnimeListItem extends PureComponent<Props> {
   render () {
-    let anime = this.props.anime
+    let { anime, onChange, onRemove } = this.props
 
     return (
       <div className='recommendation-item'>
@@ -86,30 +87,34 @@ export default class AnimeListItem extends PureComponent<Props> {
             </div>
           )}
           {this.props.onChange && 'Your rating: '}
-          {this.props.onChange && (
+          {onChange && (
             <StarRating
               name={'anime.rating.' + anime.animedbId}
               emptyStarColor='#aaa'
               starColor='#fcd382'
-              value={anime.userRating / 2}
+              value={this._rating()}
               totalStars={5}
               onStarClick={value =>
-                this.props.onChange &&
-                this.props.onChange(this.props.anime, value * 2)}
+                onChange && onChange(this.props.anime, value * 2)}
             />
           )}
-          {this.props.onRemove && (
+          {onRemove && (
             <input
               type='button'
               value='Remove'
-              onClick={() =>
-                this.props.onRemove && this.props.onRemove(this.props.anime)}
+              onClick={() => onRemove && onRemove(this.props.anime)}
             />
           )}
         </div>
       </div>
     )
   }
+
+  _rating () {
+    let anime: any = this.props.anime
+    return (anime.userRating || 0) / 2
+  }
 }
 
+export { AnimeListItem }
 export type { AnimeListItem_onRemove, AnimeListItem_onChange }

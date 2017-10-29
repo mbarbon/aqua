@@ -1,25 +1,25 @@
 // @flow
-import PubSub from './PubSub'
+import { PubSub3 } from './PubSub'
 import type AquaRecommendations from '../backend/AquaRecommendations'
-import type { PubSub3 } from './PubSub'
 import type { Anime, Recommendations } from '../backend/types'
+import type { LocalAnime, StorageType } from '../state/types'
 
 export default class FilteredRecommendations {
   aquaRecommendations: AquaRecommendations
   recommendations: ?Recommendations
   recommendationTime: ?number
-  userMode: ?string
+  userMode: ?StorageType
   localAnimeSet: Set<number>
   filteredRecommendations: ?Recommendations
   pubSub: {
-    recommendations: PubSub3<Array<Anime>, number, 'mal' | 'local'>
+    recommendations: PubSub3<Recommendations, number, StorageType>
   }
   includedTags: Array<string>
 
   constructor (aquaRecommendations: AquaRecommendations) {
     this.aquaRecommendations = aquaRecommendations
     this.pubSub = {
-      recommendations: new PubSub()
+      recommendations: new PubSub3()
     }
     this.includedTags = []
     this.localAnimeSet = new Set()
@@ -33,7 +33,7 @@ export default class FilteredRecommendations {
     this._reapplyFilters()
   }
 
-  setLocalAnimeList (animeList: Array<Anime>) {
+  setLocalAnimeList (animeList: Array<LocalAnime>) {
     if (!animeList) {
       this.localAnimeSet = new Set()
     } else {
@@ -44,24 +44,31 @@ export default class FilteredRecommendations {
 
   _reapplyFilters () {
     const recommendations = this.recommendations
-    if (recommendations === null || recommendations === undefined) {
+    const recommendationTime = this.recommendationTime
+    const userMode = this.userMode
+    if (
+      recommendations == null ||
+      recommendationTime == null ||
+      userMode == null
+    ) {
       return
     }
-    this.filteredRecommendations = {
+    let filteredRecommendations = {
       airing: this._filterAnimeList(recommendations.airing),
       completed: this._filterAnimeList(recommendations.completed)
     }
+    this.filteredRecommendations = filteredRecommendations
     this.pubSub.recommendations.notify(
-      this.filteredRecommendations,
-      this.recommendationTime,
-      this.userMode
+      filteredRecommendations,
+      recommendationTime,
+      userMode
     )
   }
 
   _newRecommendations (
     recommendations: Recommendations,
     recommendationTime: number,
-    userMode: string
+    userMode: StorageType
   ) {
     this.recommendations = recommendations
     this.recommendationTime = recommendationTime

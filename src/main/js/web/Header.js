@@ -15,7 +15,7 @@ export default class Header extends PureComponent<{
 
   refreshMalList () {
     let malUsername = this.props.malUsername
-    if (malUsername === null || malUsername === undefined) {
+    if (malUsername == null) {
       throw new Error('Invalid calls to refreshMailLis')
     }
     localState.loadMalRecommendations(malUsername)

@@ -1,7 +1,6 @@
 // @flow
 // XXX: shared
-import PubSub from '../helpers/PubSub'
-import type { PubSub1 } from '../helpers/PubSub'
+import { PubSub1 } from '../helpers/PubSub'
 import type { Anime } from './types'
 
 let objectionable = {
@@ -33,7 +32,7 @@ export default class AquaAutocomplete {
   constructor () {
     this.term = null
     this.completions = null
-    this.pubSub = new PubSub()
+    this.pubSub = new PubSub1()
   }
 
   setTerm (term: string) {

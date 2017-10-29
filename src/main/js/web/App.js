@@ -12,6 +12,7 @@ import {
 import './App.css'
 
 import type { Anime, Recommendations } from '../shared/backend/types'
+import type { LocalAnime, StorageType } from '../shared/state/types'
 
 const recommendationsValidity = 24 * 3600
 
@@ -29,12 +30,12 @@ class App extends Component<{}, State> {
   recommendationsChangedCallback: (
     p1: Recommendations,
     p2: number,
-    p3: string
+    p3: StorageType
   ) => void
   filteredRecommendationsChangedCallback: (
     p1: Recommendations,
     p2: number,
-    p3: string
+    p3: StorageType
   ) => void
   autocompleteResultCallback: (Array<Anime>) => void
   queuePositionCallback: (?number) => void
@@ -127,7 +128,7 @@ class App extends Component<{}, State> {
   recommendationsChanged (
     recommendations: Recommendations,
     recommendationTime: number,
-    userMode: string
+    userMode: StorageType
   ) {
     if (userMode === this.state.userMode) {
       localState
@@ -139,7 +140,7 @@ class App extends Component<{}, State> {
   }
 
   recommendFromLocalList (
-    animeList: Array<Anime>,
+    animeList: Array<LocalAnime>,
     reloadRecommendations: boolean,
     hasChanges: boolean
   ) {
@@ -174,12 +175,7 @@ class App extends Component<{}, State> {
 
     if (userMode === 'loading') {
       return null
-    } else if (
-      recommendations !== null &&
-      recommendations !== undefined &&
-      userMode !== null &&
-      userMode !== undefined
-    ) {
+    } else if (recommendations != null && userMode != null) {
       return (
         <UserRecommendations
           malUsername={aquaRecommendations.getMalUsername()}

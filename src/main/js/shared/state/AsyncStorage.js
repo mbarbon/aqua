@@ -1,3 +1,4 @@
+// @flow
 // XXX this should not be in the shared folder
 const storage = window.localStorage
 

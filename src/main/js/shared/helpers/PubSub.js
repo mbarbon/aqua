@@ -1,51 +1,23 @@
 // @flow
-type Receiver0 = () => void
-type Receiver1 = <V>(V) => void
-type Receiver2 = <V, U>(V, U) => void
-type Receiver3 = <V, U, T>(V, U, T) => void
-
-interface PubSub0 {
-  subscribe(fnc: Receiver0): void;
-  unsubscribe(fnc: Receiver0): void;
-  notify(): void;
-}
-
-interface PubSub1<V> {
-  subscribe(fnc: Receiver1<V>): void;
-  unsubscribe(fnc: Receiver1<V>): void;
-  notify(V): void;
-}
-
-interface PubSub2<V, U> {
-  subscribe(fnc: Receiver2<V, U>): void;
-  unsubscribe(fnc: Receiver2<V, U>): void;
-  notify(V, U): void;
-}
-
-interface PubSub3<V, U, T> {
-  subscribe(fnc: Receiver3<V, U, T>): void;
-  unsubscribe(fnc: Receiver3<V, U, T>): void;
-  notify(V, U, T): void;
-}
-
-export default class PubSub {
-  subscribers: Array<any>
+class PubSubBase<R> {
+  subscribers: Array<R>
 
   constructor () {
     this.subscribers = []
   }
 
-  subscribe (fnc: any) {
+  subscribe (fnc: R) {
     this.subscribers.push(fnc)
   }
 
-  unsubscribe (fnc: any) {
+  unsubscribe (fnc: R) {
     this.subscribers.splice(this.subscribers.indexOf(fnc), 1)
   }
 
   notify (...args: Array<any>) {
     for (let i = 0; i < this.subscribers.length; ++i) {
       try {
+        // $FlowFixMe
         this.subscribers[i].apply(null, arguments)
       } catch (err) {
         console.error(err)
@@ -54,4 +26,28 @@ export default class PubSub {
   }
 }
 
-export type { PubSub0, PubSub1, PubSub2, PubSub3 }
+class PubSub0 extends PubSubBase<() => void> {
+  notify () {
+    super.notify()
+  }
+}
+
+class PubSub1<T> extends PubSubBase<(T) => void> {
+  notify (p1: T) {
+    super.notify(p1)
+  }
+}
+
+class PubSub2<T, U> extends PubSubBase<(T, U) => void> {
+  notify (p1: T, p2: U) {
+    super.notify(p1, p2)
+  }
+}
+
+class PubSub3<T, U, V> extends PubSubBase<(T, U, V) => void> {
+  notify (p1: T, p2: U, p3: V) {
+    super.notify(p1, p2, p3)
+  }
+}
+
+export { PubSub0, PubSub1, PubSub2, PubSub3 }

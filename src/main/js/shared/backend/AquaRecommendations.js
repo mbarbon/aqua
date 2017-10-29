@@ -1,7 +1,6 @@
 // @flow
 // XXX: shared
-import PubSub from '../helpers/PubSub'
-import type { PubSub0, PubSub1, PubSub3 } from '../helpers/PubSub'
+import { PubSub0, PubSub1, PubSub3 } from '../helpers/PubSub'
 import type { Anime, Rating, Recommendations } from './types'
 
 type ResolveRatings = (Array<Rating>) => void
@@ -22,7 +21,7 @@ function fetchRatingsUntil (
   username: string,
   retries: number,
   delay: number,
-  notifyProgress: (?number) => void
+  notifyProgress: (_: ?number) => void
 ): Promise<Array<Rating>> {
   let executor = function executor (
     resolve: ResolveRatings,
@@ -71,12 +70,14 @@ function fetchRecommendations (
   }).then(response => response.json())
 }
 
+type RecommendationType = 'mal' | 'local'
+
 export default class AquaRecommendations {
   malUsername: ?string
   localUser: boolean
   pubSub: {
     userMode: PubSub0,
-    recommendations: PubSub3<Recommendations, number, 'mal' | 'local'>,
+    recommendations: PubSub3<Recommendations, number, RecommendationType>,
     queuePosition: PubSub1<?number>
   }
   recommendations: ?Recommendations
@@ -85,9 +86,9 @@ export default class AquaRecommendations {
     this.malUsername = null
     this.localUser = false
     this.pubSub = {
-      userMode: new PubSub(),
-      recommendations: new PubSub(),
-      queuePosition: new PubSub()
+      userMode: new PubSub0(),
+      recommendations: new PubSub3(),
+      queuePosition: new PubSub1()
     }
     this.recommendations = null
   }
@@ -132,7 +133,7 @@ export default class AquaRecommendations {
     }
   }
 
-  notifyProgress (queuePositon: number) {
+  notifyProgress (queuePositon: ?number) {
     this.pubSub.queuePosition.notify(queuePositon)
   }
 
@@ -150,7 +151,7 @@ export default class AquaRecommendations {
     })
   }
 
-  loadMalRecommendations (animeList: Array<Rating>): Promise<null> {
+  loadMalRecommendations (animeList: Array<Rating>): Promise<void> {
     // XXX this should be included in the anime list
     let username = this.malUsername
     return fetchRecommendations(animeList)
