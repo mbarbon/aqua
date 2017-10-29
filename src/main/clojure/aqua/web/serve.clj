@@ -139,7 +139,7 @@
   (aqua.web.search/init)
   (aqua.web.recommender/init)
   (aqua.web.background/schedule reload "Reload user models" 43200 86400)
-  (aqua.web.mal-proxy/init))
+  (aqua.web.mal-proxy/init options))
 
 (defn reload []
   (aqua.web.globals-init/reload)
@@ -175,6 +175,13 @@
     :default "maldump"]
    [nil "--code-reload" "Enable code reloading"]
    [nil "--stacktraces" "Enable stacktrace middleware"]
+   [nil "--slowpoke" "Enable slowpoke"
+    :default true
+    :id :slowpoke
+    :assoc-fn (fn [m k _] (assoc m k true))]
+   [nil "--no-slowpoke" "Disable slowpoke"
+    :id :slowpoke
+    :assoc-fn (fn [m k _] (assoc m k false))]
    ["-h" "--help"]])
 
 (defn- wrap-handler [handler options]

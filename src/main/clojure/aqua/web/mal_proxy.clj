@@ -16,10 +16,11 @@
     (schedule aqua.slowpoke/make-refresh-users 300)
     (schedule aqua.slowpoke/make-fetch-new-users 30)))
 
-(defn init []
+(defn init [{:keys [slowpoke]}]
   (aqua.mal-local/setup-tables @*data-source-rw)
   (aqua.mal.Http/init)
-  (init-slowpoke)
+  (if slowpoke
+    (init-slowpoke))
   (.scheduleWithFixedDelay
     @*background
     (aqua.slowpoke/make-process-refresh-queue @*data-source-rw @*data-source-ro)
