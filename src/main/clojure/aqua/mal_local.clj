@@ -354,7 +354,13 @@
                          (resultset-seq rs))))))
 
 (def ^:private select-user-ids
-  (str "SELECT user_id, last_change FROM users WHERE user_id > ? LIMIT ?"))
+  (str "SELECT u.user_id AS user_id, u.last_change AS last_change"
+       "    FROM users AS u"
+       "      INNER JOIN anime_list AS al"
+       "        ON u.user_id = al.user_id"
+       "    WHERE u.user_id > ? AND"
+       "          al.anime_list_format = 1"
+       "    LIMIT ?"))
 
 (defn all-user-ids [data-source after-id limit]
   (with-query data-source rs select-user-ids [after-id limit]
