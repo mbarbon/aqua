@@ -75,39 +75,46 @@ public class ComputeRPSimilarAnime {
                 currentAnime.set(i, projectedScores.get(index, i));
 
             projectedScores.mult(currentAnime, similarityScores);
-            fillTopScores(index, similarityScores);
+            fillTopScores(animedbId, index, similarityScores);
         }
     }
 
-    private void fillTopScores(int animeIndex, DenseVector similarityScores) {
+    private void fillTopScores(int animedbId, int animeIndex, DenseVector similarityScores) {
         MinMaxPriorityQueue<ScoredAnimeId> topScored =
             MinMaxPriorityQueue.orderedBy(ScoredAnimeId.SORT_SCORE)
                                .maximumSize(similarAnimeCount)
                                .create();
 
         for (Map.Entry<Integer, Integer> entry : animeIndexMap.entrySet()) {
-            int animedbId = entry.getKey();
-            int index = entry.getValue();
-            double score = similarityScores.get(index);
+            int entryAnimedbId = entry.getKey();
+            int entryIndex = entry.getValue();
+            double score = similarityScores.get(entryIndex);
 
-            if (index == animeIndex || score < 0.2)
+            if (entryIndex == animeIndex || score < 0.2)
                 continue;
-            topScored.add(new ScoredAnimeId(animedbId, (float) -score));
+            topScored.add(new ScoredAnimeId(entryAnimedbId, (float) -score));
         }
 
         Set<Integer> seenFranchises = new HashSet<>();
+        addFranchise(animedbId, seenFranchises);
         int currentIndex = animeIndex * similarAnimeCount;
         while (!topScored.isEmpty()) {
             ScoredAnimeId scoredAnimeId = topScored.removeFirst();
-            Anime anime = animeMap.get(scoredAnimeId.animedbId);
-            if (anime != null && anime.franchise != null) {
-                if (seenFranchises.contains(anime.franchise.franchiseId))
-                    continue;
-                seenFranchises.add(anime.franchise.franchiseId);
-            }
+            if (addFranchise(scoredAnimeId.animedbId, seenFranchises))
+                continue;
             similarAnimeId[currentIndex] = scoredAnimeId.animedbId;
             similarAnimeScore[currentIndex] = scoredAnimeId.score;
             ++currentIndex;
         }
+    }
+
+    private boolean addFranchise(int animedbId, Set<Integer> seenFranchises) {
+        Anime anime = animeMap.get(animedbId);
+        if (anime != null && anime.franchise != null) {
+            if (seenFranchises.contains(anime.franchise.franchiseId))
+                return true;
+            seenFranchises.add(anime.franchise.franchiseId);
+        }
+        return false;
     }
 }
