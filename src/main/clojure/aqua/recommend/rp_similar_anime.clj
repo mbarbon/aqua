@@ -55,3 +55,10 @@
 (defn load-rp-similarity [path]
   (aqua.recommend.model-files/with-open-model path 1 in version
     (load-rp-similarity-v1 in)))
+
+(defn get-recommendations [user
+                           ^aqua.recommend.RPSimilarAnime rp
+                           remove-known-anime]
+  (let [ranked-anime (.findSimilarAnime rp user)]
+    (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
+    [[] (take 100 (remove-known-anime ranked-anime))]))
