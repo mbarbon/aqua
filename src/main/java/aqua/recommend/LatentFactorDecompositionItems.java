@@ -26,6 +26,21 @@ public class LatentFactorDecompositionItems {
         this.similarAnimeScore = similarAnimeScore;
     }
 
+    public List<ScoredAnimeId> similarAnime(int animedbId) {
+        Integer index = animeIndexMap.get(animedbId);
+        if (index == null)
+            return new ArrayList<>();
+        List<ScoredAnimeId> result = new ArrayList<>(similarAnimeCount);
+
+        for (int i = 0, currentIndex = index * similarAnimeCount; i < similarAnimeCount; ++i, ++currentIndex) {
+            if (similarAnimeId[currentIndex] == 0)
+                break;
+            result.add(new ScoredAnimeId(similarAnimeId[currentIndex], similarAnimeScore[currentIndex]));
+        }
+
+        return result;
+    }
+
     public List<ScoredAnimeId> findSimilarAnime(CFUser user) {
         List<ScoredAnimeId> sortedScores = new ArrayList<>(user.completedAndDroppedIds.length);
         for (int i = 0; i < user.completedAndDroppedIds.length; ++i) {
