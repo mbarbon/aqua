@@ -2,6 +2,7 @@
   (:require aqua.misc
             aqua.recommend.lfd
             aqua.recommend.lfd-cf
+            aqua.recommend.lfd-items
             aqua.recommend.rp-similar-anime
             aqua.recommend.cosine
             aqua.recommend.pearson
@@ -52,6 +53,9 @@
 
 (defn make-score-lfd-cf [rp-model lfd-users]
   (partial score-recommender rp-model #(aqua.recommend.lfd-cf/get-recommendations %1 lfd-users %2)))
+
+(defn make-score-lfd-items [rp-model lfd]
+  (partial score-recommender rp-model #(aqua.recommend.lfd-items/get-recommendations %1 lfd %2)))
 
 (defn make-score-rp [rp-model rp-model]
   (partial score-recommender rp-model #(aqua.recommend.rp-similar-anime/get-recommendations %1 rp-model %2)))

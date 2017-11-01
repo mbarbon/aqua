@@ -3,12 +3,14 @@
             aqua.misc
             aqua.recommend.user-sample
             aqua.recommend.lfd
+            aqua.recommend.lfd-items
             aqua.recommend.rp-similar-anime
             clojure.java.io))
 
 (def user-count 15000)
 (def all-items ["user-sample"
                 "lfd-model"
+                "lfd-items"
                 "rp-similarity"
                 "rp-similarity-unfiltered"])
 
@@ -24,10 +26,22 @@
 (def lfd-lambda 0.1)
 (def lfd-iterations 20)
 
+(def lfd-items-similar-item-count 30)
+
 (defn- recompute-rp-model [users anime-map model-path]
   (let [rp-similar (aqua.recommend.rp-similar-anime/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
     (with-open [out (clojure.java.io/writer model-path)]
       (aqua.recommend.rp-similar-anime/store-rp-similarity out rp-similar))))
+
+(defn- recompute-lfd-items-model [anime lfd-path lfd-airing-path model-path airing-model-path]
+  (let [lfd (aqua.recommend.lfd/load-lfd lfd-path)
+        lfd-airing (aqua.recommend.lfd/load-lfd lfd-airing-path)
+        lfd-items (aqua.recommend.lfd-items/create-model anime lfd lfd lfd-items-similar-item-count)
+        lfd-items-airing (aqua.recommend.lfd-items/create-model anime lfd lfd-airing lfd-items-similar-item-count)]
+    (with-open [out (clojure.java.io/writer model-path)]
+      (aqua.recommend.lfd-items/store-lfd-items out lfd-items))
+    (with-open [out (clojure.java.io/writer airing-model-path)]
+      (aqua.recommend.lfd-items/store-lfd-items out lfd-items-airing))))
 
 (defn- recompute-lfd-model [users anime-map rank lambda iterations model-path airing-model-path user-model-path]
   (let [[lfdr lfdr-airing] (aqua.recommend.lfd/prepare-lfd-decompositor users anime-map rank lambda)]
@@ -59,6 +73,10 @@
           (do
             (println "Recomputing latent factor decomposition")
             (time (recompute-lfd-model users anime lfd-rank lfd-lambda lfd-iterations "maldump/lfd-model" "maldump/lfd-model-airing" "maldump/lfd-user-model")))
+        "lfd-items"
+          (do
+            (println "Recomputing latent factor decomposition item similarity")
+            (time (recompute-lfd-items-model anime, "maldump/lfd-model" "maldump/lfd-model-airing" "maldump/lfd-items-model" "maldump/lfd-items-model-airing")))
         "rp-similarity"
           (do
             (println "Recomputing random projection similarity model")

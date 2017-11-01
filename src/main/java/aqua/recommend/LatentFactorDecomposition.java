@@ -14,7 +14,7 @@ import static aqua.recommend.MatrixUtils.partialTransAmult;
 public class LatentFactorDecomposition {
     public final double lambda;
     public final DenseMatrix animeFactors;
-    private final Map<Integer, Integer> animeIndexMap;
+    final Map<Integer, Integer> animeIndexMap;
     public final int[] animeRatedMap; // inverse for animeIndexMap
 
     public LatentFactorDecomposition(double lambda, Map<Integer, Integer> animeIndexMap, int[] animeRatedMap, DenseMatrix animeFactors) {
@@ -35,6 +35,10 @@ public class LatentFactorDecomposition {
 
     public int rank() {
         return animeFactors.numColumns();
+    }
+
+    public int animeCount() {
+        return animeRatedMap.length;
     }
 
     public double[] computeUserVector(CFUser user) {
