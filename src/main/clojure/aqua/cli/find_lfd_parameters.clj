@@ -51,12 +51,15 @@
 (defn- split-doubles [arg]
   (map #(Double/valueOf %) (clojure.string/split arg #"\s*,\s*")))
 
+(defn- has-some-anime [user]
+  (>= (count (.completedAndDroppedIds user)) 10))
+
 (defn -main [ranks lambdas iteration-counts]
   (let [directory "maldump"
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
         sampled-ids (aqua.recommend.user-sample/load-user-sample "maldump/user-sample" user-count)
         cf-parameters-std (aqua.misc/make-cf-parameters 0 0)
-        users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
+        users (filter has-some-anime (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids))
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory
                                                                      data-source
                                                                      (* 10 compare-count)
