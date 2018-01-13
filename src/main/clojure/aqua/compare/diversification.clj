@@ -21,7 +21,7 @@
                                [(.animedbId item) item]))]
     (apply + (for [item rest-items]
                (if-let [similar (similar-map (.animedbId item))]
-                 (- (.score item))
+                 (- (.score similar))
                  0)))))
 
 (defn- compute-diversification [rp-model recommended-anime]
