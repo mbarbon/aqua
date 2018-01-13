@@ -62,3 +62,7 @@
   (let [ranked-anime (.findSimilarAnime rp user)]
     (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
     [[] (take 100 (remove-known-anime ranked-anime))]))
+
+(defn get-all-recommendations [user rp remove-known-anime keep-airing-anime tagger]
+  (let [[_ recommendations] (get-recommendations user rp remove-known-anime)]
+    [(tagger recommendations) []]))
