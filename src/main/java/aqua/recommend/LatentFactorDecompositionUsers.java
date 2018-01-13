@@ -110,6 +110,8 @@ public class LatentFactorDecompositionUsers {
                 return 1;
             int base = userIdx * rank;
             double sumSquaresB = sumSquares(userFactors, 0, rank);
+            if (sumSquaresB == 0)
+                return 1;
             double productSum = productSum(userVector, userFactors, base, rank);
             return (float) (-productSum / (sumSquaresA * sumSquaresB));
         }
