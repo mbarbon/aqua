@@ -18,13 +18,13 @@
 
 ; around the point where the score from find-rp-size starts stabilizing
 ; (i.e. multiple random projections start returning more stable results)
-(def rp-projection-size 1500)
+(def rp-projection-size 7000)
 ; arbitrary
 (def rp-similar-item-count 30)
 
-(def lfd-rank 25)
+(def lfd-rank 40)
 (def lfd-lambda 0.1)
-(def lfd-iterations 20)
+(def lfd-iterations 24)
 
 (def lfd-items-similar-item-count 30)
 
