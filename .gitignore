@@ -9,3 +9,6 @@
 /node_modules/
 /coverage/
 /build/
+/.idea/
+/*.iml
+/pom.xml

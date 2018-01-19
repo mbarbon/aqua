@@ -1,6 +1,6 @@
 (defproject aqua-recommend "0.0.1-SNAPSHOT"
   :description "Aqua: simplistic anime recommendations"
-  :url "https://example.com/FIXME"
+  :url "https://github.com/mbarbon/aqua"
   :license {:name "3-Clause BSD License"
             :url "https://opensource.org/licenses/BSD-3-Clause"}
   :dependencies [[org.clojure/clojure "1.8.0"]
@@ -27,6 +27,9 @@
   :java-source-paths ["src/main/java"]
   :test-paths ["test" "src/test/clojure"]
   :target-path "target/%s"
+  :pom-addition [:properties
+                    ["maven.compiler.source" "1.8"]
+                    ["maven.compiler.target" "1.8"]]
   :profiles {:serve-jvm8 {:jvm-opts ["-Xms100M" "-Xmx100M"
                                      "-XX:+PrintGCDateStamps"
                                      "-XX:+PrintGCDetails"]}
