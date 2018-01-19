@@ -4,7 +4,6 @@ import aqua.mal.data.Anime;
 
 import com.google.common.collect.MinMaxPriorityQueue;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +37,8 @@ public class ComputeRPSimilarAnime {
         fillSimilarAnime(projectedScores);
     }
 
-    public RPSimilarAnime rpSimilarAnime() {
-        return new RPSimilarAnime(animeIndexMap, similarAnimeCount, similarAnimeId, similarAnimeScore);
+    public ItemItemModel rpSimilarAnime() {
+        return new ItemItemModel(animeIndexMap, similarAnimeCount, similarAnimeId, similarAnimeScore);
     }
 
     private static FlexCompRowMatrix fillScoreBuckets(List<CFUser> users, Map<Integer, Integer> animeIndexMap) {

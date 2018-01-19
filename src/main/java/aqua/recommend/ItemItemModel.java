@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RPSimilarAnime {
+public class ItemItemModel {
     private static final int ITEM_MIN = 10;
     private static final int ITEM_MAX = 20;
 
@@ -16,7 +16,7 @@ public class RPSimilarAnime {
     public final int[] similarAnimeId;
     public final float[] similarAnimeScore;
 
-    public RPSimilarAnime(Map<Integer, Integer> animeIndexMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
+    public ItemItemModel(Map<Integer, Integer> animeIndexMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
         this.animeIndexMap = animeIndexMap;
         this.similarAnimeCount = similarAnimeCount;
         this.similarAnimeId = similarAnimeId;
@@ -27,7 +27,7 @@ public class RPSimilarAnime {
             animeRatedMap[entry.getValue()] = entry.getKey();
     }
 
-    public RPSimilarAnime(int[] animeRatedMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
+    public ItemItemModel(int[] animeRatedMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
         this.animeRatedMap = animeRatedMap;
         this.similarAnimeCount = similarAnimeCount;
         this.similarAnimeId = similarAnimeId;
