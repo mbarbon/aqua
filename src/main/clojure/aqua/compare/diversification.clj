@@ -4,6 +4,7 @@
             aqua.recommend.lfd-cf
             aqua.recommend.lfd-items
             aqua.recommend.rp-similar-anime
+            aqua.recommend.co-occurrency
             aqua.recommend.cosine
             aqua.recommend.pearson
             clojure.java.io))
@@ -59,3 +60,6 @@
 
 (defn make-score-rp [rp-model rp-model]
   (partial score-recommender rp-model #(aqua.recommend.rp-similar-anime/get-recommendations %1 rp-model %2)))
+
+(defn make-score-co-occurrency [rp-model co-occurrency-model]
+  (partial score-recommender rp-model #(aqua.recommend.co-occurrency/get-recommendations %1 co-occurrency-model %2)))

@@ -2,6 +2,7 @@
   (:require aqua.mal-local
             aqua.misc
             aqua.recommend.user-sample
+            aqua.recommend.co-occurrency
             aqua.recommend.lfd
             aqua.recommend.lfd-items
             aqua.recommend.rp-similar-anime
@@ -9,12 +10,17 @@
 
 (def user-count 15000)
 (def all-items ["user-sample"
+                "co-occurrency"
                 "lfd-model"
                 "lfd-items"
                 "rp-similarity"
                 "rp-similarity-unfiltered"])
 
 (def user-sample-count 100000)
+
+(def co-occurrency-score-threshold 0.2)
+(def co-occurrency-alpha 0.3)
+(def co-occurrency-item-count 30)
 
 ; around the point where the score from find-rp-size starts stabilizing
 ; (i.e. multiple random projections start returning more stable results)
@@ -27,6 +33,11 @@
 (def lfd-iterations 24)
 
 (def lfd-items-similar-item-count 30)
+
+(defn- recompute-co-occurrency-model [users anime-map model-path]
+  (let [co-occurrency (aqua.recommend.co-occurrency/create-co-occurrency users anime-map co-occurrency-score-threshold co-occurrency-alpha co-occurrency-item-count)]
+    (with-open [out (clojure.java.io/writer model-path)]
+      (aqua.recommend.co-occurrency/store-co-occurrency out co-occurrency))))
 
 (defn- recompute-rp-model [users anime-map model-path]
   (let [rp-similar (aqua.recommend.rp-similar-anime/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
@@ -69,6 +80,10 @@
       (case item
         "user-sample"
           nil ; handled above
+        "co-occurrency"
+          (do
+            (println "Recomputing co-occurrency item-item model")
+            (time (recompute-co-occurrency-model users anime "maldump/co-occurrency-model")))
         "lfd-model"
           (do
             (println "Recomputing latent factor decomposition")
