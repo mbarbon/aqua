@@ -10,6 +10,7 @@
 (def *data-source-ro (atom nil))
 (def *users (atom nil))
 (def *anime (atom nil))
+(def *co-occurrency (atom nil))
 (def *lfd-anime (atom nil))
 (def *lfd-anime-airing (atom nil))
 (def *lfd-users (atom nil))

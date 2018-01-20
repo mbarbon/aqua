@@ -6,10 +6,12 @@
                                       *users
                                       *anime
                                       *cf-parameters
+                                      *co-occurrency
                                       *lfd-users
                                       *lfd-anime
                                       *lfd-anime-airing]]
             aqua.recommend.cosine
+            aqua.recommend.co-occurrency
             aqua.recommend.lfd
             aqua.recommend.lfd-cf
             aqua.recommend.user-sample
@@ -19,6 +21,7 @@
 (def ^:private user-count 15000)
 (def ^:private all-recommenders [:cf-cosine
                                  :cf-lfd
+                                 :cf-co-occurrency
                                  :lfd])
 
 (defn- model-path [file]
@@ -28,10 +31,13 @@
   (log/info "Start loading users")
   (let [data-source @*data-source-ro
         users (aqua.recommend.user-sample/load-filtered-cf-users (model-path "user-sample") data-source @*cf-parameters user-count @*anime)
+        co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (model-path "co-occurrency-model")
+                                                                       (model-path "co-occurrency-model-airing"))
         lfd (aqua.recommend.lfd/load-lfd (model-path "lfd-model") @*anime)
         lfd-airing (aqua.recommend.lfd/load-lfd (model-path "lfd-model-airing") @*anime)
         lfd-users (aqua.recommend.lfd/load-user-lfd (model-path "lfd-user-model") lfd users)]
     (reset! *users users)
+    (reset! *co-occurrency co-occurrency)
     (reset! *lfd-users lfd-users)
     (reset! *lfd-anime lfd)
     (reset! *lfd-anime-airing lfd-airing))
@@ -58,6 +64,9 @@
     (reset! *lfd-users lfd-users)
     (reset! *lfd-anime lfd)
     (reset! *lfd-anime-airing lfd-airing))
+  (let [co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (model-path "co-occurrency-model")
+                                                                       (model-path "co-occurrency-model-airing"))]
+    (reset! *co-occurrency co-occurrency))
   (log/info "Done reloading users"))
 
 (defn init []
@@ -78,6 +87,12 @@
                                                      known-anime-filter
                                                      airing-anime-filter
                                                      known-anime-tagger)
+    :cf-co-occurrency
+      (aqua.recommend.co-occurrency/get-all-recommendations user
+                                                            @*co-occurrency
+                                                            known-anime-filter
+                                                            airing-anime-filter
+                                                            known-anime-tagger)
     :cf-lfd
       ; *lfd-users is unset during loading
       (if-let [lfd-users @*lfd-users]
