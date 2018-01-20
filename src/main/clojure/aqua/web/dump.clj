@@ -6,7 +6,9 @@
                                       *data-source-rw]]))
 
 (def ^:private model-names
-  ["lfd-model" "lfd-model-airing" "lfd-user-model" "user-sample"])
+  ["lfd-model" "lfd-model-airing" "lfd-user-model"
+   "co-occurrency-model" "co-occurrency-model-airing"
+   "user-sample"])
 
 (defn- to-page [key id-map]
   {key id-map
