@@ -21,6 +21,7 @@
 (def co-occurrency-score-threshold 0.2)
 (def co-occurrency-alpha 0.3)
 (def co-occurrency-item-count 30)
+(def co-occurrency-item-count-airing 15)
 
 ; around the point where the score from find-rp-size starts stabilizing
 ; (i.e. multiple random projections start returning more stable results)
@@ -34,10 +35,15 @@
 
 (def lfd-items-similar-item-count 30)
 
-(defn- recompute-co-occurrency-model [users anime-map model-path]
-  (let [co-occurrency (aqua.recommend.co-occurrency/create-co-occurrency users anime-map co-occurrency-score-threshold co-occurrency-alpha co-occurrency-item-count)]
+(defn- recompute-co-occurrency-model [users anime-map model-path airing-model-path]
+  (let [co-occurrency (aqua.recommend.co-occurrency/create-co-occurrency users anime-map
+                                                                         co-occurrency-score-threshold
+                                                                         co-occurrency-alpha co-occurrency-item-count
+                                                                         co-occurrency-item-count-airing)]
     (with-open [out (clojure.java.io/writer model-path)]
-      (aqua.recommend.co-occurrency/store-co-occurrency out co-occurrency))))
+      (aqua.recommend.co-occurrency/store-co-occurrency-complete out co-occurrency))
+    (with-open [out (clojure.java.io/writer airing-model-path)]
+      (aqua.recommend.co-occurrency/store-co-occurrency-airing out co-occurrency))))
 
 (defn- recompute-rp-model [users anime-map model-path]
   (let [rp-similar (aqua.recommend.rp-similar-anime/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
@@ -83,7 +89,7 @@
         "co-occurrency"
           (do
             (println "Recomputing co-occurrency item-item model")
-            (time (recompute-co-occurrency-model users anime "maldump/co-occurrency-model")))
+            (time (recompute-co-occurrency-model users anime "maldump/co-occurrency-model" "maldump/co-occurrency-model-airing")))
         "lfd-model"
           (do
             (println "Recomputing latent factor decomposition")

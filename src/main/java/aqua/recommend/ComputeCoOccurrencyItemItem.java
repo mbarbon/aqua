@@ -8,6 +8,116 @@ import java.util.Map;
 import java.util.Set;
 
 public class ComputeCoOccurrencyItemItem {
+    private interface AnimeIterator {
+        void reset(CFUser user);
+        int maxSize();
+        boolean next();
+        int animedbId();
+        float normalizedRating();
+    }
+
+    private class CompletedAndDroppedAnime implements AnimeIterator {
+        private final float goodScoreThreshold;
+        private CFUser user;
+        private int index;
+
+        public CompletedAndDroppedAnime(float goodScoreThreshold) {
+            this.goodScoreThreshold = goodScoreThreshold;
+        }
+
+        @Override
+        public void reset(CFUser user) {
+            this.user = user;
+            this.index = -1;
+        }
+
+        @Override
+        public int maxSize() {
+            return user.completedAndDroppedRating.length;
+        }
+
+        @Override
+        public boolean next() {
+            if (index >= user.completedAndDroppedRating.length) {
+                return false;
+            }
+            do {
+                ++index;
+            } while (index < user.completedAndDroppedRating.length && normalizedRating() < goodScoreThreshold);
+            if (index >= user.completedAndDroppedRating.length) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int animedbId() {
+            return user.completedAndDroppedIds[index];
+        }
+
+        @Override
+        public float normalizedRating() {
+            return user.completedAndDroppedRating[index];
+        }
+    }
+
+    private class AiringAnime implements AnimeIterator {
+        private final Map<Integer, Anime> animeMap;
+        private CFUser user;
+        private int index;
+        private CFRated current;
+        private List<CFRated> watching;
+
+        public AiringAnime(Map<Integer, Anime> animeMap) {
+            this.animeMap = animeMap;
+        }
+
+        @Override
+        public void reset(CFUser user) {
+            this.user = user;
+            this.index = -1;
+            this.watching = new ArrayList<>();
+
+            for (CFRated rated : user.watching()) {
+                this.watching.add(rated);
+            }
+        }
+
+        @Override
+        public int maxSize() {
+            return watching.size();
+        }
+
+        @Override
+        public boolean next() {
+            if (index >= watching.size()) {
+                return false;
+            }
+            for (;;) {
+                ++index;
+                if (index >= watching.size()) {
+                    return false;
+                }
+                current = watching.get(index);
+                Anime anime = animeMap.get(current.animedbId);
+                if (anime != null && anime.status == Anime.AIRING) {
+                    return true;
+                }
+            }
+            // can't get here
+        }
+
+        @Override
+        public int animedbId() {
+            return current.animedbId;
+        }
+
+        @Override
+        public float normalizedRating() {
+            return user.normalizedRating(current);
+        }
+    }
+
     private final Map<Integer, Anime> animeMap;
     private final Map<Integer, Integer> animeIndexMap;
     private final int similarAnimeCount;
@@ -25,7 +135,12 @@ public class ComputeCoOccurrencyItemItem {
     }
 
     public void findSimilarAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
-        countoCoOccurencies(users, goodScoreThreshold, alpha);
+        countoCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new CompletedAndDroppedAnime(goodScoreThreshold), alpha);
+        fillSimilarAnime();
+    }
+
+    public void findSimilarAiringAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
+        countoCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(animeMap), alpha);
         fillSimilarAnime();
     }
 
@@ -33,36 +148,48 @@ public class ComputeCoOccurrencyItemItem {
         return new ItemItemModel(animeIndexMap, similarAnimeCount, similarAnimeId, similarAnimeScore);
     }
 
-    private void countoCoOccurencies(List<CFUser> users, float goodScoreThreshold, float alpha) {
+    private void countoCoOccurencies(List<CFUser> users, AnimeIterator watched, AnimeIterator coOccurring, float alpha) {
         int rowStride = animeIndexMap.size();
         int[] animeTotalOccurrences = new int[rowStride];
 
         for (CFUser user : users) {
-            int[] highlyratedAnimeIndices = new int[user.completedAndDroppedIds.length];
+            watched.reset(user);
+            int[] highlyratedAnimeIndices = new int[watched.maxSize()];
             int highlyRatedCount = 0, userAnimeCount = 0;
 
-            // find highly rated items
-            for (int i = 0, max = user.completedAndDroppedIds.length; i < max; ++i) {
-                if (user.completedAndDroppedRating[i] > goodScoreThreshold) {
-                    Integer index = animeIndexMap.get(user.completedAndDroppedIds[i]);
-                    if (index != null) {
-                        userAnimeCount++;
-                        animeTotalOccurrences[index]++;
-                        highlyratedAnimeIndices[highlyRatedCount++] = index;
-                    }
+            // find highly rated completed items or any airing item
+            while (watched.next()) {
+                Integer index = animeIndexMap.get(watched.animedbId());
+                if (index != null) {
+                    userAnimeCount++;
+                    animeTotalOccurrences[index]++;
+                    highlyratedAnimeIndices[highlyRatedCount++] = index;
+                }
+            }
+
+            // find co-occurring anime
+            coOccurring.reset(user);
+            int[] coOccurringAnimeIndices = new int[coOccurring.maxSize()];
+            int coOccurringCount = 0;
+
+            // find highly rated completed items or any airing item
+            while (coOccurring.next()) {
+                Integer index = animeIndexMap.get(coOccurring.animedbId());
+                if (index != null) {
+                    coOccurringAnimeIndices[coOccurringCount++] = index;
                 }
             }
 
             // add co-occurring highly rated anime to the count matrix
-            if (userAnimeCount != 0) {
+            if (userAnimeCount != 0 && coOccurringCount != 0) {
                 // normalize the vector to unit length
                 float normalizedScore = 1.0f / (float) Math.sqrt(userAnimeCount);
 
                 for (int i = 0; i < highlyRatedCount; ++i) {
                     int startIndex = highlyratedAnimeIndices[i] * rowStride;
-                    for (int j = 0; j < highlyRatedCount; ++j) {
-                        if (i != j) {
-                            animeCounts[startIndex + highlyratedAnimeIndices[j]] += normalizedScore;
+                    for (int j = 0; j < coOccurringCount; ++j) {
+                        if (highlyratedAnimeIndices[i] != coOccurringAnimeIndices[j]) {
+                            animeCounts[startIndex + coOccurringAnimeIndices[j]] += normalizedScore;
                         }
                     }
                 }

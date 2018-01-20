@@ -59,7 +59,7 @@
   (let [cf-parameters (aqua.misc/make-cf-parameters 0 0)]
     (apply concat
       (for [batch (partition-all 1000 (map first bucketed-users))]
-        (remove #(= 0 (% 2))
+        (remove #(< (% 2) 5) ; work around the (rare) case where anime stats and anime list are completely out of sync
           (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-users-by-id data-source cf-parameters batch)]
             (let [ids (.completedAndDroppedIds cf-user)]
               [(.userId cf-user) (make-bitset ids) (count ids)])))))))
