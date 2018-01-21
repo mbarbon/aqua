@@ -7,8 +7,8 @@
        "    username VARCHAR(20) NOT NULL,"
        "    last_update INTEGER NOT NULL,"
        "    last_change INTEGER NOT NULL,",
-       "    last_anime_change INTEGER NOT NULL,",
-       "    last_manga_change INTEGER NOT NULL",
+       "    last_anime_change INTEGER NOT NULL DEFAULT 0,",
+       "    last_manga_change INTEGER NOT NULL DEFAULT 0",
        ")"))
 
 (def ^:private create-users-username-index
