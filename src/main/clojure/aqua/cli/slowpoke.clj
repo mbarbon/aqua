@@ -16,6 +16,9 @@
               (aqua.slowpoke/make-refresh-anime data-source-rw data-source-ro)
               300)
     (schedule scheduler
+              (aqua.slowpoke/make-refresh-manga data-source-rw data-source-ro)
+              300)
+    (schedule scheduler
               (aqua.slowpoke/make-refresh-users data-source-rw data-source-ro)
               300)
     (schedule scheduler

@@ -38,6 +38,18 @@
         404 nil
         (log-error error status (str "fetching anime " title))))))
 
+(defn fetch-manga-details [mangadb-id title]
+  (mal-fetch (str "/manga/" mangadb-id) {}
+    (fn [error status body]
+      (case status
+        200 (let [details (aqua.mal-scrape/parse-manga-page body)
+                  titles (:titles details)
+                  alternative-titles (clojure.set/difference titles
+                                                             (set [title]))]
+              (assoc details :titles alternative-titles))
+        404 nil
+        (log-error error status (str "fetching manga " title))))))
+
 (defn fetch-active-users []
   (mal-fetch "/users.php" {}
     (fn [error status body]
@@ -45,11 +57,17 @@
         200 (aqua.mal-scrape/parse-users-page body)
         (log-error error status "fetching user sample")))))
 
-(defn fetch-anime-list [username]
+(defn fetch-item-list [type username]
   (mal-fetch "/malappinfo.php" {"u" username
-                                "type" "anime"
+                                "type" type
                                 "status" "all"}
     (fn [error status body]
       (case status
         200 (aqua.mal.Serialize/readMalAppInfo body)
         (log-error error status (str "fetching anime list for " username))))))
+
+(defn fetch-anime-list [username]
+  (fetch-item-list "anime" username))
+
+(defn fetch-manga-list [username]
+  (fetch-item-list "manga" username))

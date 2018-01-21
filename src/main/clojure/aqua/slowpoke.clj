@@ -114,6 +114,26 @@
         (with-web-result [details @(aqua.mal-web/fetch-anime-details animedb_id title)]
           (aqua.mal-local/store-anime-details data-source-rw animedb_id title details))))))
 
+(def ^:private manga-needing-update
+  (str "SELECT m.mangadb_id, m.title"
+       "    FROM manga AS m"
+       "      LEFT JOIN manga_details_update mu"
+       "        ON m.mangadb_id = mu.mangadb_id AND"
+       "           last_update > strftime('%s', 'now') - ?"
+       "    WHERE last_update IS NULL"
+       "    LIMIT 30"))
+
+(defn- refresh-manga [data-source-rw data-source-ro]
+  (let [manga-to-refresh (with-query data-source-ro rs
+                                     manga-needing-update
+                                     [(* 86400 15)]
+                           (doall (resultset-seq rs)))]
+    (if (seq manga-to-refresh)
+      (doseq-slowly 8700 [{:keys [mangadb_id title]} manga-to-refresh]
+        (log/info "Fetching new manga details for" title)
+        (with-web-result [details @(aqua.mal-web/fetch-manga-details mangadb_id title)]
+          (aqua.mal-local/store-manga-details data-source-rw mangadb_id title details))))))
+
 (defn ^:private already-existing-users [users]
   (str "SELECT username"
        "    FROM users"
@@ -134,7 +154,9 @@
         (doseq-slowly 1200 [username new-users]
           (log/info "Fetching user data for" username)
           (with-web-result [mal-app-info @(aqua.mal-web/fetch-anime-list username)]
-            (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info)))))))
+            (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info))
+          (with-web-result [mal-app-info @(aqua.mal-web/fetch-manga-list username)]
+            (aqua.mal-local/store-user-manga-list data-source-rw username mal-app-info)))))))
 
 (def ^:private old-inactive-budget-fraction 0.1)
 (def ^:private old-inactive-budget-min 20)
@@ -197,7 +219,9 @@
       (doseq-slowly 2300 [user users]
         (log/info "Refreshing user data for" user)
         (with-web-result [mal-app-info @(aqua.mal-web/fetch-anime-list user)]
-          (aqua.mal-local/store-user-anime-list data-source-rw user mal-app-info))))))
+          (aqua.mal-local/store-user-anime-list data-source-rw user mal-app-info))
+        (with-web-result [mal-app-info @(aqua.mal-web/fetch-manga-list user)]
+          (aqua.mal-local/store-user-manga-list data-source-rw user mal-app-info))))))
 
 (defn- clean-refresh-queue [data-source-rw]
   (with-connection data-source-rw connection
@@ -231,6 +255,12 @@
     "refresh-anime"
     (fn []
       (refresh-anime data-source-rw data-source-ro))))
+
+(defn make-refresh-manga [data-source-rw data-source-ro]
+  (wrap-background-task
+    "refresh-manga"
+    (fn []
+      (refresh-manga data-source-rw data-source-ro))))
 
 (defn make-fetch-new-users [data-source-rw data-source-ro]
   (wrap-background-task

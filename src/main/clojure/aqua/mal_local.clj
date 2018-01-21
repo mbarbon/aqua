@@ -493,16 +493,26 @@
                               (.setString 1 username))]
     (.execute statement)))
 
-(def ^:private update-changed-user
+(def ^:private update-changed-anime-user
   (str "INSERT OR REPLACE INTO users"
-       "        (user_id, username, last_update, last_change)"
-       "    VALUES (?, ?, STRFTIME('%s', 'now'), ?)"))
+       "        (user_id, username, last_update, last_change, last_anime_change, last_manga_change)"
+       "    VALUES (?, ?, STRFTIME('%s', 'now'), MAX(?, (SELECT last_manga_change FROM users WHERE user_id = ?)), ?,"
+       "            (SELECT last_manga_change FROM users WHERE user_id = ?))"))
+
+(def ^:private update-changed-manga-user
+  (str "INSERT OR REPLACE INTO users"
+       "        (user_id, username, last_update, last_change, last_anime_change, last_manga_change)"
+       "    VALUES (?, ?, STRFTIME('%s', 'now'), MAX(?, (SELECT last_anime_change FROM users WHERE user_id = ?)),"
+       "            (SELECT last_anime_change FROM users WHERE user_id = ?),"
+       "            ?)"))
 
 (def ^:private update-unchanged-user
   (str "INSERT OR REPLACE INTO users"
-       "        (user_id, username, last_update, last_change)"
+       "        (user_id, username, last_update, last_change, last_anime_change, last_manga_change)"
        "    VALUES (?, ?, STRFTIME('%s', 'now'),"
-       "            (SELECT last_change FROM users WHERE user_id = ?))"))
+       "            (SELECT last_change FROM users WHERE user_id = ?),"
+       "            (SELECT last_anime_change FROM users WHERE user_id = ?),"
+       "            (SELECT last_manga_change FROM users WHERE user_id = ?))"))
 
 ; here we set username to '' because it's hard to make models cope
 ; with users being deleted
@@ -516,10 +526,20 @@
        "    FROM anime"
        "    WHERE animedb_id IN"))
 
+(def ^:private select-manga-prefix
+  (str "SELECT mangadb_id, title, type, chapters, volumes, status, STRFTIME('%Y-%m-%d', start, 'unixepoch'), STRFTIME('%Y-%m-%d', end, 'unixepoch'), image"
+       "    FROM manga"
+       "    WHERE mangadb_id IN"))
+
 (def ^:private insert-anime
   (str "INSERT OR REPLACE INTO anime"
        "        (animedb_id, title, type, episodes, status, start, end, image)"
        "    VALUES (?, ?, ?, ?, ?, STRFTIME('%s', ?), STRFTIME('%s', ?), ?)"))
+
+(def ^:private insert-manga
+  (str "INSERT OR REPLACE INTO manga"
+       "        (mangadb_id, title, type, chapters, volumes, status, start, end, image)"
+       "    VALUES (?, ?, ?, ?, ?, ?, STRFTIME('%s', ?), STRFTIME('%s', ?), ?)"))
 
 (defn- adjust-date [^String date-string]
   (cond
@@ -537,14 +557,31 @@
        (= (.getString rs 7) (adjust-date (.end anime)))
        (= (.getString rs 8) (.image anime))))
 
-(defn- make-malappinfo-hash ^java.util.HashMap [rated-list]
+(defn- manga-equals [^aqua.mal.data.MalAppInfo$RatedManga manga
+                     ^java.sql.ResultSet rs]
+  (and (= (.getString rs 2) (.title manga))
+       (= (.getInt rs 3) (.seriesType manga))
+       (= (.getInt rs 4) (.chapters manga))
+       (= (.getInt rs 5) (.volumes manga))
+       (= (.getInt rs 6) (.seriesStatus manga))
+       (= (.getString rs 7) (adjust-date (.start manga)))
+       (= (.getString rs 8) (adjust-date (.end manga)))
+       (= (.getString rs 9) (.image manga))))
+
+(defn- make-malappinfo-anime-hash ^java.util.HashMap [rated-list]
   (let [hash (java.util.HashMap.)]
     (doseq [^aqua.mal.data.MalAppInfo$RatedAnime rated rated-list]
       (.put hash (.animedbId rated) rated))
     hash))
 
+(defn- make-malappinfo-manga-hash ^java.util.HashMap [rated-list]
+  (let [hash (java.util.HashMap.)]
+    (doseq [^aqua.mal.data.MalAppInfo$RatedManga rated rated-list]
+      (.put hash (.mangadbId rated) rated))
+    hash))
+
 (defn- insert-or-update-anime [connection mal-app-info-anime]
-  (let [anime-map (make-malappinfo-hash mal-app-info-anime)
+  (let [anime-map (make-malappinfo-anime-hash mal-app-info-anime)
         id-csv (clojure.string/join "," (keys anime-map))
         select-anime (str select-anime-prefix " (" id-csv ")")]
     (with-open [statement (.createStatement connection)
@@ -569,6 +606,33 @@
           (.addBatch)))
       (.executeBatch statement))))
 
+(defn- insert-or-update-manga [connection mal-app-info-manga]
+  (let [manga-map (make-malappinfo-manga-hash mal-app-info-manga)
+        id-csv (clojure.string/join "," (keys manga-map))
+        select-manga (str select-manga-prefix " (" id-csv ")")]
+    (with-open [statement (.createStatement connection)
+                ^java.sql.ResultSet rs (.executeQuery statement select-manga)]
+      (while (.next rs)
+        (let [mangadb-id (.getInt rs 1)
+              manga (.get manga-map mangadb-id)]
+          (if (manga-equals manga rs)
+            (.remove manga-map mangadb-id)))))
+
+    (with-open [statement (.prepareStatement connection insert-manga)]
+      (doseq [^aqua.mal.data.MalAppInfo$RatedManga manga (vals manga-map)]
+        (doto ^java.sql.PreparedStatement statement
+          (.setInt 1 (.mangadbId manga))
+          (.setString 2 (.title manga))
+          (.setInt 3 (.seriesType manga))
+          (.setInt 4 (.chapters manga))
+          (.setInt 5 (.volumes manga))
+          (.setInt 6 (.seriesStatus manga))
+          (.setString 7 (adjust-date (.start manga)))
+          (.setString 8 (adjust-date (.end manga)))
+          (.setString 9 (.image manga))
+          (.addBatch)))
+      (.executeBatch statement))))
+
 (def ^:private insert-anime-list
   (str "INSERT OR REPLACE INTO anime_list"
        "        (user_id, anime_list, anime_list_format)"
@@ -589,20 +653,40 @@
                [(.userId user) (.toByteArray sink) 1]))
     nil))
 
-(def ^:private update-user-stats
+(def ^:private insert-manga-list
+  (str "INSERT OR REPLACE INTO manga_list"
+       "        (user_id, manga_list)"
+       "    VALUES"
+       "        (?, ?)"))
+
+(defn- insert-or-update-user-manga-list [connection user manga-list]
+  (let [new-rated-list (for [^aqua.mal.data.MalAppInfo$RatedManga manga manga-list]
+                         (aqua.mal.data.Rated. (.mangadbId manga)
+                                               (.userStatus manga)
+                                               (.score manga)
+                                               (int (/ (.lastUpdated manga) 86400))))]
+    (let [sink (java.io.ByteArrayOutputStream.)
+          compress (java.util.zip.GZIPOutputStream. sink)]
+      (Serialize/writeRatedProtobuf compress new-rated-list)
+      (.finish compress)
+      (execute connection insert-manga-list
+               [(.userId user) (.toByteArray sink)]))
+    nil))
+
+(def ^:private update-user-anime-stats
   (str "INSERT OR REPLACE INTO user_anime_stats"
        "        (user_id, planned, watching, completed, onhold, dropped)"
        "    VALUES"
        "        (?, ?, ?, ?, ?, ?)"))
 
-(defn- insert-or-update-user [connection request-username
-                              ^aqua.mal.data.MalAppInfo$UserInfo user
-                              change-time]
+(defn- insert-or-update-anime-user [connection request-username
+                                    ^aqua.mal.data.MalAppInfo$UserInfo user
+                                    change-time]
   (if (not= change-time 0)
-    (execute connection update-changed-user
-             [(.userId user) (.username user) change-time])
+    (execute connection update-changed-anime-user
+             [(.userId user) (.username user) change-time (.userId user) change-time (.userId user)])
     (execute connection update-unchanged-user
-             [(.userId user) (.username user) (.userId user)]))
+             [(.userId user) (.username user) (.userId user) (.userId user) (.userId user)]))
 
   ; It looks like that when usernames change case, a new user id is
   ; created, or something like that, so when the requested and
@@ -614,8 +698,37 @@
   (execute connection fix-duplicated-usernames
            [(.username user) (.userId user)])
 
-  (execute connection update-user-stats
+  (execute connection update-user-anime-stats
            [(.userId user) (.plantowatch user) (.watching user)
+            (.completed user) (.onhold user) (.dropped user)]))
+
+(def ^:private update-user-manga-stats
+  (str "INSERT OR REPLACE INTO user_manga_stats"
+       "        (user_id, planned, reading, completed, onhold, dropped)"
+       "    VALUES"
+       "        (?, ?, ?, ?, ?, ?)"))
+
+(defn- insert-or-update-manga-user [connection request-username
+                                    ^aqua.mal.data.MalAppInfo$UserInfo user
+                                    change-time]
+  (if (not= change-time 0)
+    (execute connection update-changed-manga-user
+             [(.userId user) (.username user) change-time (.userId user) (.userId user) change-time])
+    (execute connection update-unchanged-user
+             [(.userId user) (.username user) (.userId user) (.userId user) (.userId user)]))
+
+  ; It looks like that when usernames change case, a new user id is
+  ; created, or something like that, so when the requested and
+  ; received usernames
+  (when (not= (.username user) request-username)
+    (execute connection fix-changed-case-usernames [request-username]))
+
+  ; This is to clear bed data caused by me not knowing about the above
+  (execute connection fix-duplicated-usernames
+           [(.username user) (.userId user)])
+
+  (execute connection update-user-manga-stats
+           [(.userId user) (.plantoread user) (.reading user)
             (.completed user) (.onhold user) (.dropped user)]))
 
 (defn store-user-anime-list [data-source request-username mal-app-info]
@@ -629,14 +742,29 @@
           (insert-or-update-user-anime-list connection user anime-list)
           (let [change-time (reduce max 0 (for [anime anime-list]
                                             (.lastUpdated anime)))]
-            (insert-or-update-user connection request-username user change-time)))))))
+            (insert-or-update-anime-user connection request-username user change-time)))))))
+
+(defn store-user-manga-list [data-source request-username mal-app-info]
+  (let [user (.user mal-app-info)
+        manga-list (.manga mal-app-info)]
+    (with-open [connection (.getConnection data-source)]
+      (if (or (= nil user) (= nil (.username user)))
+        (mark-user-updated connection request-username)
+        (do
+          (insert-or-update-manga connection manga-list)
+          (insert-or-update-user-manga-list connection user manga-list)
+          (let [change-time (reduce max 0 (for [manga manga-list]
+                                            (.lastUpdated manga)))]
+            (insert-or-update-manga-user connection request-username user change-time)))))))
 
 (def ^:private sync-update-user
   (str "INSERT OR REPLACE INTO users"
-       "       (user_id, username, last_update, last_change)"
+       "       (user_id, username, last_update, last_change, last_anime_change, last_manga_change)"
        "    VALUES"
        "       (?,"
        "        COALESCE((SELECT username FROM users WHERE user_id = ?), ?),"
+       "        ?,"
+       "        ?,"
        "        ?,"
        "        ?)"))
 
@@ -648,9 +776,9 @@
                             planned watching completed onhold dropped]}]
   (execute connection
            sync-update-user
-           [user_id user_id username last_update last_change])
+           [user_id user_id username last_update last_change last_change nil])
   (execute connection
-           update-user-stats
+           update-user-anime-stats
            [user_id planned watching completed onhold dropped])
   (execute connection
            insert-anime-list
@@ -740,6 +868,41 @@
     (doseq [anime anime-list]
       (update-anime connection anime))))
 
+(def ^:private update-manga-details
+  (str "INSERT OR REPLACE INTO manga_details"
+       "        (mangadb_id, rank, popularity, score)"
+       "    VALUES"
+       "        (?, ?, ?, ?)"))
+
+(def ^:private delete-manga-side-tables
+  ["DELETE FROM manga_relations WHERE mangadb_id = ?"
+   "DELETE FROM manga_genres WHERE mangadb_id = ?"
+   "DELETE FROM manga_titles WHERE mangadb_id = ?"])
+
+(def ^:private update-manga-relations
+  (str "INSERT OR REPLACE INTO manga_relations"
+       "        (mangadb_id, related_id, relation)"
+       "    VALUES"
+       "        (?, ?, ?)"))
+
+(def ^:private update-manga-titles
+  (str "INSERT OR REPLACE INTO manga_titles"
+       "        (mangadb_id, title)"
+       "    VALUES"
+       "        (?, ?)"))
+
+(def ^:private update-manga-genres
+  (str "INSERT OR REPLACE INTO manga_genres"
+       "        (mangadb_id, genre_id, sort_order)"
+       "    VALUES"
+       "        (?, ?, ?)"))
+
+(def ^:private update-manga-genre-names
+  (str "INSERT OR REPLACE INTO manga_genre_names"
+       "        (genre, description)"
+       "    VALUES"
+       "        (?, ?)"))
+
 (defn- store-anime-side-tables-scraped [connection animedb_id genres titles relations]
   (doseq [query delete-anime-side-tables]
     (execute connection query [animedb_id]))
@@ -765,3 +928,29 @@
              update-anime-details
              [animedb-id (:rank scores) (:popularity scores) (:score scores)])
     (execute connection update-anime-details-update [animedb-id])))
+
+(defn- store-manga-side-tables-scraped [connection mangadb_id genres titles relations]
+  (doseq [query delete-manga-side-tables]
+    (execute connection query [mangadb_id]))
+  (doseq [[genre_id description sort_order] (map conj genres (range))]
+    (execute connection update-manga-genre-names [genre_id description])
+    (execute connection update-manga-genres [mangadb_id genre_id sort_order]))
+  (doseq [title titles]
+    (execute connection update-manga-titles [mangadb_id title]))
+  (doseq [[related_id relation] relations]
+    (execute connection update-manga-relations [mangadb_id related_id relation])))
+
+(def ^:private update-manga-details-update
+  (str "INSERT OR REPLACE INTO manga_details_update"
+       "    (mangadb_id, last_update)"
+       "        VALUES"
+       "    (?, strftime('%s', 'now'))"))
+
+(defn store-manga-details [data-source mangadb-id title
+                           {:keys [relations genres titles scores]}]
+  (with-transaction data-source connection
+    (store-manga-side-tables-scraped connection mangadb-id genres titles relations)
+    (execute connection
+             update-manga-details
+             [mangadb-id (:rank scores) (:popularity scores) (:score scores)])
+    (execute connection update-manga-details-update [mangadb-id])))
