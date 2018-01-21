@@ -13,6 +13,7 @@
                                        interval
                                        java.util.concurrent.TimeUnit/SECONDS)))]
     (schedule aqua.slowpoke/make-refresh-anime 300)
+    (schedule aqua.slowpoke/make-refresh-manga 300)
     (schedule aqua.slowpoke/make-refresh-users 300)
     (schedule aqua.slowpoke/make-fetch-new-users 30)))
 
