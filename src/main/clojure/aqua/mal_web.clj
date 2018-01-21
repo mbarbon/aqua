@@ -15,9 +15,9 @@
     (log/warn (str "HTTP error " status " while " activity)))
   nil)
 
-(defn fetch-anime-list-cb [username callback]
+(defn- fetch-item-list-cb [kind username callback]
   (mal-fetch "/malappinfo.php" {"u" username
-                                "type" "anime"
+                                "type" kind
                                 "status" "all"}
     (fn [error status body]
       (try
@@ -25,6 +25,12 @@
           (callback nil error)
           (callback (aqua.mal.Serialize/readMalAppInfo body) nil))
         (catch Exception e (callback nil e))))))
+
+(defn fetch-anime-list-cb [username callback]
+  (fetch-item-list-cb "anime" username callback))
+
+(defn fetch-manga-list-cb [username callback]
+  (fetch-item-list-cb "manga" username callback))
 
 (defn fetch-anime-details [animedb-id title]
   (mal-fetch (str "/anime/" animedb-id) {}
@@ -57,9 +63,9 @@
         200 (aqua.mal-scrape/parse-users-page body)
         (log-error error status "fetching user sample")))))
 
-(defn fetch-item-list [type username]
+(defn- fetch-item-list [kind username]
   (mal-fetch "/malappinfo.php" {"u" username
-                                "type" type
+                                "type" kind
                                 "status" "all"}
     (fn [error status body]
       (case status

@@ -76,23 +76,28 @@
   (with-connection data-source connection
     (execute connection update-user-refresh [queue-status inc-attempts username])))
 
-(defn- fetch-and-update-user-anime-list [data-source username]
-  (let [update-user (fn [queue-status inc-attempts]
-                      (set-user-refresh-status data-source username queue-status inc-attempts))
-        response-callback (fn [mal-app-info error]
+(defn- update-user-item-list-cb [kind data-source username store-items]
+  (let [response-callback (fn [mal-app-info error]
                             (try
                               (if error
                                 (do
-                                  (log/info error "Error while downloading anime list for " username)
-                                  (update-user queue-status-failed 0))
+                                  (log/info error "Error while downloading " kind " list for " username)
+                                  queue-status-failed)
                                 (do
-                                  (aqua.mal-local/store-user-anime-list data-source username mal-app-info)
-                                  (update-user queue-status-complete 0)))
+                                  (store-items data-source username mal-app-info)
+                                  queue-status-complete))
                               (catch Exception e (do
-                                                   (log/info e "Error while downloading anime list for " username)
-                                                   (update-user queue-status-failed 0)))))]
-    (update-user queue-status-processing 1)
+                                                   (log/info e "Error while downloading " kind " list for " username)
+                                                   queue-status-failed))))]
+    response-callback))
+
+(defn- fetch-and-update-user-anime-list [data-source username]
+  (let [response-callback (update-user-item-list-cb "anime" data-source username aqua.mal-local/store-user-anime-list)]
     (aqua.mal-web/fetch-anime-list-cb username response-callback)))
+
+(defn- fetch-and-update-user-manga-list [data-source username]
+  (let [response-callback (update-user-item-list-cb "manga" data-source username aqua.mal-local/store-user-manga-list)]
+    (aqua.mal-web/fetch-manga-list-cb username response-callback)))
 
 (def ^:private anime-needing-update
   (str "SELECT a.animedb_id, a.title"
@@ -227,14 +232,23 @@
   (with-connection data-source-rw connection
     (execute connection clean-expired-user-refresh [])))
 
+(defn- merge-status [a b]
+  (if (or (= a queue-status-failed) (= b queue-status-failed))
+    queue-status-failed
+    queue-status-complete))
+
 (defn- process-refresh-queue [data-source-rw data-source-ro]
   (with-query data-source-ro rs select-next-user-refresh [queue-status-new queue-status-failed 120]
     (when (.next rs)
       (let [username (.getString rs 1)]
         (log/info "Interactively fetching user data for" username)
-        (let [wait-completion (fetch-and-update-user-anime-list data-source-rw
-                                                                username)]
-          @wait-completion)))))
+        (set-user-refresh-status data-source-rw username queue-status-processing 1)
+        (let [wait-completion-anime (fetch-and-update-user-anime-list data-source-rw
+                                                                      username)
+              wait-completion-manga (fetch-and-update-user-manga-list data-source-rw
+                                                                      username)
+              status (merge-status @wait-completion-anime @wait-completion-manga)]
+          (set-user-refresh-status data-source-rw username status 0))))))
 
 (defn- wrap-background-task [name task]
   (fn []
