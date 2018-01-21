@@ -19,6 +19,9 @@
 (defn all-anime-ids [{after_id "after_id" limit "count"}]
   (to-page "anime" (aqua.mal-local/all-anime-ids @*data-source-ro after_id limit)))
 
+(defn all-manga-ids [{after_id "after_id" limit "count"}]
+  (to-page "manga" (aqua.mal-local/all-manga-ids @*data-source-ro after_id limit)))
+
 (defn all-user-ids [{after_id "after_id" limit "count"}]
   (to-page "users" (aqua.mal-local/all-user-ids @*data-source-ro after_id limit)))
 
@@ -28,11 +31,17 @@
 (defn changed-anime [{anime "anime"}]
   (aqua.mal-local/select-changed-anime @*data-source-ro anime))
 
+(defn changed-manga [{manga "manga"}]
+  (aqua.mal-local/select-changed-manga @*data-source-ro manga))
+
 (defn store-users [{users "users"}]
   (aqua.mal-local/store-users @*data-source-rw users))
 
 (defn store-anime [{anime "anime"}]
   (aqua.mal-local/store-anime @*data-source-rw anime))
+
+(defn store-manga [{manga "manga"}]
+  (aqua.mal-local/store-manga @*data-source-rw manga))
 
 (defn upload-model [model-name body]
   (let [destdir (io/as-file @*maldump-directory)

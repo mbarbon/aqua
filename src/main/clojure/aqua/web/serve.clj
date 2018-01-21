@@ -91,6 +91,9 @@
   (POST "/sync/all-anime-ids" {:keys [body]}
     (ring.util.response/response
       (aqua.web.dump/all-anime-ids body)))
+  (POST "/sync/all-manga-ids" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/all-manga-ids body)))
   (POST "/sync/all-user-ids" {:keys [body]}
     (ring.util.response/response
       (aqua.web.dump/all-user-ids body)))
@@ -100,12 +103,18 @@
   (POST "/sync/changed-anime" {:keys [body]}
     (ring.util.response/response
       (aqua.web.dump/changed-anime body)))
+  (POST "/sync/changed-manga" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/changed-manga body)))
   (POST "/sync/store-users" {:keys [body]}
     (ring.util.response/response
       (aqua.web.dump/store-users body)))
   (POST "/sync/store-anime" {:keys [body]}
     (ring.util.response/response
       (aqua.web.dump/store-anime body)))
+  (POST "/sync/store-manga" {:keys [body]}
+    (ring.util.response/response
+      (aqua.web.dump/store-manga body)))
   (POST "/sync/upload-model/:model-name" {{:keys [model-name]} :params body :body}
     (ring.util.response/response
       (aqua.web.dump/upload-model model-name body)))

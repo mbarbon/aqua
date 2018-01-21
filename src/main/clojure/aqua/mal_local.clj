@@ -353,6 +353,19 @@
     (doall (into {} (map #(vector (:animedb_id %) (:last_update %))
                          (resultset-seq rs))))))
 
+(def ^:private select-manga-ids
+  (str "SELECT m.mangadb_id, COALESCE(mdu.last_update, 1) AS last_update"
+       "    FROM manga AS m"
+       "      LEFT JOIN manga_details_update AS mdu"
+       "        ON m.mangadb_id = mdu.mangadb_id"
+       "    WHERE m.mangadb_id > ?"
+       "    LIMIT ?"))
+
+(defn all-manga-ids [data-source after-id limit]
+  (with-query data-source rs select-manga-ids [after-id limit]
+    (doall (into {} (map #(vector (:mangadb_id %) (:last_update %))
+                         (resultset-seq rs))))))
+
 (def ^:private select-user-ids
   (str "SELECT u.user_id AS user_id, u.last_change AS last_change"
        "    FROM users AS u"
@@ -373,14 +386,22 @@
        "    WHERE user_id IN (" (placeholders items) ")"))
 
 (defn- select-user-data [items]
-  (str "SELECT u.user_id, u.username, u.last_update, u.last_change,"
-       "       uas.planned, uas.watching, uas.completed, uas.onhold, uas.dropped,"
-       "       al.anime_list, al.anime_list_format"
+  (str "SELECT u.user_id, u.username, u.last_update, u.last_change, u.last_anime_change, u.last_manga_change,"
+       "       uas.planned AS anime_planned, uas.watching AS anime_watching, uas.completed AS anime_completed,"
+       "           uas.onhold AS anime_onhold, uas.dropped AS anime_dropped,"
+       "       mas.planned AS manga_planned, mas.reading AS manga_reading, mas.completed AS manga_completed,"
+       "           mas.onhold AS manga_onhold, mas.dropped AS manga_dropped,"
+       "       al.anime_list, al.anime_list_format,"
+       "       ml.manga_list"
        "    FROM users AS u"
-       "      INNER JOIN user_anime_stats AS uas"
+       "      LEFT JOIN user_anime_stats AS uas"
        "        ON u.user_id = uas.user_id"
-       "      INNER JOIN anime_list AS al"
+       "      LEFT JOIN user_manga_stats AS mas"
+       "        ON u.user_id = mas.user_id"
+       "      LEFT JOIN anime_list AS al"
        "        ON u.user_id = al.user_id"
+       "      LEFT JOIN manga_list AS ml"
+       "        ON u.user_id = ml.user_id"
        "    WHERE u.user_id IN (" (placeholders items) ")"))
 
 (defn- filter-unchanged-items [rs id-key update-key id-to-time]
@@ -476,6 +497,82 @@
         (join-fields select-anime-titles :title :titles)
         (join-fields select-anime-relations [:related_id :relation] :relations)
         (join-fields select-anime-genres [:genre_id :description :sort_order] :genres)
+        vals))))
+
+(defn- select-changed-manga-ids [items]
+  (str "SELECT m.mangadb_id, COALESCE(mdu.last_update, 0) AS last_update"
+       "    FROM manga AS m"
+       "      LEFT JOIN manga_details_update AS mdu"
+       "        ON m.mangadb_id = mdu.mangadb_id"
+       "    WHERE m.mangadb_id IN (" (placeholders items) ")"))
+
+(defn- select-manga-data [items]
+  (str "SELECT m.mangadb_id, m.title, m.type, m.chapters, m.volumes, m.status,"
+       "       m.start, m.end, m.image,"
+       "       md.rank, md.popularity, md.score,"
+       "       mdu.last_update"
+       "    FROM manga AS m"
+       "      INNER JOIN manga_details AS md"
+       "        ON m.mangadb_id = md.mangadb_id"
+       "      INNER JOIN manga_details_update AS mdu"
+       "        ON m.mangadb_id = mdu.mangadb_id"
+       "    WHERE m.mangadb_id IN (" (placeholders items) ")"))
+
+(defn- select-manga-titles [items]
+  (str "SELECT mangadb_id, title"
+       "    FROM manga_titles"
+       "    WHERE mangadb_id IN (" (placeholders items) ")"))
+
+(defn- select-manga-relations [items]
+  (str "SELECT mangadb_id, related_id, relation"
+       "    FROM manga_relations"
+       "    WHERE mangadb_id IN (" (placeholders items) ")"))
+
+(defn- select-manga-genres [items]
+  (str "SELECT mg.mangadb_id, mg.genre_id, mgn.description, mg.sort_order"
+       "    FROM manga_genres AS mg"
+       "      INNER JOIN manga_genre_names mgn"
+       "        ON mg.genre_id = mgn.genre"
+       "    WHERE mangadb_id IN (" (placeholders items) ")"))
+
+(defn select-changed-manga [data-source manga-id-to-time]
+  (letfn [(fetch-manga-map [manga-ids]
+            (with-query data-source
+                        rs
+                        (select-manga-data manga-ids)
+                        manga-ids
+              (doall (into {} (for [manga (resultset-seq rs)]
+                                [(:mangadb_id manga) manga])))))
+          (update-manga [fields into-field]
+            (fn [manga-map item]
+              (let [manga-id (:mangadb_id item)
+                    manga (manga-map manga-id)
+                    value (if (keyword? fields)
+                            (item fields)
+                            (select-keys item fields))
+                    current (get manga into-field [])
+                    updated-manga (assoc manga
+                                    into-field (conj current value))]
+                (assoc manga-map manga-id updated-manga))))
+          (join-fields [manga-map query-builder fields into-field]
+            (let [query (query-builder manga-map)
+                  items (with-query data-source rs query (keys manga-map)
+                          (doall (resultset-seq rs)))]
+              (reduce (update-manga fields into-field) manga-map items)))]
+  (let [; anime ids updated after specified time
+        manga-ids (with-query data-source
+                              rs
+                              (select-changed-manga-ids manga-id-to-time)
+                              (keys manga-id-to-time)
+                    (doall (filter-unchanged-items rs
+                                                   :mangadb_id
+                                                   :last_update
+                                                   manga-id-to-time)))
+        manga (fetch-manga-map manga-ids)]
+    (-> manga
+        (join-fields select-manga-titles :title :titles)
+        (join-fields select-manga-relations [:related_id :relation] :relations)
+        (join-fields select-manga-genres [:genre_id :description :sort_order] :genres)
         vals))))
 
 ;
@@ -771,18 +868,29 @@
 (def ^:private guava-base64 (com.google.common.io.BaseEncoding/base64))
 
 (defn- update-user [connection
-                    {:strs [user_id username last_update last_change
-                            anime_list anime_list_format
-                            planned watching completed onhold dropped]}]
+                    {:strs [user_id username last_update last_change last_anime_change last_manga_change
+                            anime_list anime_list_format manga_list
+                            anime_planned anime_watching anime_completed anime_onhold anime_dropped
+                            manga_planned manga_reading manga_completed manga_onhold manga_dropped]}]
   (execute connection
            sync-update-user
-           [user_id user_id username last_update last_change last_change nil])
-  (execute connection
-           update-user-anime-stats
-           [user_id planned watching completed onhold dropped])
-  (execute connection
-           insert-anime-list
-           [user_id (.decode guava-base64 anime_list) anime_list_format]))
+           [user_id user_id username last_update last_change last_anime_change last_manga_change])
+  (if anime_planned
+    (execute connection
+             update-user-anime-stats
+             [user_id anime_planned anime_watching anime_completed anime_onhold anime_dropped]))
+  (if manga_planned
+    (execute connection
+             update-user-manga-stats
+             [user_id manga_planned manga_reading manga_completed manga_onhold manga_dropped]))
+  (if manga_list
+    (execute connection
+             insert-manga-list
+             [user_id (.decode guava-base64 manga_list)]))
+  (if anime_list
+    (execute connection
+             insert-anime-list
+             [user_id (.decode guava-base64 anime_list) anime_list_format])))
 
 (defn store-users [data-source users]
   (with-transaction data-source connection
@@ -868,11 +976,23 @@
     (doseq [anime anime-list]
       (update-anime connection anime))))
 
+(def ^:private sync-update-manga
+  (str "INSERT OR REPLACE INTO manga"
+       "        (mangadb_id, title, type, chapters, volumes, status, start, end, image)"
+       "    VALUES"
+       "        (?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+
 (def ^:private update-manga-details
   (str "INSERT OR REPLACE INTO manga_details"
        "        (mangadb_id, rank, popularity, score)"
        "    VALUES"
        "        (?, ?, ?, ?)"))
+
+(def ^:private sync-update-manga-details-update
+  (str "INSERT OR REPLACE INTO manga_details_update"
+       "        (mangadb_id, last_update)"
+       "    VALUES"
+       "        (?, ?)"))
 
 (def ^:private delete-manga-side-tables
   ["DELETE FROM manga_relations WHERE mangadb_id = ?"
@@ -954,3 +1074,35 @@
              update-manga-details
              [mangadb-id (:rank scores) (:popularity scores) (:score scores)])
     (execute connection update-manga-details-update [mangadb-id])))
+
+(defn- store-manga-side-tables-sync [connection mangadb_id genres titles relations]
+  (doseq [query delete-manga-side-tables]
+    (execute connection query [mangadb_id]))
+  (doseq [{:strs [genre_id description sort_order]} genres]
+    (execute connection update-manga-genre-names [genre_id description])
+    (execute connection update-manga-genres [mangadb_id genre_id sort_order]))
+  (doseq [title titles]
+    (execute connection update-manga-titles [mangadb_id title]))
+  (doseq [{:strs [related_id relation]} relations]
+    (execute connection update-manga-relations [mangadb_id related_id relation])))
+
+(defn- update-manga [connection
+                    {:strs [mangadb_id title type chapters volumes status start end image
+                            rank popularity score
+                            last_update genres titles relations]}]
+  (execute connection
+           sync-update-manga
+           [mangadb_id title type chapters volumes status start end image])
+  (when-not (= last_update 1)
+    (execute connection
+             update-manga-details
+             [mangadb_id rank popularity score])
+    (store-manga-side-tables-sync connection mangadb_id genres titles relations)
+    (execute connection
+             sync-update-manga-details-update
+             [mangadb_id last_update])))
+
+(defn store-manga [data-source manga-list]
+  (with-transaction data-source connection
+    (doseq [manga manga-list]
+      (update-manga connection manga))))

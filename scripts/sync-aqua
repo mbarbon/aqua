@@ -10,8 +10,8 @@ import time
 import urllib, urllib.request
 
 LOGGER = logging.getLogger('sync-aqua')
-ANIME_BATCH = 100
-SMALL_ANIME_BATCH = 10
+ITEM_BATCH = 100
+SMALL_ITEM_BATCH = 10
 USER_BATCH = 200
 SMALL_USER_BATCH = 20
 
@@ -96,6 +96,18 @@ class AquaSync(object):
         req = {'after_id': start, 'count': size}
         return self.req_json('/sync/all-anime-ids', req)
 
+    def fetch_manga_ids(self, start, size):
+        req = {'after_id': start, 'count': size}
+        return self.req_json('/sync/all-manga-ids', req)
+
+    def fetch_item_ids(self, kind, start, size):
+        if kind == 'anime':
+            return self.fetch_anime_ids(start, size)
+        elif kind == 'manga':
+            return self.fetch_manga_ids(start, size)
+        else:
+            raise Exception("Invalid kind %s" % kind)
+
     def fetch_changed_users(self, id_map):
         req = {'users': id_map}
         return self.req_json('/sync/changed-users', req)
@@ -112,6 +124,30 @@ class AquaSync(object):
         req = {'anime': anime}
         return self.req_json('/sync/store-anime', req)
 
+    def fetch_changed_manga(self, id_map):
+        req = {'manga': id_map}
+        return self.req_json('/sync/changed-manga', req)
+
+    def store_changed_manga(self, manga):
+        req = {'manga': manga}
+        return self.req_json('/sync/store-manga', req)
+
+    def fetch_changed_items(self, kind, id_map):
+        if kind == 'anime':
+            return self.fetch_changed_anime(id_map)
+        elif kind == 'manga':
+            return self.fetch_changed_manga(id_map)
+        else:
+            raise Exception("Invalid kind %s" % kind)
+
+    def store_changed_items(self, kind, items):
+        if kind == 'anime':
+            return self.store_changed_anime(items)
+        elif kind == 'manga':
+            return self.store_changed_manga(items)
+        else:
+            raise Exception("Invalid kind %s" % kind)
+
     def upload_model(self, path, model_name):
         with open(path, 'rb') as fh:
             blob = fh.read()
@@ -120,44 +156,44 @@ class AquaSync(object):
     def commit_models(self):
         return self.req_json('/sync/commit-models', {})
 
-def sync_aqua_anime(from_aqua, to_aqua, dry_run):
-    LOGGER.info('  Fetching source anime ids')
-    from_anime_ids = set()
-    anime_ids = from_aqua.fetch_anime_ids(0, ANIME_BATCH)
-    while anime_ids['anime']:
-        from_anime_ids = from_anime_ids | anime_ids['anime'].keys()
-        anime_ids = from_aqua.fetch_anime_ids(anime_ids['last_page'], ANIME_BATCH)
+def sync_aqua_items(kind, from_aqua, to_aqua, dry_run):
+    LOGGER.info('  Fetching source %s ids', kind)
+    from_item_ids = set()
+    item_ids = from_aqua.fetch_item_ids(kind, 0, ITEM_BATCH)
+    while item_ids[kind]:
+        from_item_ids = from_item_ids | item_ids[kind].keys()
+        item_ids = from_aqua.fetch_item_ids(kind, item_ids['last_page'], ITEM_BATCH)
 
     LOGGER.info('  Starting sync')
     total, synced, partial = 0, 0, time.time()
-    anime_ids = to_aqua.fetch_anime_ids(0, ANIME_BATCH)
-    while anime_ids['anime']:
-        from_anime_ids = from_anime_ids - anime_ids['anime'].keys()
-        changed_anime = to_aqua.fetch_changed_anime(anime_ids['anime'])
+    item_ids = to_aqua.fetch_item_ids(kind, 0, ITEM_BATCH)
+    while item_ids[kind]:
+        from_item_ids = from_item_ids - item_ids[kind].keys()
+        changed_items = to_aqua.fetch_changed_items(kind, item_ids[kind])
         if not dry_run:
-            to_aqua.store_changed_anime(changed_anime)
-        total += len(anime_ids['anime'])
-        synced += len(changed_anime or [])
+            to_aqua.store_changed_items(kind, changed_items)
+        total += len(item_ids[kind])
+        synced += len(changed_items or [])
         if time.time() - partial >= 60:
-            LOGGER.info('  Synced %d/%d anime', synced, total)
+            LOGGER.info('  Synced %d/%d %s', synced, total, kind)
             partial = time.time()
-        anime_ids = to_aqua.fetch_anime_ids(anime_ids['last_page'], ANIME_BATCH)
+        item_ids = to_aqua.fetch_item_ids(kind, item_ids['last_page'], ITEM_BATCH)
 
-    missing = list(from_anime_ids)
+    missing = list(from_item_ids)
     while missing:
-        batch = missing[0:SMALL_ANIME_BATCH]
+        batch = missing[0:SMALL_ITEM_BATCH]
         id_map = {k: 0 for k in batch}
-        changed_anime = from_aqua.fetch_changed_anime(id_map)
+        changed_items = from_aqua.fetch_changed_items(kind, id_map)
         if not dry_run:
-            to_aqua.store_changed_anime(changed_anime)
+            to_aqua.store_changed_items(kind, changed_items)
         total += len(id_map)
-        synced += len(changed_anime or [])
+        synced += len(changed_items or [])
         if time.time() - partial >= 60:
-            LOGGER.info('  Synced %d/%d anime', synced, total)
+            LOGGER.info('  Synced %d/%d %s', synced, total, kind)
             partial = time.time()
-        missing = missing[SMALL_ANIME_BATCH:]
+        missing = missing[SMALL_ITEM_BATCH:]
 
-    LOGGER.info('  Synced %d/%d anime', synced, total)
+    LOGGER.info('  Synced %d/%d %s', synced, total, kind)
 
 def sync_aqua_users(from_aqua, to_aqua, dry_run):
     LOGGER.info('  Fetching source user ids')
@@ -200,7 +236,9 @@ def sync_aqua_users(from_aqua, to_aqua, dry_run):
 
 def sync_aqua_db(from_aqua, to_aqua, dry_run):
     LOGGER.info('Syncing anime %s -> %s', from_aqua.base, to_aqua.base)
-    sync_aqua_anime(from_aqua, to_aqua, dry_run=dry_run)
+    sync_aqua_items('anime', from_aqua, to_aqua, dry_run=dry_run)
+    LOGGER.info('Syncing manga %s -> %s', from_aqua.base, to_aqua.base)
+    sync_aqua_items('manga', from_aqua, to_aqua, dry_run=dry_run)
     LOGGER.info('Syncing users %s -> %s', from_aqua.base, to_aqua.base)
     sync_aqua_users(from_aqua, to_aqua, dry_run=dry_run)
     LOGGER.info('Done')
