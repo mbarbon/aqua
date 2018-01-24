@@ -1,6 +1,26 @@
 ## Aqua
 
-A simplistic anime recommendation system
+A simplistic anime recommendation system: try it at [aqua-recommend.net](https://aqua-recommend.net/)
+
+## How it works
+
+The core of the system is a set of well-known recommendation algorithms, using rating data from
+[MyAnimeList](https://myanimelist.net/).
+
+Currently implemented algorithms are:
+
+* co-occurrency collaborative filtering ("other users also liked..." recommendations)<br>
+  "Item-based top-N recommendation algorithms" by Mukund Deshpande and George Karypis (2004)
+* memory-based colleborative filtering using vector dot product as similarity measure<br>
+  [WikiPedia link](https://en.wikipedia.org/wiki/Collaborative_filtering#Memory-based)
+* latent factor decomposition (LFD) matrix factorization using alternating least squares<br>
+  [blog.insightdatascience.com link](https://blog.insightdatascience.com/explicit-matrix-factorization-als-sgd-and-all-that-jazz-b00e4d9b21ea)
+* memory-based collaborative filtering using LFD output vectors instead of the raw rating vectors
+
+In my completely unbiased evaluation, Aqua provides decent recommendations, but keep in mind that this is mostly
+a pet project to learn more about fields I was not familiar with before (recommendations, machine learning) and to
+check out some technologies (Clojure, React, React Native). In other words: I think the end result is useful, but
+creating a finished product was never the goal.
 
 ## LICENSE
 
