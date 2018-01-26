@@ -20,6 +20,7 @@
                  [org.asynchttpclient/async-http-client "2.0.37"]
                  [ring "1.5.0"]
                  [compojure "1.5.1"]
+                 [slester/ring-browser-caching "0.1.1"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.2.1"]]
   :source-paths ["src/main/clojure"]

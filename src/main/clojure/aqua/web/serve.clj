@@ -17,6 +17,7 @@
             ring.middleware.json
             ring.middleware.reload
             ring.middleware.stacktrace
+            ring.middleware.browser-caching
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]))
 
 (defn- encode-binary [buffer ^com.fasterxml.jackson.core.JsonGenerator jsonGenerator]
@@ -161,6 +162,10 @@
         no-csrf (assoc security :anti-forgery false)
         modified-site-defaults (dissoc (assoc site-defaults :security no-csrf) :static)]
     (-> app-routes
+      (ring.middleware.browser-caching/wrap-browser-caching {"text/javascript" 28800 ; 8 hours
+                                                             "image/jpeg"      28800
+                                                             "text/html"       28800
+                                                             "text/css"        28800})
       (wrap-defaults modified-site-defaults))))
 
 (def service-app
