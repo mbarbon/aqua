@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import AquaButton from './components/AquaButton'
 import Spinner from './components/Spinner'
 import { localState } from '../shared/state/Globals'
+import './UserMode.css'
 
 type Props = {
   queuePosition: ?number,
@@ -63,6 +64,7 @@ export default class UserMode extends Component<Props, State> {
           <div className='start-your-list'>
             MAL user{' '}
             <input
+              className='mal-username-input'
               value={this.state.malUserName}
               onChange={this.updateUserName.bind(this)}
               onKeyDown={this.handleEnter.bind(this)}
