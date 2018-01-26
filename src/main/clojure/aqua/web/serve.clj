@@ -135,8 +135,14 @@
 (defn- configurator [jetty-server]
   (.setHandler jetty-server
     (doto (io.dropwizard.jetty.BiDiGzipHandler.)
-          (.setIncludedMimeTypes (into-array ["application/json"]))
-          (.setIncludedMethods (into-array String ["GET" "POST"]))
+          (.addIncludedMimeTypes (into-array ["text/html"
+                                              "text/javascript"
+                                              ; this is needed because Jetty GzipHandler checks the content type
+                                              ; based on the extension, not the actual content type of the response
+                                              "application/javascript"
+                                              "text/css"
+                                              "application/json"]))
+          (.addIncludedMethods (into-array String ["GET" "POST"]))
           (.setMinGzipSize 1024)
           (.setHandler (.getHandler jetty-server))))
   (.setRequestLog jetty-server
