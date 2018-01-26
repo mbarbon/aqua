@@ -140,6 +140,7 @@ export default class UserRecommendations extends Component<Props, State> {
           >
             Add watched anime{' '}
             <input
+              className='text-input'
               id='searchAnime'
               type='text'
               onChange={this.performSearch.bind(this)}

@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 import AquaButton from './components/AquaButton'
 import Spinner from './components/Spinner'
 import { localState } from '../shared/state/Globals'
-import './UserMode.css'
 
 type Props = {
   queuePosition: ?number,
