@@ -200,7 +200,18 @@ class App extends Component<{}, State> {
         />
       )
     } else if (!userMode || !recommendations) {
-      return <UserMode queuePosition={this.state.queuePosition} />
+      return (
+        <UserMode
+          queuePosition={this.state.queuePosition}
+          loadingState={
+            !userMode
+              ? UserMode.MODE_DEFAULT
+              : this.state.queuePosition
+                ? UserMode.MODE_LOADING_LIST
+                : UserMode.MODE_LOADING_RECOMMENDATIONS
+          }
+        />
+      )
     }
   }
 }

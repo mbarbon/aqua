@@ -1,9 +1,12 @@
 // @flow
 import React, { Component } from 'react'
+import AquaButton from './components/AquaButton'
+import Spinner from './components/Spinner'
 import { localState } from '../shared/state/Globals'
 
 type Props = {
-  queuePosition: ?number
+  queuePosition: ?number,
+  loadingState: number
 }
 
 type State = {
@@ -11,6 +14,10 @@ type State = {
 }
 
 export default class UserMode extends Component<Props, State> {
+  static MODE_DEFAULT = 0
+  static MODE_LOADING_LIST = 1
+  static MODE_LOADING_RECOMMENDATIONS = 2
+
   constructor (props: Props) {
     super(props)
     this.state = {
@@ -34,6 +41,10 @@ export default class UserMode extends Component<Props, State> {
     localState.setLocalUserAndLoadRecommendations()
   }
 
+  stopLoading () {
+    localState.resetUserMode()
+  }
+
   render () {
     return (
       <div className='start-page' id='start-page'>
@@ -48,22 +59,35 @@ export default class UserMode extends Component<Props, State> {
           </div>
           <br style={{ clear: 'both' }} />
         </div>
-        <div className='start-your-list'>
-          MAL user{' '}
-          <input
-            value={this.state.malUserName}
-            onChange={this.updateUserName.bind(this)}
-            onKeyDown={this.handleEnter.bind(this)}
-          />
-          {' or '}
-          <a href='add-anime' onClick={this.setLocalUser.bind(this)}>
-            just add anime you like
-          </a>
-        </div>
-        {this.props.queuePosition && (
+        {this.props.loadingState == UserMode.MODE_DEFAULT && (
+          <div className='start-your-list'>
+            MAL user{' '}
+            <input
+              value={this.state.malUserName}
+              onChange={this.updateUserName.bind(this)}
+              onKeyDown={this.handleEnter.bind(this)}
+            />
+            {' or '}
+            <a href='add-anime' onClick={this.setLocalUser.bind(this)}>
+              just add anime you like
+            </a>
+          </div>
+        )}
+        {this.props.loadingState != UserMode.MODE_DEFAULT && <Spinner />}
+        {this.props.loadingState == UserMode.MODE_LOADING_LIST && (
           <div className='start-your-list'>
             Loading MAL anime list (position in queue {this.props.queuePosition})
           </div>
+        )}
+        {this.props.loadingState == UserMode.MODE_LOADING_RECOMMENDATIONS && (
+          <div className='start-your-list'>Loading recommendations</div>
+        )}
+        {this.props.loadingState != UserMode.MODE_DEFAULT && (
+          <AquaButton
+            inline={true}
+            label='Cancel'
+            onClick={this.stopLoading.bind(this)}
+          />
         )}
       </div>
     )
