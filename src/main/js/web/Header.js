@@ -36,7 +36,7 @@ export default class Header extends PureComponent<{
             <AquaButton
               inline
               onClick={this.changeUser.bind(this)}
-              label='Use a MAL account'
+              label='Use MAL'
             />
           )}
           {isMal && <b>{this.props.malUsername}</b>}
