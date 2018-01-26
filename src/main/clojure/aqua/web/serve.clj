@@ -159,7 +159,7 @@
 (def app
   (let [security (site-defaults :security)
         no-csrf (assoc security :anti-forgery false)
-        modified-site-defaults (assoc site-defaults :security no-csrf)]
+        modified-site-defaults (dissoc (assoc site-defaults :security no-csrf) :static)]
     (-> app-routes
       (wrap-defaults modified-site-defaults))))
 
