@@ -14,7 +14,7 @@
                  [org.jsoup/jsoup "1.10.3"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [org.eclipse.jetty/jetty-server "9.3.18.v20170406"]
+                 [org.eclipse.jetty/jetty-server "9.4.8.v20171121"]
                  [javax.servlet/javax.servlet-api "4.0.0"]
                  [ch.qos.logback/logback-classic "1.2.2"]
                  [org.asynchttpclient/async-http-client "2.0.37"]
