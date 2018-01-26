@@ -168,10 +168,10 @@
         no-csrf (assoc security :anti-forgery false)
         modified-site-defaults (dissoc (assoc site-defaults :security no-csrf) :static)]
     (-> app-routes
-      (ring.middleware.browser-caching/wrap-browser-caching {"text/javascript" 28800 ; 8 hours
-                                                             "image/jpeg"      28800
-                                                             "text/html"       28800
-                                                             "text/css"        28800})
+      (ring.middleware.browser-caching/wrap-browser-caching {"text/javascript" 604800 ; 7 days
+                                                             "image/jpeg"      604800
+                                                             "text/html"       604800
+                                                             "text/css"        604800})
       (wrap-defaults modified-site-defaults))))
 
 (def service-app
