@@ -17,6 +17,7 @@ export default class UserMode extends Component<Props, State> {
   static MODE_DEFAULT = 0
   static MODE_LOADING_LIST = 1
   static MODE_LOADING_RECOMMENDATIONS = 2
+  static MODE_PRERENDER = 3
 
   constructor (props: Props) {
     super(props)
@@ -46,6 +47,8 @@ export default class UserMode extends Component<Props, State> {
   }
 
   render () {
+    let loadingState = this.props.loadingState
+
     return (
       <div className='start-page' id='start-page'>
         <div className='start-page-body'>
@@ -59,7 +62,7 @@ export default class UserMode extends Component<Props, State> {
           </div>
           <br style={{ clear: 'both' }} />
         </div>
-        {this.props.loadingState == UserMode.MODE_DEFAULT && (
+        {loadingState == UserMode.MODE_DEFAULT && (
           <div className='start-your-list'>
             MAL user{' '}
             <input
@@ -74,22 +77,23 @@ export default class UserMode extends Component<Props, State> {
             </a>
           </div>
         )}
-        {this.props.loadingState != UserMode.MODE_DEFAULT && <Spinner />}
-        {this.props.loadingState == UserMode.MODE_LOADING_LIST && (
+        {loadingState != UserMode.MODE_DEFAULT && <Spinner />}
+        {loadingState == UserMode.MODE_LOADING_LIST && (
           <div className='start-your-list'>
             Loading MAL anime list (position in queue {this.props.queuePosition})
           </div>
         )}
-        {this.props.loadingState == UserMode.MODE_LOADING_RECOMMENDATIONS && (
+        {loadingState == UserMode.MODE_LOADING_RECOMMENDATIONS && (
           <div className='start-your-list'>Loading recommendations</div>
         )}
-        {this.props.loadingState != UserMode.MODE_DEFAULT && (
-          <AquaButton
-            inline={true}
-            label='Cancel'
-            onClick={this.stopLoading.bind(this)}
-          />
-        )}
+        {loadingState != UserMode.MODE_DEFAULT &&
+          loadingState != UserMode.MODE_PRERENDER && (
+            <AquaButton
+              inline={true}
+              label='Cancel'
+              onClick={this.stopLoading.bind(this)}
+            />
+          )}
       </div>
     )
   }

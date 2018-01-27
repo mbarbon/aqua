@@ -3,4 +3,5 @@
 set -e
 
 npm run build
+npm run pre-render
 lein uberjar
