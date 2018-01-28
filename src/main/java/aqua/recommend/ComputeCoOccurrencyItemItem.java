@@ -231,13 +231,14 @@ public class ComputeCoOccurrencyItemItem {
 
             Set<Integer> seenFranchises = new HashSet<>();
             addFranchise(animedbId, seenFranchises);
+            int index = i * similarAnimeCount;
             for (int j = 0; j < similarAnimeCount && j < similarAnme.size(); ++j) {
                 ScoredAnimeId scoredAnimeId = similarAnme.get(j);
                 if (addFranchise(scoredAnimeId.animedbId, seenFranchises))
                     continue;
-                int index = i * similarAnimeCount + j;
                 similarAnimeId[index] = scoredAnimeId.animedbId;
                 similarAnimeScore[index] = scoredAnimeId.score;
+                ++index;
             }
         }
     }
