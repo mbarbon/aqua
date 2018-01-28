@@ -2,8 +2,7 @@
   (:require clojure.string))
 
 (defn- split-words [title]
-  (map clojure.string/lower-case
-    (clojure.string/split (clojure.string/replace title #"\W+" " ") #"\s+")))
+  (clojure.string/split (clojure.string/lower-case (clojure.string/replace title #"\W+" " ")) #"\s+"))
 
 (defn prepare-suggest [anime-title-list anime-rank]
   (let [word-anime (java.util.HashMap.)]
