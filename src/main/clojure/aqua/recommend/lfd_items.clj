@@ -1,54 +1,36 @@
 (ns aqua.recommend.lfd-items
-  )
+  (:require aqua.recommend.item-item-model))
 
-(defn store-lfd-items [out ^aqua.recommend.LatentFactorDecompositionItems lfd]
-  (let [similar-id (.similarAnimeId lfd)
-        similar-score (.similarAnimeScore lfd)
-        writer (no.uib.cipr.matrix.io.MatrixVectorWriter. out)]
-    (binding [*out* out]
-      (println (.similarAnimeCount lfd))
-      (println (count similar-id))
-      (.printArray writer similar-id)
-      (.printArray writer similar-score))))
-
-(defn- load-lfd-items-v1 [in complete factors]
-  (let [read-int (fn [] (Integer/valueOf (read-line)))
-        reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)]
-    (binding [*in* in]
-      (let [similar-count (read-int)
-            array-size (read-int)
-            similar-id (make-array Integer/TYPE array-size)
-            similar-score (make-array Float/TYPE array-size)]
-        (.readArray reader similar-id)
-        (.readArray reader similar-score)
-        (aqua.recommend.LatentFactorDecompositionItems. complete factors
-                                                        similar-count
-                                                        similar-id
-                                                        similar-score)))))
-
-(defn load-lfd-items [path complete factors]
-  (aqua.recommend.model-files/with-open-model path 1 in version
-    (load-lfd-items-v1 in complete factors)))
-
-(defn create-model [anime lfd factors item-count]
+(defn- create-model [anime lfd factors item-count]
   (let [clfd (aqua.recommend.ComputeLatentFactorDecompositionItems. anime lfd factors item-count)]
     (.findSimilarAnime clfd)
     (.lfdItems clfd)))
 
+(defn create-lfd-items [anime lfd lfd-airing item-count item-count-airing]
+  (let [model (create-model anime lfd lfd item-count)
+        model-airing (create-model anime lfd lfd-airing item-count-airing)]
+    (aqua.recommend.LatentFactorDecompositionItems. model model-airing)))
+
+(defn store-lfd-items-complete [out lfd]
+  (aqua.recommend.item-item-model/store-item-item out (.complete lfd)))
+
+(defn store-lfd-items-airing [out lfd]
+  (aqua.recommend.item-item-model/store-item-item out (.airing lfd)))
+
+(defn load-lfd-items [path-complete path-airing]
+  (let [complete (aqua.recommend.item-item-model/load-item-item path-complete)
+        airing (aqua.recommend.item-item-model/load-item-item path-airing)]
+    (aqua.recommend.LatentFactorDecompositionItems. complete airing)))
+
 (defn get-recommendations [user
-                           ^aqua.recommend.LatentFactorDecompositionItems lfd
+                           ^aqua.recommend.LatentFactorDecompositionItems model
                            remove-known-anime]
-  (let [ranked-anime (.findSimilarAnime lfd user)]
-    (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
-    [[] (take 100 (remove-known-anime ranked-anime))]))
+  (aqua.recommend.item-item-model/get-recommendations user (.complete model) remove-known-anime))
 
 (defn get-all-recommendations [user
-                               ^aqua.recommend.LatentFactorDecompositionItems lfd
-                               ^aqua.recommend.LatentFactorDecompositionItems lfd-airing
-                               remove-known-anime keep-airing-anime tagger]
-  (let [ranked-anime (.findSimilarAnime lfd user)
-        ranked-airing-anime (.findSimilarAnime lfd-airing user)]
-    (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
-    (.sort ranked-airing-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
-    [(tagger (take 100 (remove-known-anime ranked-anime)))
-     (tagger (take 100 (keep-airing-anime ranked-airing-anime)))]))
+                               ^aqua.recommend.LatentFactorDecompositionItems model
+                               remove-known-anime keep-airing-anime
+                               tagger]
+  (let [[_ recommendations] (aqua.recommend.item-item-model/get-recommendations user (.complete model) remove-known-anime)
+        [_ airing] (aqua.recommend.item-item-model/get-recommendations user (.airing model) remove-known-anime)]
+    [(tagger recommendations) (tagger airing)]))

@@ -33,7 +33,8 @@
 (def lfd-lambda 0.1)
 (def lfd-iterations 24)
 
-(def lfd-items-similar-item-count 30)
+(def lfd-items-item-count 30)
+(def lfd-items-item-count-airing 15)
 
 (defn- recompute-co-occurrency-model [users anime-map model-path airing-model-path]
   (let [co-occurrency (aqua.recommend.co-occurrency/create-co-occurrency users anime-map
@@ -53,12 +54,11 @@
 (defn- recompute-lfd-items-model [anime lfd-path lfd-airing-path model-path airing-model-path]
   (let [lfd (aqua.recommend.lfd/load-lfd lfd-path)
         lfd-airing (aqua.recommend.lfd/load-lfd lfd-airing-path)
-        lfd-items (aqua.recommend.lfd-items/create-model anime lfd lfd lfd-items-similar-item-count)
-        lfd-items-airing (aqua.recommend.lfd-items/create-model anime lfd lfd-airing lfd-items-similar-item-count)]
+        lfd-items (aqua.recommend.lfd-items/create-lfd-items anime lfd lfd-airing lfd-items-item-count lfd-items-item-count-airing)]
     (with-open [out (clojure.java.io/writer model-path)]
-      (aqua.recommend.lfd-items/store-lfd-items out lfd-items))
+      (aqua.recommend.lfd-items/store-lfd-items-complete out lfd-items))
     (with-open [out (clojure.java.io/writer airing-model-path)]
-      (aqua.recommend.lfd-items/store-lfd-items out lfd-items-airing))))
+      (aqua.recommend.lfd-items/store-lfd-items-airing out lfd-items))))
 
 (defn- recompute-lfd-model [users anime-map rank lambda iterations model-path airing-model-path user-model-path]
   (let [[lfdr lfdr-airing] (aqua.recommend.lfd/prepare-lfd-decompositor users anime-map rank lambda)]
@@ -97,7 +97,10 @@
         "lfd-items"
           (do
             (println "Recomputing latent factor decomposition item similarity")
-            (time (recompute-lfd-items-model anime, "maldump/lfd-model" "maldump/lfd-model-airing" "maldump/lfd-items-model" "maldump/lfd-items-model-airing")))
+            (time (recompute-lfd-items-model anime "maldump/lfd-model"
+                                                   "maldump/lfd-model-airing"
+                                                   "maldump/lfd-items-model"
+                                                   "maldump/lfd-items-model-airing")))
         "rp-similarity"
           (do
             (println "Recomputing random projection similarity model")

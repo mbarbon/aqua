@@ -30,8 +30,8 @@ public class ComputeLatentFactorDecompositionItems {
         fillSimilarityMatrix();
     }
 
-    public LatentFactorDecompositionItems lfdItems() {
-        return new LatentFactorDecompositionItems(completed, factors, similarAnimeCount, similarAnimeId, similarAnimeScore);
+    public ItemItemModel lfdItems() {
+        return new ItemItemModel(completed.animeIndexMap, similarAnimeCount, similarAnimeId, similarAnimeScore);
     }
 
     private void fillSimilarityMatrix() {

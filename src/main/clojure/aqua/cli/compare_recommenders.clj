@@ -22,7 +22,7 @@
         users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
         lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model")
         lfd-users (aqua.recommend.lfd/load-user-lfd "maldump/lfd-user-model" lfd users)
-        lfd-items (aqua.recommend.lfd-items/load-lfd-items "maldump/lfd-items-model" lfd lfd)
+        lfd-items (aqua.recommend.lfd-items/load-lfd-items "maldump/lfd-items-model" "maldump/lfd-items-model-airing")
         rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model-unfiltered")
         co-occurrency-model (aqua.recommend.co-occurrency/load-co-occurrency "maldump/co-occurrency-model" "maldump/co-occurrency-model-airing")
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory
