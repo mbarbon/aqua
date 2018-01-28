@@ -1,5 +1,7 @@
 package aqua.search;
 
+import aqua.recommend.HPPCUtils;
+import com.carrotsearch.hppc.IntIntMap;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
@@ -66,10 +68,10 @@ public class Suggest {
     }
 
     private final List<Entry> entries = new ArrayList<>();
-    private final Map<Integer, Integer> animeRank;
+    private final IntIntMap animeRank;
 
     public Suggest(Map<String, Collection<Integer>> searchMap, Map<Integer, Integer> animeRank) {
-        this.animeRank = animeRank;
+        this.animeRank = HPPCUtils.convertMap(animeRank);
 
         for (Map.Entry<String, Collection<Integer>> entry : searchMap.entrySet())
             insertEntry(entry.getKey(), Ints.toArray(entry.getValue()));

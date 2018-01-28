@@ -9,6 +9,7 @@
                  [com.fasterxml.jackson.dataformat/jackson-dataformat-xml "2.8.7"]
                  [io.protostuff/protostuff-core "1.6.0"]
                  [io.protostuff/protostuff-runtime "1.6.0"]
+                 [com.carrotsearch/hppc "0.7.3"]
                  [com.google.guava/guava "21.0"]
                  [com.googlecode.matrix-toolkits-java/mtj "1.0.2"]
                  [org.jsoup/jsoup "1.10.3"]

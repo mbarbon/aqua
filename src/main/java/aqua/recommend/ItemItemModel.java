@@ -1,5 +1,8 @@
 package aqua.recommend;
 
+import com.carrotsearch.hppc.IntIntHashMap;
+import com.carrotsearch.hppc.IntIntMap;
+import com.carrotsearch.hppc.cursors.IntIntCursor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,21 +13,25 @@ public class ItemItemModel {
     private static final int ITEM_MIN = 10;
     private static final int ITEM_MAX = 20;
 
-    public final Map<Integer, Integer> animeIndexMap;
+    public final IntIntMap animeIndexMap;
     public final int[] animeRatedMap;
     public final int similarAnimeCount;
     public final int[] similarAnimeId;
     public final float[] similarAnimeScore;
 
     public ItemItemModel(Map<Integer, Integer> animeIndexMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
+        this(HPPCUtils.convertMap(animeIndexMap), similarAnimeCount, similarAnimeId, similarAnimeScore);
+    }
+
+    public ItemItemModel(IntIntMap animeIndexMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
         this.animeIndexMap = animeIndexMap;
         this.similarAnimeCount = similarAnimeCount;
         this.similarAnimeId = similarAnimeId;
         this.similarAnimeScore = similarAnimeScore;
 
         this.animeRatedMap = new int[animeIndexMap.size()];
-        for (Map.Entry<Integer, Integer> entry : animeIndexMap.entrySet())
-            animeRatedMap[entry.getValue()] = entry.getKey();
+        for (IntIntCursor entry : animeIndexMap)
+            animeRatedMap[entry.value] = entry.key;
     }
 
     public ItemItemModel(int[] animeRatedMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
@@ -33,7 +40,7 @@ public class ItemItemModel {
         this.similarAnimeId = similarAnimeId;
         this.similarAnimeScore = similarAnimeScore;
 
-        this.animeIndexMap = new HashMap<>();
+        this.animeIndexMap = new IntIntHashMap();
         for (int i = 0; i < animeRatedMap.length; ++i)
             animeIndexMap.put(animeRatedMap[i], i);
     }

@@ -1,10 +1,11 @@
 package aqua.recommend;
 
+import com.carrotsearch.hppc.IntIntHashMap;
+import com.carrotsearch.hppc.IntIntMap;
 import no.uib.cipr.matrix.DenseMatrix;
 import no.uib.cipr.matrix.DenseVector;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,13 +14,13 @@ import static aqua.recommend.MatrixUtils.partialTransAmult;
 public class LatentFactorDecomposition {
     public final double lambda;
     public final DenseMatrix animeFactors;
-    final Map<Integer, Integer> animeIndexMap;
+    final IntIntMap animeIndexMap;
     public final int[] animeRatedMap; // inverse for animeIndexMap
 
     public LatentFactorDecomposition(double lambda, Map<Integer, Integer> animeIndexMap, DenseMatrix animeFactors) {
         this.lambda = lambda;
         this.animeFactors = animeFactors;
-        this.animeIndexMap = animeIndexMap;
+        this.animeIndexMap = HPPCUtils.convertMap(animeIndexMap);
         this.animeRatedMap = new int[animeIndexMap.size()];
         for (Map.Entry<Integer, Integer> entry : animeIndexMap.entrySet())
             animeRatedMap[entry.getValue()] = entry.getKey();
@@ -28,7 +29,7 @@ public class LatentFactorDecomposition {
     public LatentFactorDecomposition(double lambda, int[] animeRatedMap, DenseMatrix animeFactors) {
         this.lambda = lambda;
         this.animeFactors = animeFactors;
-        this.animeIndexMap = new HashMap<>();
+        this.animeIndexMap = new IntIntHashMap();
         this.animeRatedMap = animeRatedMap;
         for (int i = 0; i < animeRatedMap.length; ++i)
             animeIndexMap.put(animeRatedMap[i], i);
