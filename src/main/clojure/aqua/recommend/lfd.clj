@@ -3,9 +3,7 @@
 
 (defn prepare-lfd-decompositor [user-list anime-map rank lambda]
   (let [anime-index-map (java.util.HashMap.)
-        anime-rated-map (java.util.ArrayList.)
-        airing-anime-index-map (java.util.HashMap.)
-        airing-anime-rated-map (java.util.ArrayList.)]
+        airing-anime-index-map (java.util.HashMap.)]
     (doseq [^aqua.mal.data.Anime anime (vals anime-map)]
       (cond
         (.isAiring anime) (.put airing-anime-index-map
@@ -14,23 +12,13 @@
         (.isCompleted anime) (.put anime-index-map
                                    (.animedbId anime)
                                    (.size anime-index-map))))
-    (dotimes [_ (.size anime-index-map)]
-      (.add anime-rated-map nil))
-    (dotimes [_ (.size airing-anime-index-map)]
-      (.add airing-anime-rated-map nil))
-    (doseq [^java.util.Map$Entry entry anime-index-map]
-      (.set anime-rated-map (.getValue entry) (.getKey entry)))
-    (doseq [^java.util.Map$Entry entry airing-anime-index-map]
-      (.set airing-anime-rated-map (.getValue entry) (.getKey entry)))
     (let [lfdr (aqua.recommend.ComputeLatentFactorDecomposition. anime-index-map
-                                                                 (into-array Integer/TYPE anime-rated-map)
                                                                  (.size user-list)
                                                                  rank
                                                                  lambda)
           ; shares user weights
           lfdr-airing (.forAiring lfdr
-                                  airing-anime-index-map
-                                  (into-array Integer/TYPE airing-anime-rated-map))]
+                                  airing-anime-index-map)]
       (dotimes [i (.size user-list)]
         (.addCompletedRatings lfdr i (.get user-list i))
         (.addAiringRatings lfdr-airing i (.get user-list i)))

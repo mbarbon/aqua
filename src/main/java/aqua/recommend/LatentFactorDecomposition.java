@@ -4,7 +4,6 @@ import no.uib.cipr.matrix.DenseMatrix;
 import no.uib.cipr.matrix.DenseVector;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,11 +16,13 @@ public class LatentFactorDecomposition {
     final Map<Integer, Integer> animeIndexMap;
     public final int[] animeRatedMap; // inverse for animeIndexMap
 
-    public LatentFactorDecomposition(double lambda, Map<Integer, Integer> animeIndexMap, int[] animeRatedMap, DenseMatrix animeFactors) {
+    public LatentFactorDecomposition(double lambda, Map<Integer, Integer> animeIndexMap, DenseMatrix animeFactors) {
         this.lambda = lambda;
         this.animeFactors = animeFactors;
         this.animeIndexMap = animeIndexMap;
-        this.animeRatedMap = animeRatedMap;
+        this.animeRatedMap = new int[animeIndexMap.size()];
+        for (Map.Entry<Integer, Integer> entry : animeIndexMap.entrySet())
+            animeRatedMap[entry.getValue()] = entry.getKey();
     }
 
     public LatentFactorDecomposition(double lambda, int[] animeRatedMap, DenseMatrix animeFactors) {

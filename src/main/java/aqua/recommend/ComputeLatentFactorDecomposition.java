@@ -19,7 +19,6 @@ public class ComputeLatentFactorDecomposition {
     private final int animeCount, userCount, rank;
     private final double lambda;
     private final Map<Integer, Integer> animeIndexMap;
-    private final int[] animeRatedMap; // inverse for animeIndexMap
     private final CFUser[] userMap;
     // from https://datasciencemadesimpler.wordpress.com/tag/alternating-least-squares/
     private final FlexCompRowMatrix ratingMatrixByUser; // R matrix
@@ -39,10 +38,9 @@ public class ComputeLatentFactorDecomposition {
     // timing information
     private long preprocessTime, coefficientTime, valueTime, solveTime;
 
-    public ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int[] animeRatedMap, int userCount, int rank, double lambda) {
+    public ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int userCount, int rank, double lambda) {
         this.animeIndexMap = animeIndexMap;
-        this.animeRatedMap = animeRatedMap;
-        this.animeCount = animeRatedMap.length;
+        this.animeCount = animeIndexMap.size();
         this.userCount = userCount;
         this.userMap = new CFUser[userCount];
         this.rank = rank;
@@ -59,10 +57,9 @@ public class ComputeLatentFactorDecomposition {
         this.linearSystemSolution = new DenseVector(rank);
     }
 
-    private ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int[] animeRatedMap, int userCount, int rank, double lambda, DenseMatrix userFactors) {
+    private ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int userCount, int rank, double lambda, DenseMatrix userFactors) {
         this.animeIndexMap = animeIndexMap;
-        this.animeRatedMap = animeRatedMap;
-        this.animeCount = animeRatedMap.length;
+        this.animeCount = animeIndexMap.size();
         this.userCount = userCount;
         this.userMap = null;
         this.rank = rank;
@@ -103,12 +100,12 @@ public class ComputeLatentFactorDecomposition {
         return solveTime;
     }
 
-    public ComputeLatentFactorDecomposition forAiring(Map<Integer, Integer> animeIndexMap, int[] animeRatedMap) {
-        return new ComputeLatentFactorDecomposition(animeIndexMap, animeRatedMap, userCount, rank, lambda, userFactors);
+    public ComputeLatentFactorDecomposition forAiring(Map<Integer, Integer> animeIndexMap) {
+        return new ComputeLatentFactorDecomposition(animeIndexMap, userCount, rank, lambda, userFactors);
     }
 
     public LatentFactorDecomposition decomposition() {
-        return new LatentFactorDecomposition(lambda, animeIndexMap, animeRatedMap, animeFactors);
+        return new LatentFactorDecomposition(lambda, animeIndexMap, animeFactors);
     }
 
     public LatentFactorDecompositionUsers decompositionUsers() {
