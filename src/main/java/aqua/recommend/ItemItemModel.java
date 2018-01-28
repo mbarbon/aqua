@@ -63,7 +63,7 @@ public class ItemItemModel {
     public List<ScoredAnime> findSimilarAnime(CFUser user) {
         List<ScoredAnimeId> sortedScores = new ArrayList<>(user.completedAndDroppedIds.length);
         for (int i = 0; i < user.completedAndDroppedIds.length; ++i) {
-            sortedScores.add(new ScoredAnimeId(user.completedAndDroppedIds[i], user.completedAndDroppedRating[i]));
+            sortedScores.add(new ScoredAnimeId(user.completedAndDroppedIds[i], user.completedAndDroppedRatingFloat(i)));
         }
         sortedScores.sort(ScoredAnimeId.SORT_SCORE);
         int maxUse = Math.min(ITEM_MAX, sortedScores.size());

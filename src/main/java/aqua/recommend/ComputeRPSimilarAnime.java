@@ -51,7 +51,7 @@ public class ComputeRPSimilarAnime {
                 Integer index = animeIndexMap.get(animedbId);
                 if (index == null)
                     continue;
-                float rating = user.completedAndDroppedRating[i];
+                float rating = user.completedAndDroppedRatingFloat(i);
 
                 scores.set(index, userIndex, rating);
             }

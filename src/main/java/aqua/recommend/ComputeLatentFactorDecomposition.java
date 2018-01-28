@@ -115,7 +115,7 @@ public class ComputeLatentFactorDecomposition {
     public void addCompletedRatings(int userIndex, CFUser user) {
         for (int i = 0; i < user.completedAndDroppedIds.length; ++i) {
             int animedbId = user.completedAndDroppedIds[i];
-            float rating = user.completedAndDroppedRating[i];
+            float rating = user.completedAndDroppedRatingFloat(i);
             Integer animeIndex = animeIndexMap.get(animedbId);
 
             // some anime are filtered out, so they will have no index

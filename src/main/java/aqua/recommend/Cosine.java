@@ -1,7 +1,5 @@
 package aqua.recommend;
 
-import java.util.Iterator;
-
 public class Cosine {
     private final CFUser usera;
     private final double sumSquaresA;
@@ -22,15 +20,15 @@ public class Cosine {
     }
 
     private static double sumSquares(CFUser user) {
-        double sum = 0.0;
-        for (float rating : user.completedAndDroppedRating)
+        int sum = 0;
+        for (byte rating : user.completedAndDroppedRating)
             sum += rating * rating;
-        return Math.sqrt(sum);
+        return Math.sqrt(CFUser.squaredRatingToDouble(sum));
     }
 
     private static double productSum(CFUser usera, CFUser userb) {
-        float[] ratedRatingA = usera.completedAndDroppedRating;
-        float[] ratedRatingB = userb.completedAndDroppedRating;
+        byte[] ratedRatingA = usera.completedAndDroppedRating;
+        byte[] ratedRatingB = userb.completedAndDroppedRating;
         int[] ratedA = usera.completedAndDroppedIds;
         int[] ratedB = userb.completedAndDroppedIds;
         int indexA = 0, indexB = 0, maxA = ratedA.length, maxB = ratedB.length;
@@ -38,7 +36,7 @@ public class Cosine {
             return 0;
         int currentA = ratedA[indexA++];
         int currentB = ratedB[indexB++];
-        double sum = 0.0;
+        int sum = 0;
 
         for (;;) {
             int order = currentA - currentB;
@@ -62,6 +60,6 @@ public class Cosine {
             }
         }
 
-        return sum;
+        return CFUser.squaredRatingToDouble(sum);
     }
 }

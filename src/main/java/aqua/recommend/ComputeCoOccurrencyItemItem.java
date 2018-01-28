@@ -33,18 +33,18 @@ public class ComputeCoOccurrencyItemItem {
 
         @Override
         public int maxSize() {
-            return user.completedAndDroppedRating.length;
+            return user.completedAndDroppedIds.length;
         }
 
         @Override
         public boolean next() {
-            if (index >= user.completedAndDroppedRating.length) {
+            if (index >= user.completedAndDroppedIds.length) {
                 return false;
             }
             do {
                 ++index;
-            } while (index < user.completedAndDroppedRating.length && normalizedRating() < goodScoreThreshold);
-            if (index >= user.completedAndDroppedRating.length) {
+            } while (index < user.completedAndDroppedIds.length && normalizedRating() < goodScoreThreshold);
+            if (index >= user.completedAndDroppedIds.length) {
                 return false;
             }
             return true;
@@ -57,7 +57,7 @@ public class ComputeCoOccurrencyItemItem {
 
         @Override
         public float normalizedRating() {
-            return user.completedAndDroppedRating[index];
+            return user.completedAndDroppedRatingFloat(index);
         }
     }
 

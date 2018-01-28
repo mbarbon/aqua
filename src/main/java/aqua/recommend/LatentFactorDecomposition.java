@@ -58,7 +58,7 @@ public class LatentFactorDecomposition {
             Integer animeIndex = animeIndexMap.get(user.completedAndDroppedIds[i]);
             if (animeIndex == null)
                 continue;
-            double rating = user.completedAndDroppedRating[i];
+            double rating = user.completedAndDroppedRatingDouble(i);
 
             animeRatingSlice.set(animeIndex, rating);
             animeIndices[i] = animeIndex;

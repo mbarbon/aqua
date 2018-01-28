@@ -2,7 +2,7 @@ package aqua.recommend;
 
 import aqua.mal.data.FilteredListIterator;
 
-import com.google.common.primitives.Floats;
+import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 
 import java.lang.Iterable;
@@ -13,6 +13,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CFUser {
+    private static final double FP_DOUBLE = 32.0d;
+    private static final float FP_FLOAT = 32.0f;
+
     private static final CFRated[] EMPTY_CFRATED_ARRAY = new CFRated[0];
     private static final int COMPLETED_AND_DROPPED =
         statusMask(CFRated.COMPLETED, CFRated.DROPPED);
@@ -27,7 +30,7 @@ public class CFUser {
     public long userId;
     public CFRated[] animeList;
     public int[] completedAndDroppedIds;
-    public float[] completedAndDroppedRating;
+    public byte[] completedAndDroppedRating;
     public int completedCount, droppedCount;
     public float ratingMean, ratingStddev;
     public byte minRating;
@@ -65,17 +68,17 @@ public class CFUser {
 
         {
             List<Integer> idList = new ArrayList<>();
-            List<Float> ratings = new ArrayList<>();
+            List<Byte> ratings = new ArrayList<>();
             for (CFRated rated : withStatusMask(COMPLETED_AND_DROPPED)) {
                 if (rated.status == CFRated.COMPLETED)
                     ++completedCount;
                 else if (rated.status == CFRated.DROPPED)
                     ++droppedCount;
                 idList.add(rated.animedbId);
-                ratings.add(normalizedRating(rated));
+                ratings.add(toCappedFixedPoint(normalizedRating(rated)));
             }
             completedAndDroppedIds = Ints.toArray(idList);
-            completedAndDroppedRating = Floats.toArray(ratings);
+            completedAndDroppedRating = Bytes.toArray(ratings);
         }
     }
 
@@ -151,6 +154,15 @@ public class CFUser {
             return 0;
     }
 
+    public float completedAndDroppedRatingFloat(int index) {
+        return completedAndDroppedRating[index] / FP_FLOAT;
+    }
+
+
+    public double completedAndDroppedRatingDouble(int index) {
+        return completedAndDroppedRating[index] / FP_DOUBLE;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof CFUser))
@@ -172,5 +184,21 @@ public class CFUser {
         for (int status : statuses)
             mask |= (1 <<  status);
         return mask;
+    }
+
+    private static byte toCappedFixedPoint(float rating) {
+        int fpRating = (int) (rating * FP_FLOAT);
+        return
+            fpRating < - 128 ? -128 :
+            fpRating > 127   ? 127 :
+                               (byte) fpRating;
+    }
+
+    public static double ratingToDouble(int rating) {
+        return rating / FP_DOUBLE;
+    }
+
+    public static double squaredRatingToDouble(int rating) {
+        return rating / (FP_DOUBLE * FP_DOUBLE);
     }
 }

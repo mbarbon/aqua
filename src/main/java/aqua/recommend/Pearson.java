@@ -1,7 +1,5 @@
 package aqua.recommend;
 
-import java.util.Iterator;
-
 public class Pearson {
     private final CFUser usera;
     private final int minCommonItems;
@@ -14,8 +12,8 @@ public class Pearson {
     public double userSimilarity(CFUser userb) {
         if (usera.equals(userb))
             return 1;
-        float[] ratedRatingA = usera.completedAndDroppedRating;
-        float[] ratedRatingB = userb.completedAndDroppedRating;
+        byte[] ratedRatingA = usera.completedAndDroppedRating;
+        byte[] ratedRatingB = userb.completedAndDroppedRating;
         int[] ratedA = usera.completedAndDroppedIds;
         int[] ratedB = userb.completedAndDroppedIds;
         int indexA = 0, indexB = 0, maxA = ratedA.length, maxB = ratedB.length;
@@ -23,14 +21,14 @@ public class Pearson {
             return 0;
         int currentA = ratedA[indexA++];
         int currentB = ratedB[indexB++];
-        double productSum = 0.0, sumSquaresA = 0.0, sumSquaresB = 0.0;
+        int productSum = 0, sumSquaresA = 0, sumSquaresB = 0;
         int count = 0;
 
         for (;;) {
             int order = currentA - currentB;
             if (order == 0) {
-                float normalizedA = ratedRatingA[indexA - 1];
-                float normalizedB = ratedRatingB[indexB - 1];
+                byte normalizedA = ratedRatingA[indexA - 1];
+                byte normalizedB = ratedRatingB[indexB - 1];
                 productSum += normalizedA * normalizedB;
                 sumSquaresA += normalizedA * normalizedA;
                 sumSquaresB += normalizedB * normalizedB;
@@ -56,8 +54,10 @@ public class Pearson {
         if (100 * count / maxA < minCommonItems ||
                 100 * count / maxB < minCommonItems)
             return 1;
-        if (sumSquaresA == 0.0 || sumSquaresB == 0.0)
+        if (sumSquaresA == 0 || sumSquaresB == 0)
             return 1;
-        return -productSum / (Math.sqrt(sumSquaresA) * Math.sqrt(sumSquaresB));
+        return -CFUser.ratingToDouble(productSum) /
+            (Math.sqrt(CFUser.squaredRatingToDouble(sumSquaresA)) *
+                Math.sqrt(CFUser.squaredRatingToDouble(sumSquaresB)));
     }
 }
