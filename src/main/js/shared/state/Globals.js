@@ -1,11 +1,15 @@
 // @flow
 import AquaRecommendations from '../backend/AquaRecommendations'
+import AquaSingleAnimeRecommendations from '../backend/AquaSingleAnimeRecommendations'
+import AquaAnimeList from '../backend/AquaAnimeList'
 import AquaAutocomplete from '../backend/AquaAutocomplete'
 import LocalAnimeList from './LocalAnimeList'
 import LocalState from './LocalState'
 import FilteredRecommendations from '../helpers/FilteredRecommendations'
 
 export const aquaRecommendations = new AquaRecommendations()
+export const aquaSingleAnimeRecommednations = new AquaSingleAnimeRecommendations()
+export const aquaAnimeList = new AquaAnimeList()
 export const aquaAutocomplete = new AquaAutocomplete()
 export const localAnimeList = new LocalAnimeList()
 export const localState = new LocalState()

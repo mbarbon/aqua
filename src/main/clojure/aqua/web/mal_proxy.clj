@@ -1,7 +1,11 @@
 (ns aqua.web.mal-proxy
   (:require aqua.mal-local
             aqua.slowpoke
-            [aqua.web.globals :refer [*data-source-ro *data-source-rw *background]]))
+            aqua.web.render
+            [aqua.web.globals :refer [*data-source-ro *data-source-rw *background *anime *anime-list-by-letter]]))
+
+(def ^:private title-letters-numbers "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+(def ^:private title-letters "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 (defn- init-slowpoke []
   (letfn [(schedule [make-function interval]
@@ -17,6 +21,28 @@
     (schedule aqua.slowpoke/make-refresh-users 300)
     (schedule aqua.slowpoke/make-fetch-new-users 30)))
 
+(defn- recompute-anime-list-by-letter []
+  (letfn [(is-letter-number [c]
+            (not= (.indexOf title-letters-numbers (int c)) -1))
+          (to-symbol [c]
+            (if-not c
+              \0
+              (if-not (= (.indexOf title-letters (int c)) -1)
+                c
+                \0)))
+          (first-letter [^aqua.mal.data.Anime anime]
+            (->> (.title anime)
+                 (clojure.string/upper-case)
+                 (filter is-letter-number)
+                 (first)
+                 (to-symbol)
+                 (str)))]
+    (reset! *anime-list-by-letter
+      (into {} (for [[head-letter anime-list] (group-by #(first-letter %) (remove #(.isHentai %) (vals @*anime)))]
+                 [head-letter {:head-letter head-letter
+                               :example-anime (take 4 (shuffle anime-list))
+                               :anime anime-list}])))))
+
 (defn init [{:keys [slowpoke]}]
   (aqua.mal-local/setup-tables @*data-source-rw)
   (aqua.mal.Http/init)
@@ -25,7 +51,11 @@
   (.scheduleWithFixedDelay
     @*background
     (aqua.slowpoke/make-process-refresh-queue @*data-source-rw @*data-source-ro)
-    1 5 java.util.concurrent.TimeUnit/SECONDS))
+    1 5 java.util.concurrent.TimeUnit/SECONDS)
+  (recompute-anime-list-by-letter))
+
+(defn reload []
+  (recompute-anime-list-by-letter))
 
 (def ^:private ct-pb "application/x-protobuf")
 (def ^:private ct-json "application/json")
@@ -56,3 +86,17 @@
           :else
             [(pb-to-json stream) ct-json ce-id -1]))
       [nil nil nil (aqua.slowpoke/enqueue-user-refresh @*data-source-rw username)])))
+
+(defn- render-anime-list [anime-list]
+  (for [anime anime-list]
+    (aqua.web.render/render-anime anime nil)))
+
+(defn anime-list-detail [head-letter]
+  (if-let [item (@*anime-list-by-letter (clojure.string/upper-case head-letter))]
+    {:anime (render-anime-list (:anime item))}
+    {:anime []}))
+
+(defn anime-list-excerpt []
+  {:parts (for [item (sort-by :head-letter (vals @*anime-list-by-letter))]
+            {:headLetter (:head-letter item)
+             :exampleAnime (render-anime-list (:example-anime item))})})

@@ -1,6 +1,7 @@
 // @flow
 import React, { PureComponent } from 'react'
 import StarRating from 'react-star-rating-component'
+import { malLink, malLinkClick } from '../../shared/helpers/MAL'
 import './AnimeListItem.css'
 
 import type { Anime } from '../../shared/backend/types'
@@ -15,39 +16,31 @@ const tagDescriptions = {
   'planned-franchise': 'Related to planned anime'
 }
 
-function malLink (anime) {
-  return `https://myanimelist.net/anime/${anime.animedbId}`
-}
-
-function malLinkClick (anime) {
-  if (window.ga) {
-    window.ga('send', 'event', {
-      eventCategory: 'mal_link',
-      eventAction: 'click',
-      eventLabel: '' + anime.animedbId
-    })
-  }
-}
-
 type AnimeListItem_onRemove = Anime => void
 type AnimeListItem_onChange = (anime: Anime, rating: number) => void
+type AnimeListItem_onClick = Anime => void
+type AnimeListItem_makeLink = Anime => string
 
 type Props = {
   anime: Anime,
   onChange?: ?AnimeListItem_onChange,
-  onRemove?: ?AnimeListItem_onRemove
+  onRemove?: ?AnimeListItem_onRemove,
+  onClick?: ?AnimeListItem_onClick,
+  makeLink?: ?AnimeListItem_makeLink
 }
 
 class AnimeListItem extends PureComponent<Props> {
   render () {
     let { anime, onChange, onRemove } = this.props
+    let onClick = this.props.onClick || malLinkClick
+    let makeLink = this.props.makeLink || malLink
 
     return (
       <div className='recommendation-item'>
         <a
           title={anime.title}
-          onClick={malLinkClick.bind(anime)}
-          href={malLink(anime)}
+          onClick={onClick.bind(anime)}
+          href={makeLink(anime)}
           target='_blank'
         >
           <img
@@ -64,8 +57,8 @@ class AnimeListItem extends PureComponent<Props> {
         <div className='recommendation-details'>
           <div className='header'>
             <a
-              onClick={malLinkClick.bind(anime)}
-              href={malLink(anime)}
+              onClick={onClick.bind(anime)}
+              href={makeLink(anime)}
               title={anime.title}
               target='_blank'
             >
@@ -95,7 +88,8 @@ class AnimeListItem extends PureComponent<Props> {
               value={this._rating()}
               totalStars={5}
               onStarClick={value =>
-                onChange && onChange(this.props.anime, value * 2)}
+                onChange && onChange(this.props.anime, value * 2)
+              }
             />
           )}
           {onRemove && (
@@ -117,4 +111,9 @@ class AnimeListItem extends PureComponent<Props> {
 }
 
 export { AnimeListItem }
-export type { AnimeListItem_onRemove, AnimeListItem_onChange }
+export type {
+  AnimeListItem_onRemove,
+  AnimeListItem_onChange,
+  AnimeListItem_onClick,
+  AnimeListItem_makeLink
+}

@@ -18,3 +18,4 @@
 (def *background (atom nil))
 (def *state-directory (atom nil))
 (def *cf-parameters (atom nil))
+(def *anime-list-by-letter (atom nil))

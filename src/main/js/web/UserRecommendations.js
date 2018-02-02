@@ -7,7 +7,7 @@ import {
   filteredRecommendations,
   aquaAutocomplete
 } from '../shared/state/Globals'
-import Header from './Header'
+import { UserHeader } from './Header'
 import AquaButton from './components/AquaButton'
 
 import type { Anime, Recommendations } from '../shared/backend/types'
@@ -127,7 +127,7 @@ export default class UserRecommendations extends Component<Props, State> {
 
     return (
       <div>
-        <Header
+        <UserHeader
           userMode={this.props.userMode}
           malUsername={this.props.malUsername}
           queuePosition={this.props.queuePosition}

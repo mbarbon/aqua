@@ -232,6 +232,17 @@ a:hover {
   margin-left: 1ex;
 }
 
+.anime-details {
+  float: left;
+  margin-left: 1ex;
+  font-size: 110%;
+}
+
+.anime-image {
+  float: left;
+  width: 160px;
+}
+
 div.small-aqua-button {
   margin: 0px;
 }

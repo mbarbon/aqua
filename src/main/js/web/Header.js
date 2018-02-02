@@ -3,7 +3,7 @@ import React, { PureComponent } from 'react'
 import { aquaAutocomplete, localState } from '../shared/state/Globals'
 import AquaButton from './components/AquaButton'
 
-export default class Header extends PureComponent<{
+class UserHeader extends PureComponent<{
   userMode: string,
   malUsername: ?string,
   queuePosition: ?number,
@@ -76,3 +76,24 @@ export default class Header extends PureComponent<{
     )
   }
 }
+
+class NoUserHeader extends PureComponent<{}> {
+  render () {
+    return (
+      <div className='main-page-head aqua-body' id='main-page-head'>
+        <div className='main-page-head-actions'> </div>
+        <div className='main-page-logo'>
+          <a href='/'>
+            <img src='/aqua-thumbsup.jpg' />
+          </a>
+          <div className='start-page-head-text'>
+            <div className='first-head'>Aqua</div>
+            <div className='second-head'>anime recommendations</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export { UserHeader, NoUserHeader }

@@ -69,6 +69,36 @@
                                             {:root "public"})
                                             "text/html"))
 
+  (GET "/anime/details/:id" []
+    (ring.util.response/content-type
+      (ring.util.response/resource-response "index.html"
+                                            {:root "public"})
+                                            "text/html"))
+
+  (GET "/anime/list/:initial" []
+    (ring.util.response/content-type
+      (ring.util.response/resource-response "index.html"
+                                            {:root "public"})
+                                            "text/html"))
+
+  (GET "/anime/list" []
+    (ring.util.response/content-type
+      (ring.util.response/resource-response "index.html"
+                                            {:root "public"})
+                                            "text/html"))
+
+  (GET "/recommend/anime/:animedb-id" [animedb-id]
+    (ring.util.response/response
+      (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))))
+
+  (GET "/list/anime/:head-letter" [head-letter]
+    (ring.util.response/response
+      (aqua.web.mal-proxy/anime-list-detail head-letter)))
+
+  (GET "/list/anime" []
+    (ring.util.response/response
+      (aqua.web.mal-proxy/anime-list-excerpt)))
+
   (POST "/recommend" {:keys [body headers]}
     (let [user (aqua.mal.Serialize/readPartialCFUser @aqua.web.globals/*cf-parameters body)]
       (ring.util.response/response
@@ -161,6 +191,7 @@
   (aqua.web.globals-init/reload)
   (aqua.web.search/reload)
   (aqua.web.recommender/reload)
+  (aqua.web.mal-proxy/reload)
   (str true))
 
 (def app

@@ -79,6 +79,10 @@ export default class UserMode extends Component<Props, State> {
                 just add anime you like
               </a>
             </div>
+            <div>
+              {'you can also '}
+              <a href='/anime/list'>browse all anime</a>
+            </div>
           </div>
         )}
         {loadingState != UserMode.MODE_DEFAULT && <Spinner />}
