@@ -66,7 +66,7 @@ export default class Header extends PureComponent<{
           )}
         </div>
         <div className='main-page-logo'>
-          <img src='aqua-thumbsup.jpg' />
+          <img src='/aqua-thumbsup.jpg' />
           <div className='start-page-head-text'>
             <div className='first-head'>Aqua</div>
             <div className='second-head'>anime recommendations</div>

@@ -53,7 +53,7 @@ export default class UserMode extends Component<Props, State> {
       <div className='start-page' id='start-page'>
         <div className='start-page-body'>
           <img
-            src='aqua-thumbsup.jpg'
+            src='/aqua-thumbsup.jpg'
             alt='The goddess Aqua showing approbation'
           />
           <div className='start-page-head'>
