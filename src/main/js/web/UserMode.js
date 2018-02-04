@@ -64,17 +64,21 @@ export default class UserMode extends Component<Props, State> {
         </div>
         {loadingState == UserMode.MODE_DEFAULT && (
           <div className='start-your-list'>
-            MAL user{' '}
-            <input
-              className='mal-username-input'
-              value={this.state.malUserName}
-              onChange={this.updateUserName.bind(this)}
-              onKeyDown={this.handleEnter.bind(this)}
-            />
-            {' or '}
-            <a href='add-anime' onClick={this.setLocalUser.bind(this)}>
-              just add anime you like
-            </a>
+            <div>
+              Use your MAL user{' '}
+              <input
+                className='text-input'
+                value={this.state.malUserName}
+                onChange={this.updateUserName.bind(this)}
+                onKeyDown={this.handleEnter.bind(this)}
+              />
+            </div>
+            <div>
+              {'or '}
+              <a href='add-anime' onClick={this.setLocalUser.bind(this)}>
+                just add anime you like
+              </a>
+            </div>
           </div>
         )}
         {loadingState != UserMode.MODE_DEFAULT && <Spinner />}
