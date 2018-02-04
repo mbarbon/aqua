@@ -94,8 +94,8 @@
 
 (defn anime-list-detail [head-letter]
   (if-let [item (@*anime-list-by-letter (clojure.string/upper-case head-letter))]
-    {:anime (render-anime-list (:anime item))}
-    {:anime []}))
+    {:anime (render-anime-list (:anime item)) :headLetter head-letter}
+    {:anime [] :headLetter head-letter}))
 
 (defn anime-list-excerpt []
   {:parts (for [item (sort-by :head-letter (vals @*anime-list-by-letter))]

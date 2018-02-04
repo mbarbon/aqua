@@ -19,6 +19,7 @@
                  [javax.servlet/javax.servlet-api "4.0.0"]
                  [ch.qos.logback/logback-classic "1.2.2"]
                  [org.asynchttpclient/async-http-client "2.0.37"]
+                 [org.freemarker/freemarker "2.3.27-incubating"]
                  [ring "1.5.0"]
                  [compojure "1.5.1"]
                  [slester/ring-browser-caching "0.1.1"]

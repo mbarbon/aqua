@@ -3,6 +3,5 @@
 set -e
 
 npm run build
-cp build/public/index.html build/public/default.html
 npm run pre-render
 lein uberjar

@@ -8,6 +8,7 @@
             aqua.web.internal
             aqua.web.background
             aqua.web.dump
+            aqua.web.templates
             cheshire.generate
             [compojure.core :refer :all]
             [compojure.route :as route]
@@ -69,23 +70,16 @@
                                             {:root "public"})
                                             "text/html"))
 
-  (GET "/anime/details/:id" []
-    (ring.util.response/content-type
-      (ring.util.response/resource-response "default.html"
-                                            {:root "public"})
-                                            "text/html"))
+  (GET "/anime/details/:animedb-id" [animedb-id]
+    (aqua.web.templates/render-layout-template "anime-details.ftlh"
+                                               (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))))
 
-  (GET "/anime/list/:initial" []
-    (ring.util.response/content-type
-      (ring.util.response/resource-response "default.html"
-                                            {:root "public"})
-                                            "text/html"))
+  (GET "/anime/list/:initial" [initial]
+    (aqua.web.templates/render-layout-template "anime-list-initial.ftlh"
+                                               (aqua.web.mal-proxy/anime-list-detail initial)))
 
   (GET "/anime/list" []
-    (ring.util.response/content-type
-      (ring.util.response/resource-response "default.html"
-                                            {:root "public"})
-                                            "text/html"))
+    (aqua.web.templates/render-layout-template "anime-list.ftlh" (aqua.web.mal-proxy/anime-list-excerpt)))
 
   (GET "/recommend/anime/:animedb-id" [animedb-id]
     (ring.util.response/response

@@ -23,13 +23,12 @@
   <meta name=viewport content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" href="/favicon.ico?uniq=2" />
   <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/aqua.css?r=2">
   <title>Aqua: anime recommendations</title>
 </head>
 
 <body>
-  <div id="root">
-    <span id="root-marker"></span>
-  </div>
+  <#include aquaBodyTemplate>
 </body>
 
 </html>
