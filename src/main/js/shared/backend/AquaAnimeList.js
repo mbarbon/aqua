@@ -21,7 +21,7 @@ export default class AquaSingleAnimeRecommendations {
     headers.append('Cache-Control', 'max-age=' + 3600 * 4)
     headers.append('Cache-Control', 'max-stale')
 
-    return fetch('/list/anime', {
+    return fetch('/list/anime-by-initial', {
       headers: headers
     }).then(response => response.json())
   }
@@ -32,7 +32,7 @@ export default class AquaSingleAnimeRecommendations {
     headers.append('Cache-Control', 'max-age=' + 3600 * 4)
     headers.append('Cache-Control', 'max-stale')
 
-    return fetch('/list/anime/' + headLetter, {
+    return fetch('/list/anime-by-initial/' + headLetter, {
       headers: headers
     }).then(response => response.json())
   }

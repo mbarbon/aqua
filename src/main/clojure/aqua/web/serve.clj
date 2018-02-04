@@ -91,11 +91,11 @@
     (ring.util.response/response
       (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))))
 
-  (GET "/list/anime/:head-letter" [head-letter]
+  (GET "/list/anime-by-initial/:head-letter" [head-letter]
     (ring.util.response/response
       (aqua.web.mal-proxy/anime-list-detail head-letter)))
 
-  (GET "/list/anime" []
+  (GET "/list/anime-by-initial" []
     (ring.util.response/response
       (aqua.web.mal-proxy/anime-list-excerpt)))
 
