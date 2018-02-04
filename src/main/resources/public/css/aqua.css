@@ -243,6 +243,26 @@ a:hover {
   width: 160px;
 }
 
+@media (max-width: 600px) {
+  .anime-details {
+    font-size: 100%;
+    width: 250px;
+    width: -webkit-calc(100% - 80px - 1ex);
+    width: -moz-calc(100% - 80px - 1ex);
+    width: calc(100% - 80px - 1ex);
+  }
+
+  .anime-details .details {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .anime-image {
+    width: 80px;
+  }
+}
+
 div.small-aqua-button {
   margin: 0px;
 }

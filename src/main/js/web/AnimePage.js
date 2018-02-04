@@ -32,7 +32,7 @@ class AnimeDetails extends PureComponent<{ anime: Anime }> {
     let anime = this.props.anime
 
     return (
-      <div class='aqua-body'>
+      <div className='aqua-body'>
         <h1>{anime.title}</h1>
         <a
           title={anime.title}
@@ -51,9 +51,9 @@ class AnimeDetails extends PureComponent<{ anime: Anime }> {
             alt={anime.title}
           />
         </a>
-        <div class='anime-details'>
-          <div class='details'>
-            <div>{anime.genres}</div>
+        <div className='anime-details'>
+          <div className='details' title={anime.genres}>
+            {anime.genres}
           </div>
           <div className='details'>
             {anime.episodes} eps
@@ -73,7 +73,7 @@ class AnimeRecommendations extends PureComponent<{
 }> {
   render () {
     return (
-      <div class='aqua-body'>
+      <div className='aqua-body'>
         {this.props.recommendations.airing.length > 0 && (
           <h3 className='recommendation-description'>
             Airing anime people are watching
