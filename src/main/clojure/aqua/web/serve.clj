@@ -71,19 +71,19 @@
 
   (GET "/anime/details/:id" []
     (ring.util.response/content-type
-      (ring.util.response/resource-response "index.html"
+      (ring.util.response/resource-response "default.html"
                                             {:root "public"})
                                             "text/html"))
 
   (GET "/anime/list/:initial" []
     (ring.util.response/content-type
-      (ring.util.response/resource-response "index.html"
+      (ring.util.response/resource-response "default.html"
                                             {:root "public"})
                                             "text/html"))
 
   (GET "/anime/list" []
     (ring.util.response/content-type
-      (ring.util.response/resource-response "index.html"
+      (ring.util.response/resource-response "default.html"
                                             {:root "public"})
                                             "text/html"))
 
