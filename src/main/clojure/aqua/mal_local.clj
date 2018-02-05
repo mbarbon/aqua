@@ -328,6 +328,15 @@
     (for [anime (load-anime-list data-source)]
       [(.animedbId anime) anime])))
 
+(def ^:private select-case-correct-username
+  (str "SELECT username FROM users where username = ? COLLATE nocase"))
+
+(defn case-correct-username [data-source username-nocase]
+  (with-query data-source rs select-case-correct-username [username-nocase]
+    (if (.next rs)
+      (.getString rs 1)
+      username-nocase)))
+
 (def ^:private select-last-update
   (str "SELECT last_update FROM users where username = ?"))
 
