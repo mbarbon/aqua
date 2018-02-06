@@ -86,6 +86,9 @@ export default class UserMode extends Component<Props, State> {
           </div>
         )}
         {loadingState != UserMode.MODE_DEFAULT && <Spinner />}
+        {loadingState != UserMode.MODE_DEFAULT && (
+          <a href='/anime/list'>Browse all anime</a>
+        )}
         {loadingState == UserMode.MODE_LOADING_LIST && (
           <div className='start-your-list'>
             Loading MAL anime list (position in queue {this.props.queuePosition})
