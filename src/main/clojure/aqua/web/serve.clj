@@ -71,15 +71,24 @@
                                             "text/html"))
 
   (GET "/anime/details/:animedb-id" [animedb-id]
-    (aqua.web.templates/render-layout-template "anime-details.ftlh"
-                                               (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))))
+    (let [model (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))
+          anime (:animeDetails model)
+          page-title (str "Anime recommendations for " (:title anime))
+          page-description (str "If you watched " (:title anime) " you will like the other anime in this page")]
+      (aqua.web.templates/render-layout-template "anime-details.ftlh"
+                                                 {:title page-title
+                                                  :description page-description}
+                                                 model)))
 
   (GET "/anime/list/:initial" [initial]
     (aqua.web.templates/render-layout-template "anime-list-initial.ftlh"
+                                               {:noindex true}
                                                (aqua.web.mal-proxy/anime-list-detail initial)))
 
   (GET "/anime/list" []
-    (aqua.web.templates/render-layout-template "anime-list.ftlh" (aqua.web.mal-proxy/anime-list-excerpt)))
+    (aqua.web.templates/render-layout-template "anime-list.ftlh"
+                                               {:noindex true}
+                                               (aqua.web.mal-proxy/anime-list-excerpt)))
 
   (GET "/recommend/anime/:animedb-id" [animedb-id]
     (ring.util.response/response

@@ -22,10 +22,12 @@
   </script>
   <!-- End Google Analytics -->
   <meta name=viewport content="width=device-width, initial-scale=1">
+  <meta name="description" content="${meta.description ! "Get anime recommendations based on your ratings; you can use your MyAnimelist account as well"}">
+  <#if meta.noindex??><meta name="robots" content="noindex, follow"></#if>
   <link rel="shortcut icon" href="/favicon.ico?uniq=2" />
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css/aqua.css?r=2">
-  <title>Aqua: anime recommendations</title>
+  <title>${meta.title ! "Aqua: anime recommendations"}</title>
 </head>
 
 <body>

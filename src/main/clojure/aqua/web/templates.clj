@@ -11,10 +11,10 @@
 (defn get-template [name]
   (.getTemplate fm-configuration name))
 
-(defn render-layout-template [template-name model]
+(defn render-layout-template [template-name meta model]
   (let [template (get-template "aqua/layout.ftlh")
         writer (java.io.StringWriter.)]
-    (.process template {"aquaBodyTemplate" template-name "model" model} writer)
+    (.process template {"aquaBodyTemplate" template-name "model" model "meta" meta} writer)
     (-> (.toString writer)
         ring.util.response/response
         (ring.util.response/content-type "text/html"))))
