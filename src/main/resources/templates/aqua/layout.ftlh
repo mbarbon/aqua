@@ -1,3 +1,4 @@
+<#compress>
 <html>
 
 <head>
@@ -32,3 +33,4 @@
 </body>
 
 </html>
+</#compress>
