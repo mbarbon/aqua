@@ -111,6 +111,11 @@
     (ring.util.response/response
       (aqua.web.search/autocomplete (params :term))))
 
+  (GET "/sitemaps/anime.xml" []
+    (aqua.web.templates/render-template "aqua/sitemaps/anime.ftlh"
+                                        {:content-type "text/xml"}
+                                        {:anime (vals @aqua.web.globals/*anime)}))
+
   (route/resources "/"))
 
 (defroutes app-routes

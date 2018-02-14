@@ -5,7 +5,8 @@
   (doto (freemarker.template.Configuration. freemarker.template.Configuration/VERSION_2_3_27)
     (.setTemplateExceptionHandler freemarker.template.TemplateExceptionHandler/RETHROW_HANDLER)
     (.setDefaultEncoding "UTF-8")
-    (.setObjectWrapper (com.makotan.clojure.freemarker.ClojureWrapper.))
+    (.setObjectWrapper (doto (com.makotan.clojure.freemarker.ClojureWrapper.)
+                         (.setExposeFields true)))
     (.setClassForTemplateLoading aqua.mal.data.Anime "/templates")))
 
 (defn get-template [name]
@@ -18,3 +19,11 @@
     (-> (.toString writer)
         ring.util.response/response
         (ring.util.response/content-type "text/html"))))
+
+(defn render-template [template-name meta model]
+  (let [template (get-template template-name)
+        writer (java.io.StringWriter.)]
+    (.process template {"model" model "meta" meta} writer)
+    (-> (.toString writer)
+        ring.util.response/response
+        (ring.util.response/content-type (get meta :content-type "text/html")))))
