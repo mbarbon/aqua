@@ -23,7 +23,8 @@
     (let [user-ids (load-stable-user-sample-from-db directory
                                                     data-source
                                                     100000)
-          shuffled-user-ids (stable-shuffle user-ids)]
+          unused-user-ids (.subList user-ids 70000 (.size user-ids))
+          shuffled-user-ids (stable-shuffle unused-user-ids)]
       (spit file (clojure.string/join "\n" shuffled-user-ids))
       (aqua.mal-local/load-cf-users-by-id data-source
                                           (aqua.recommend.CFParameters.)

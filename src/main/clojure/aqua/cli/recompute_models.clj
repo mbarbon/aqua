@@ -8,7 +8,8 @@
             aqua.recommend.rp-similar-anime
             clojure.java.io))
 
-(def user-count 15000)
+(def user-count 60000)
+(def cf-user-count 15000)
 (def all-items ["user-sample"
                 "co-occurrency"
                 "lfd-model"
@@ -67,7 +68,7 @@
        (aqua.recommend.lfd/run-user-steps lfdr))
      (aqua.recommend.lfd/run-anime-steps lfdr-airing)
      (with-open [out (clojure.java.io/writer user-model-path)]
-       (aqua.recommend.lfd/store-user-lfd out (.decompositionUsers lfdr)))
+       (aqua.recommend.lfd/store-user-lfd out (.reduceUserCount (.decompositionUsers lfdr) cf-user-count)))
      (with-open [out (clojure.java.io/writer model-path)]
        (aqua.recommend.lfd/store-lfd out (.decomposition lfdr)))
      (with-open [out (clojure.java.io/writer airing-model-path)]

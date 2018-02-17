@@ -49,6 +49,20 @@ public class LatentFactorDecompositionUsers {
         this.rank = rank;
     }
 
+    private LatentFactorDecompositionUsers(LatentFactorDecomposition lfd, int rank, CFUser[] userMap, float[] userFactors) {
+        this.lfd = lfd;
+        this.rank = rank;
+        this.userMap = userMap;
+        this.userFactors = userFactors;
+    }
+
+    public LatentFactorDecompositionUsers reduceUserCount(int rowCount) {
+        CFUser[] restrictedUsers = Arrays.copyOfRange(userMap, 0, rowCount);
+        float[] restrictedFactors = Arrays.copyOfRange(userFactors, 0, rowCount * rank);
+
+        return new LatentFactorDecompositionUsers(lfd, rank, restrictedUsers, restrictedFactors);
+    }
+
     public List<ScoredUser> computeUserUserScores(CFUser usera) {
         float[] userVector = toFloatArray(lfd.computeUserVector(usera));
         double sumSquaresA = sumSquares(userVector, 0, userVector.length);
