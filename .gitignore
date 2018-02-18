@@ -12,3 +12,6 @@
 /.idea/
 /*.iml
 /pom.xml
+/.classpath
+/.project
+/.settings/
