@@ -90,18 +90,6 @@
                                                {:noindex true}
                                                (aqua.web.mal-proxy/anime-list-excerpt)))
 
-  (GET "/recommend/anime/:animedb-id" [animedb-id]
-    (ring.util.response/response
-      (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))))
-
-  (GET "/list/anime-by-initial/:head-letter" [head-letter]
-    (ring.util.response/response
-      (aqua.web.mal-proxy/anime-list-detail head-letter)))
-
-  (GET "/list/anime-by-initial" []
-    (ring.util.response/response
-      (aqua.web.mal-proxy/anime-list-excerpt)))
-
   (POST "/recommend" {:keys [body headers]}
     (let [user (aqua.mal.Serialize/readPartialCFUser @aqua.web.globals/*cf-parameters body)]
       (ring.util.response/response
