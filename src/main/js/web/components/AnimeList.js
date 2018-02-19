@@ -59,4 +59,71 @@ class LocalAnimeList extends PureComponent<{
   }
 }
 
-export { AnimeList, LocalAnimeList }
+type AutocompleteAnimeListProps = {
+  anime: Array<Anime>,
+  localAnime?: ?Array<LocalAnime>,
+  onRatingChange: AnimeListItem_onChange
+}
+
+class AutocompleteAnimeList extends PureComponent<
+  AutocompleteAnimeListProps,
+  { mergedAnime: Array<LocalAnime> }
+> {
+  constructor (props: AutocompleteAnimeListProps) {
+    super(props)
+
+    this.state = {
+      mergedAnime: this.mergeLists(this.props.localAnime)
+    }
+  }
+
+  componentWillReceiveProps (nextProps: AutocompleteAnimeListProps) {
+    this.setState({
+      mergedAnime: this.mergeLists(this.props.localAnime)
+    })
+  }
+
+  mergeLists (nextLocalAnime: ?Array<LocalAnime>): Array<LocalAnime> {
+    if (nextLocalAnime && nextLocalAnime.length > 0) {
+      let ratingMap = {}
+      let mergedAnime = []
+
+      for (let localAnime of nextLocalAnime) {
+        ratingMap[localAnime.animedbId] = localAnime.userRating
+      }
+      for (let anime of this.props.anime) {
+        let mergedItem = {
+          ...anime,
+          userRating: ratingMap[anime.animedbId],
+          userStatus: 2
+        }
+
+        mergedAnime.push(mergedItem)
+      }
+
+      return mergedAnime
+    } else {
+      return []
+    }
+  }
+
+  render () {
+    if (this.state.mergedAnime.length == 0) {
+      return (
+        <AnimeList
+          anime={this.props.anime}
+          onRatingChange={this.props.onRatingChange}
+        />
+      )
+    } else {
+      return (
+        <LocalAnimeList
+          anime={this.state.mergedAnime}
+          onRatingChange={this.props.onRatingChange}
+        />
+      )
+    }
+  }
+}
+
+export { AnimeList, AutocompleteAnimeList, LocalAnimeList }

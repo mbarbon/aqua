@@ -1,6 +1,10 @@
 // @flow
 import React, { Component, PureComponent } from 'react'
-import { AnimeList, LocalAnimeList } from './components/AnimeList'
+import {
+  AnimeList,
+  AutocompleteAnimeList,
+  LocalAnimeList
+} from './components/AnimeList'
 import {
   localAnimeList,
   localState,
@@ -173,8 +177,9 @@ export default class UserRecommendations extends Component<Props, State> {
         </div>
         {this.props.autocompleteAnime && (
           <div id='recommendations' className='aqua-body'>
-            <AnimeList
+            <AutocompleteAnimeList
               anime={this.props.autocompleteAnime}
+              localAnime={this.props.localAnimeList}
               onRatingChange={this.changeLocalRating.bind(this)}
             />
           </div>
