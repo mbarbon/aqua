@@ -23,13 +23,11 @@
 (defn- anime-franchise [^aqua.mal.data.Anime anime] (.franchise anime))
 
 (defn- all-but-planned [user]
-  (->> (.animeList user)
-       (filter #(not= (rated-status %) aqua.mal.data.Rated/PLANTOWATCH))
+  (->> (.allButPlanToWatch user)
        (map rated-animedb-id)))
 
 (defn- only-planned [user]
-  (->> (.animeList user)
-       (filter #(= (rated-status %) aqua.mal.data.Rated/PLANTOWATCH))
+  (->> (.planToWatch user)
        (map rated-animedb-id)))
 
 (defn- franchise-anime-ids [anime-ids anime-map]

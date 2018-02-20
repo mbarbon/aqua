@@ -25,6 +25,9 @@ public class CFUser {
         statusMask(CFRated.DROPPED);
     private static final int WATCHING =
         statusMask(CFRated.WATCHING);
+    private static final int PLANTOWATCH =
+        statusMask(CFRated.PLANTOWATCH);
+    private static final int ALL_BUT_PLANTOWATCH = ~PLANTOWATCH;
 
     public String username;
     public long userId;
@@ -113,6 +116,14 @@ public class CFUser {
 
     public Iterable<CFRated> watching() {
         return withStatusMask(WATCHING);
+    }
+
+    public Iterable<CFRated> planToWatch() {
+        return withStatusMask(PLANTOWATCH);
+    }
+
+    public Iterable<CFRated> allButPlanToWatch() {
+        return withStatusMask(ALL_BUT_PLANTOWATCH);
     }
 
     public CFUser removeAnime(int animedbId) {

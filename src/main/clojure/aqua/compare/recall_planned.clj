@@ -15,8 +15,7 @@
 ; many means the recommender wont surprise the user
 
 (defn- plan-to-watch-count [user]
-  (count (filter #(= (.status %) aqua.recommend.CFRated/PLANTOWATCH)
-                 (.animeList user))))
+  (->> (.planToWatch user) seq count))
 
 (defn make-test-users-list [list-size users]
   (take list-size
