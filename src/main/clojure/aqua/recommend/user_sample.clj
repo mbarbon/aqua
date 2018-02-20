@@ -189,18 +189,16 @@
 
 ; the only purpose of this function is to avoid doubling memory usage
 ; while users are reloaded: old users become garbage while new users are loaded
-(defn load-filtered-cf-users-into [path data-source cf-parameters cache target anime-map-to-filter-hentai]
+(defn load-filtered-cf-users-into [path data-source cf-parameters target anime-map-to-filter-hentai]
   (aqua.mal-local/load-filtered-cf-users-into data-source
                                               (load-user-sample path (count target))
                                               cf-parameters
-                                              cache
                                               target
                                               anime-map-to-filter-hentai))
 
 (defn- load-filtered-cf-users-helper [path data-source cf-parameters max-count anime-map-to-filter-hentai]
-  (let [cache (java.util.HashMap.)
-        target (java.util.ArrayList. (repeat max-count nil))]
-    (load-filtered-cf-users-into path data-source cf-parameters cache target anime-map-to-filter-hentai)))
+  (let [target (java.util.ArrayList. (repeat max-count nil))]
+    (load-filtered-cf-users-into path data-source cf-parameters target anime-map-to-filter-hentai)))
 
 ; those produce a lot of garbage, should not be used in web code
 (defn load-filtered-cf-users
@@ -210,11 +208,9 @@
     (load-filtered-cf-users-helper path data-source cf-parameters max-count anime-map-to-filter-hentai)))
 
 (defn load-filtered-cf-user-ids [data-source cf-parameters user-ids anime-map-to-filter-hentai]
-  (let [cache (java.util.HashMap.)
-        target (java.util.ArrayList. (repeat (count user-ids) nil))]
+  (let [target (java.util.ArrayList. (repeat (count user-ids) nil))]
     (aqua.mal-local/load-filtered-cf-users-into data-source
                                                 user-ids
                                                 cf-parameters
-                                                cache
                                                 target
                                                 anime-map-to-filter-hentai)))

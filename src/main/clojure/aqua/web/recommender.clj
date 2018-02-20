@@ -43,21 +43,13 @@
     (reset! *lfd-anime-airing lfd-airing))
   (log/info "Done loading users"))
 
-(defn- cf-rated-cache [users]
-  (let [cache (java.util.HashMap.)]
-    (doseq [^aqua.recommend.CFUser user users]
-      (doseq [rated (.animeList user)]
-        (.putIfAbsent cache rated rated)))
-    cache))
-
 (defn- reload-users []
   (log/info "Start reloading users")
   ; so users are garbage collected
   (reset! *lfd-users nil)
   (let [data-source @*data-source-ro
-        cache (cf-rated-cache @*users)
         target @*users]
-    (aqua.recommend.user-sample/load-filtered-cf-users-into (model-path "user-sample") data-source @*cf-parameters cache target @*anime))
+    (aqua.recommend.user-sample/load-filtered-cf-users-into (model-path "user-sample") data-source @*cf-parameters target @*anime))
   (let [lfd (aqua.recommend.lfd/load-lfd (model-path "lfd-model") @*anime)
         lfd-airing (aqua.recommend.lfd/load-lfd (model-path "lfd-model-airing") @*anime)
         lfd-users (aqua.recommend.lfd/load-user-lfd (model-path "lfd-user-model") lfd @*users)]

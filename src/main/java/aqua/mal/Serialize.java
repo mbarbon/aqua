@@ -83,6 +83,10 @@ public class Serialize {
         public CFRatedProtostuff(List<CFRated> rated) { this.rated = rated; }
     }
 
+    public static class CFUserInput {
+        public CFRated[] animeList;
+    }
+
     private static final ThreadLocal<LinkedBuffer> LINKED_BUFFER =
         new ThreadLocal<LinkedBuffer>() {
             @Override
@@ -165,8 +169,10 @@ public class Serialize {
     }
 
     public static CFUser readPartialCFUser(CFParameters cfParameters, InputStream is) throws IOException {
-        CFUser user = JSON_MAPPER.readValue(is, CFUser.class);
-        Arrays.sort(user.animeList, CFRated::compareTo);
+        CFUserInput userInput = JSON_MAPPER.readValue(is, CFUserInput.class);
+        Arrays.sort(userInput.animeList, CFRated::compareTo);
+        CFUser user = new CFUser();
+        user.animeListIds = CFRated.packAnimeIdArray(userInput.animeList);
         user.processAfterDeserialize(cfParameters);
         return user;
     }

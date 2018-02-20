@@ -17,6 +17,7 @@ public class CFUser {
     private static final float FP_FLOAT = 32.0f;
 
     private static final CFRated[] EMPTY_CFRATED_ARRAY = new CFRated[0];
+    private static final int[] EMPTY_PACKED_CFRATED_ARRAY = new int[0];
     private static final int COMPLETED_AND_DROPPED =
         statusMask(CFRated.COMPLETED, CFRated.DROPPED);
     private static final int COMPLETED =
@@ -31,7 +32,7 @@ public class CFUser {
 
     public String username;
     public long userId;
-    public CFRated[] animeList;
+    public int[] animeListIds;
     public int[] completedAndDroppedIds;
     public byte[] completedAndDroppedRating;
     public int completedCount, droppedCount;
@@ -86,7 +87,7 @@ public class CFUser {
     }
 
     public void setAnimeList(CFParameters cfParameters, List<CFRated> animeList) {
-        this.animeList = animeList.toArray(EMPTY_CFRATED_ARRAY);
+        this.animeListIds = CFRated.packAnimeIdList(animeList);
         processAfterDeserialize(cfParameters);
     }
 
@@ -94,12 +95,16 @@ public class CFUser {
         List<CFRated> filtered = new ArrayList<>();
         for (CFRated item : new FilteredListIterator<>(animeList.toArray(EMPTY_CFRATED_ARRAY), COMPLETED_AND_DROPPED|WATCHING))
             filtered.add(item);
-        this.animeList = filtered.toArray(EMPTY_CFRATED_ARRAY);
+        this.animeListIds = CFRated.packAnimeIdList(filtered);
         processAfterDeserialize(cfParameters);
     }
 
     private Iterable<CFRated> withStatusMask(int mask) {
-        return new FilteredListIterator<>(animeList, mask);
+        return new CFFilteredListIterator(animeListIds, mask);
+    }
+
+    public Iterable<CFRated> animeList() {
+        return withStatusMask(COMPLETED_AND_DROPPED);
     }
 
     public Iterable<CFRated> completedAndDropped() {
@@ -127,28 +132,32 @@ public class CFUser {
     }
 
     public CFUser removeAnime(int animedbId) {
-        CFUser filtered = new CFUser();
-
-        filtered.username = username;
-        filtered.userId = userId;
-        filtered.animeList = Arrays.stream(animeList)
-            .filter(rated -> rated.animedbId != animedbId)
-            .collect(Collectors.toList())
-            .toArray(EMPTY_CFRATED_ARRAY);
-        filtered.processAfterDeserialize(cfParameters);
-
-        return filtered;
+        return removeAnimeBy(packed -> animedbId != CFRated.unpackAnimeId(packed));
     }
 
     public CFUser removeAnime(Set<Integer> animedbIds) {
+        return removeAnimeBy(packed -> !animedbIds.contains(CFRated.unpackAnimeId(packed)));
+    }
+
+    @FunctionalInterface
+    private interface CFUserFilter {
+        boolean keep(int packedRated);
+    }
+
+    private CFUser removeAnimeBy(CFUserFilter keep) {
         CFUser filtered = new CFUser();
+        int[] filteredIds = new int[animeListIds.length];
+        int filteredSize = 0;
+
+        for (int i = 0, max = animeListIds.length; i < max; ++i) {
+            if (keep.keep(animeListIds[i])) {
+                filteredIds[filteredSize++] = animeListIds[i];
+            }
+        }
 
         filtered.username = username;
         filtered.userId = userId;
-        filtered.animeList = Arrays.stream(animeList)
-            .filter(rated -> !animedbIds.contains(rated.animedbId))
-            .collect(Collectors.toList())
-            .toArray(EMPTY_CFRATED_ARRAY);
+        filtered.animeListIds = Arrays.copyOfRange(filteredIds, 0, filteredSize);
         filtered.processAfterDeserialize(cfParameters);
 
         return filtered;

@@ -74,7 +74,6 @@
     user))
 
 (defn- load-filtered-cf-users-from-rs [cf-parameters
-                                       ^java.util.Map cache
                                        ^java.util.List target
                                        ^java.util.Map anime-map-to-filter-hentai
                                        ^java.sql.ResultSet rs]
@@ -84,22 +83,16 @@
         anime-list (if (= 1 (.getInt rs 4))
                      (Serialize/readCFRatedProtobuf al-data)
                      (Serialize/readCFRatedList al-data))]
-    (dotimes [n (.size anime-list)]
-      (let [^aqua.recommend.CFRated item (.get anime-list n)
-            item-id (.animedbId item)
-            cached (if-let [existing (.get cache item)]
-                     existing
-                     (do
-                       (if (and anime-map-to-filter-hentai
-                                ; when we have an user referring to non-existing anime
-                                (if-let [^aqua.mal.data.Anime in-map
-                                          (anime-map-to-filter-hentai item-id)]
-                                  (.isHentai in-map)
-                                  false))
-                         (.setHentai item))
-                       (.put cache item item)
-                       item))]
-        (.set anime-list n cached)))
+    (if anime-map-to-filter-hentai
+      (doseq [^aqua.recommend.CFRated item anime-list]
+        (let [item-id (.animedbId item)
+              is-hentai ; when we have an user referring to non-existing anime
+                        (if-let [^aqua.mal.data.Anime in-map
+                                  (anime-map-to-filter-hentai item-id)]
+                          (.isHentai in-map)
+                          false)]
+          (if is-hentai
+            (.setHentai item)))))
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
     (.setFilteredAnimeList user cf-parameters anime-list)
@@ -132,11 +125,11 @@
     (let [query (select-test-user-ids user-ids)]
       (selected-cf-user-ids connection max-count query))))
 
-(defn load-filtered-cf-users-into [data-source user-ids cf-parameters cache target anime-map-to-filter-hentai]
+(defn load-filtered-cf-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
   ; this allocates and throws away an ArrayList, it's fine
   (select-users-by-id data-source
                       user-ids
-                      (partial load-filtered-cf-users-from-rs cf-parameters cache target anime-map-to-filter-hentai))
+                      (partial load-filtered-cf-users-from-rs cf-parameters target anime-map-to-filter-hentai))
   target)
 
 (def ^:private select-user
