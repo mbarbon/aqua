@@ -32,9 +32,9 @@
 
 (defn- franchise-anime-ids [anime-ids anime-map]
   (set (->> anime-ids
-            (map #(-> %
-                      (anime-map)
-                      anime-franchise))
+            (map #(some-> %
+                          (anime-map)
+                          anime-franchise))
             (remove nil?)
             (mapcat franchise-anime)
             (map anime-animedb-id))))
@@ -56,8 +56,8 @@
   (let [seen-franchises (java.util.HashSet.)]
     (doseq [^aqua.recommend.ScoredAnime scored-anime ranked-anime-seq]
       (let [anime-id (.animedbId scored-anime)
-            franchise-id (let [^aqua.mal.data.Anime anime (.get anime-map anime-id)]
-                           (when-let [franchise (.franchise anime)]
+            franchise-id (if-let [^aqua.mal.data.Anime anime (.get anime-map anime-id)]
+                           (if-let [franchise (.franchise anime)]
                              (.franchiseId franchise)))
             is-planned (planned-anime anime-id)
             in-franchise (known-franchises anime-id)
@@ -77,16 +77,16 @@
 
 (defn make-filter [user anime-map]
   (let [known-anime (set (all-but-planned user))
-        is-known-anime (fn [^aqua.recommend.RecommendationItem rated]
-                         (or (known-anime (scored-animedb-id rated))
-                             (.isHentai rated)))
-        remove-known-anime (partial remove is-known-anime)]
-    remove-known-anime))
+        is-known-or-bad-anime (fn [^aqua.recommend.RecommendationItem rated]
+                                (or (known-anime (scored-animedb-id rated))
+                                    (.isHentai rated)))
+        remove-anime (partial remove is-known-or-bad-anime)]
+    remove-anime))
 
 (defn make-airing-filter [user anime-map]
   (let [known-anime-filter (make-filter user anime-map)
         not-airing-or-old? (fn [rated]
-                             (let [^aqua.mal.data.Anime anime (anime-map (scored-animedb-id rated))]
+                             (if-let [^aqua.mal.data.Anime anime (anime-map (scored-animedb-id rated))]
                                (or (.isCompleted anime)
                                    (.isOld anime))))]
     #(remove not-airing-or-old? (known-anime-filter %))))

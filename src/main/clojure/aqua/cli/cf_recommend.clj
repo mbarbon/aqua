@@ -15,12 +15,12 @@
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
     (println "Airing anime")
     (doseq [scored-anime (take 15 recommended-airing)]
-      (let [anime (anime-map (.animedbId scored-anime))]
+      (if-let [anime (anime-map (.animedbId scored-anime))]
         (println (.tags scored-anime) (.animedbId anime) (.title anime) (.score scored-anime))))
     (println)
     (println "Completed anime")
     (doseq [scored-anime recommended]
-      (let [anime (anime-map (.animedbId scored-anime))]
+      (if-let [anime (anime-map (.animedbId scored-anime))]
         (println (.tags scored-anime) (.animedbId anime) (.title anime) (.score scored-anime))))))
 
 (defn -main [username]

@@ -32,7 +32,8 @@ public class LatentFactorDecomposition {
         this.animeIndexMap = new IntIntHashMap();
         this.animeRatedMap = animeRatedMap;
         for (int i = 0; i < animeRatedMap.length; ++i)
-            animeIndexMap.put(animeRatedMap[i], i);
+            if (animeRatedMap[i] != 0)
+                animeIndexMap.put(animeRatedMap[i], i);
     }
 
     public int rank() {
@@ -55,8 +56,8 @@ public class LatentFactorDecomposition {
         DenseVector animeRatingSlice = new DenseVector(animeFactors.numRows());
 
         for (int i = 0; i < indexCount; ++i) {
-            Integer animeIndex = animeIndexMap.get(user.completedAndDroppedIds[i]);
-            if (animeIndex == null)
+            int animeIndex = animeIndexMap.getOrDefault(user.completedAndDroppedIds[i], -1);
+            if (animeIndex == -1)
                 continue;
             double rating = user.completedAndDroppedRatingDouble(i);
 
@@ -84,7 +85,9 @@ public class LatentFactorDecomposition {
 
         List<ScoredAnimeId> scoredAnime = new ArrayList<>(animeRatedMap.length);
         for (int i = 0; i < animeRatedMap.length; ++i) {
-            scoredAnime.add(new ScoredAnimeId(animeRatedMap[i], -(float) scores.get(i)));
+            if (animeRatedMap[i] != 0) {
+                scoredAnime.add(new ScoredAnimeId(animeRatedMap[i], -(float) scores.get(i)));
+            }
         }
 
         return scoredAnime;
