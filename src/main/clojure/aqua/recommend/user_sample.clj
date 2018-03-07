@@ -4,16 +4,6 @@
             aqua.recommend.model-files
             aqua.mal-local))
 
-; nothing against hentai, just there is not enough data for meaningful
-; recommendations
-(def ^:private select-non-hentai-anime
-  (str "SELECT a.animedb_id AS animedb_id"
-       "    FROM anime AS a"
-       "      LEFT JOIN anime_genres AS ag"
-       "        ON a.animedb_id = ag.animedb_id AND"
-       "           genre_id = 12"
-       "    WHERE sort_order IS NULL"))
-
 (def ^:private select-active-users
   (str "SELECT uas.user_id, uas.completed as anime_count"
        "    FROM user_anime_stats AS uas"
@@ -33,14 +23,6 @@
     (* b 15)
     (* 45 (- b 8))))
 
-(defn- non-hentai-anime [data-source]
-  (with-open [connection (.getConnection data-source)
-              statement (.createStatement connection)
-              rs (.executeQuery statement select-non-hentai-anime)]
-    (->> (resultset-seq rs)
-         (map :animedb_id)
-         (set))))
-
 (defn- active-users [data-source]
   (with-open [connection (.getConnection data-source)
               statement (.createStatement connection)
@@ -49,20 +31,24 @@
                                 (resultset-seq rs)))]
       (group-by #(->> % second count-to-bucket) all-ids))))
 
-(defn- make-bitset [^ints items]
+(defn- make-filtered-bitset ^java.util.BitSet [^java.util.Set anime-ids ^ints items]
   (let [bitset (java.util.BitSet.)]
     (doseq [item items]
-      (.set bitset item))
+      (if (.contains anime-ids item)
+        (.set bitset item)))
     bitset))
 
-(defn- batched-user-loader [data-source bucketed-users]
+(defn- batched-user-loader [data-source anime-ids bucketed-users]
   (let [cf-parameters (aqua.misc/make-cf-parameters 0 0)]
     (apply concat
       (for [batch (partition-all 1000 (map first bucketed-users))]
-        (remove #(< (% 2) 5) ; work around the (rare) case where anime stats and anime list are completely out of sync
+        ; work around the (rare) case where anime stats and anime list are completely out of sync
+        ; or the (slightly more frequent) case where the majority of anime are non-interesting (hentai, specials, ...)
+        (remove #(< (% 2) 5)
           (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-users-by-id data-source nil cf-parameters batch)]
-            (let [ids (.completedAndDroppedIds cf-user)]
-              [(.userId cf-user) (make-bitset ids) (count ids)])))))))
+            (let [ids (.completedAndDroppedIds cf-user)
+                  bitset (make-filtered-bitset anime-ids ids)]
+              [(.userId cf-user) bitset (.cardinality bitset)])))))))
 
 (defn- fresh-user-cluster []
   {:user-ids [] :anime-ids (java.util.BitSet.) :anime-count 0})
@@ -93,13 +79,13 @@
 (defn- add-user-to-cluster-sequence [is-complete new-in-progress in-progress user]
   (letfn [(insertion-condition [added anime-count]
             (let [cluster-index (count new-in-progress)
-                  absolute-threshold (min (* 0.5 anime-count)
-                                          (- (+ 20 1) cluster-index))
-                  relative-threshold (- 0.33 (* 0.3 (/ cluster-index 20)))]
+                  absolute-threshold (min (* 0.4 anime-count)
+                                          (- (+ 25 1) cluster-index))
+                  relative-threshold (- 0.23 (* 0.2 (/ cluster-index 25)))]
               (> added (max absolute-threshold
                             (* relative-threshold anime-count)))))]
     (if-not (seq in-progress)
-      (if (< (count new-in-progress) 20)
+      (if (< (count new-in-progress) 25)
         (if-let [inserted (add-user-to-cluster insertion-condition
                                                (fresh-user-cluster)
                                                user)]
@@ -154,7 +140,7 @@
 
 (defn- cluster-lazy-sequence [data-source all-users anime-ids]
   (let [clusters (for [[bucket bucketed-users] all-users]
-                   (let [users (batched-user-loader data-source bucketed-users)
+                   (let [users (batched-user-loader data-source anime-ids bucketed-users)
                          clusters (cluster-users bucket anime-ids users)]
                      clusters))]
     (apply interleave-all clusters)))
@@ -172,7 +158,6 @@
 
 (defn recompute-user-sample [data-source sample-count anime-ids model-path]
   (let [all-users (active-users data-source)
-        anime-ids (non-hentai-anime data-source)
         clusters (cluster-lazy-sequence data-source all-users anime-ids)
         users (java.util.ArrayList.)]
     (consume-clusters clusters users sample-count)

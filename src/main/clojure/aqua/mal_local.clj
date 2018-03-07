@@ -230,28 +230,21 @@
           (.add genres-list (genre-names (:genre_id item)))))
       genres-map)))
 
-(def ^:private select-non-hentai-anime-titles
+(def ^:private select-all-anime-titles
   (str "SELECT a.animedb_id AS animedb_id, a.title AS title"
        "    FROM anime AS a"
-       "      LEFT JOIN anime_genres AS ag"
-       "        ON a.animedb_id = ag.animedb_id AND"
-       "           genre_id = 12"
-       "    WHERE sort_order IS NULL"
        " UNION "
        "SELECT at.animedb_id AS animedb_id, at.title AS title"
-       "    FROM anime_titles AS at"
-       "      LEFT JOIN anime_genres AS ag"
-       "        ON at.animedb_id = ag.animedb_id AND"
-       "           genre_id = 12"
-       "    WHERE sort_order IS NULL"))
+       "    FROM anime_titles AS at"))
 
 (defn load-anime-titles [data-source anime-ids]
     (with-open [connection (.getConnection data-source)
                 statement (.createStatement connection)
-                rs (.executeQuery statement select-non-hentai-anime-titles)]
+                rs (.executeQuery statement select-all-anime-titles)]
       (doall
-        (for [item (resultset-seq rs)]
-          [(:animedb_id item) (:title item)]))))
+        (filter #(anime-ids (first %))
+          (for [item (resultset-seq rs)]
+            [(:animedb_id item) (:title item)])))))
 
 (def ^:private select-anime-rank
   "SELECT animedb_id, rank FROM anime_details")
@@ -319,9 +312,15 @@
                 (.add (.anime franchise) anime)))
             anime))))))
 
-(defn load-anime [data-source]
+(defn load-all-anime [data-source]
   (into {}
     (for [anime (load-anime-list data-source)]
+      [(.animedbId anime) anime])))
+
+(defn load-anime [data-source]
+  (into {}
+    (for [anime (remove #(or (.isHentai %)
+                             (= (.seriesType %) aqua.mal.data.Anime/SPECIAL)) (load-anime-list data-source))]
       [(.animedbId anime) anime])))
 
 (def ^:private select-case-correct-username

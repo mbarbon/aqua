@@ -3,6 +3,13 @@ package aqua.mal.data;
 import java.util.List;
 
 public class Anime {
+    public static final int TV = 1;
+    public static final int OVA = 2;
+    public static final int MOVIE = 3;
+    public static final int SPECIAL = 4;
+    public static final int ONA = 5;
+    public static final int MUSIC = 6;
+
     public static final int AIRING = 1;
     public static final int FINISHED = 2;
     public static final int NOTAIRED = 3;
