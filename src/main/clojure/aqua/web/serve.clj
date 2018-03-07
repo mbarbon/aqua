@@ -71,14 +71,15 @@
                                             "text/html"))
 
   (GET "/anime/details/:animedb-id" [animedb-id]
-    (let [model (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))
-          anime (:animeDetails model)
-          page-title (str "Anime recommendations for " (:title anime))
-          page-description (str "If you watched " (:title anime) " you will like the other anime in this page")]
-      (aqua.web.templates/render-layout-template "anime-details.ftlh"
-                                                 {:title page-title
-                                                  :description page-description}
-                                                 model)))
+    (if-let [model (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))]
+      (let [anime (:animeDetails model)
+            page-title (str "Anime recommendations for " (:title anime))
+            page-description (str "If you watched " (:title anime) " you will like the other anime in this page")]
+        (aqua.web.templates/render-layout-template "anime-details.ftlh"
+                                                  {:title page-title
+                                                    :description page-description}
+                                                  model))
+      (ring.util.response/redirect "/anime/list")))
 
   (GET "/anime/list/:initial" [initial]
     (aqua.web.templates/render-layout-template "anime-list-initial.ftlh"

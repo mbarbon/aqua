@@ -118,13 +118,14 @@
      :completed (make-list lookup-anime recommended-completed)}))
 
 (defn recommend-single-anime [animedb-id]
-  (let [lookup-anime @*anime
-        co-occurrency @*co-occurrency
-        anime (lookup-anime animedb-id)
-        completed (.similarAnime (.complete co-occurrency) animedb-id)
-        airing (.similarAnime (.airing co-occurrency) animedb-id)]
-    (.sort completed aqua.recommend.ScoredAnimeId/SORT_SCORE)
-    (.sort airing aqua.recommend.ScoredAnimeId/SORT_SCORE)
-    {:animeDetails (aqua.web.render/render-anime anime nil)
-     :recommendations {:airing (make-list lookup-anime (take 5 airing))
-                       :completed (make-list lookup-anime (take 15 completed))}}))
+  (if-let [anime (@*anime animedb-id)]
+    (let [lookup-anime @*anime
+          co-occurrency @*co-occurrency
+          anime (lookup-anime animedb-id)
+          completed (.similarAnime (.complete co-occurrency) animedb-id)
+          airing (.similarAnime (.airing co-occurrency) animedb-id)]
+      (.sort completed aqua.recommend.ScoredAnimeId/SORT_SCORE)
+      (.sort airing aqua.recommend.ScoredAnimeId/SORT_SCORE)
+      {:animeDetails (aqua.web.render/render-anime anime nil)
+        :recommendations {:airing (make-list lookup-anime (take 5 airing))
+                          :completed (make-list lookup-anime (take 15 completed))}})))
