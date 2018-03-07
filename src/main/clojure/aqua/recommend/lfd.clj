@@ -53,7 +53,7 @@
       (.printArray writer anime-indices)
       (.printArray writer (.getData anime-factors)))))
 
-(defn- load-lfd-v1 [in anime-map-to-filter-hentai]
+(defn- load-lfd-v1 [in anime-map]
   (let [read-int (fn [] (Integer/valueOf (read-line)))
         read-double (fn [] (Double/valueOf (read-line)))
         reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)]
@@ -64,10 +64,15 @@
             rows (read-int)
             factors-data (make-array Double/TYPE (* rows cols))]
         (.readArray reader anime-indices)
-        (if anime-map-to-filter-hentai
+        (if anime-map
           (dotimes [n (alength anime-indices)]
-            (if (.isHentai (anime-map-to-filter-hentai (aget anime-indices n)))
-              (aset-int anime-indices n (- (aget anime-indices n))))))
+            (if-let [anime (anime-map (aget anime-indices n))]
+              ; mark as Hentai if present
+              (if (.isHentai anime)
+                (aset-int anime-indices n (- (aget anime-indices n))))
+              ; remove from model in case the set of interesting anime is different from model
+              ; creation to runtime
+              (aset-int anime-indices n 0))))
         (.readArray reader factors-data)
         (aqua.recommend.LatentFactorDecomposition. lambda
                                                    anime-indices
@@ -79,8 +84,8 @@
 
 (defn load-lfd
   ([in] (load-lfd in nil))
-  ([in anime-map-to-filter-hentai]
-     (load-lfd-helper in anime-map-to-filter-hentai)))
+  ([in anime-map]
+     (load-lfd-helper in anime-map)))
 
 (defn store-user-lfd [out ^aqua.recommend.LatentFactorDecompositionUsers user-lfd]
   (let [user-map (map #(.userId %) (.userMap user-lfd))

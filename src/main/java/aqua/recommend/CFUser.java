@@ -91,7 +91,11 @@ public class CFUser {
         processAfterDeserialize(cfParameters);
     }
 
-    public void setFilteredAnimeList(CFParameters cfParameters, List<CFRated> animeList) {
+    public void setAnimeList(CFParameters cfParameters, List<CFRated> animeList, Set<Integer> animeIds) {
+        setAnimeList(cfParameters, animeList);
+    }
+
+    public void setFilteredAnimeList(CFParameters cfParameters, List<CFRated> animeList, Set<Integer> animeIds) {
         List<CFRated> filtered = new ArrayList<>();
         for (CFRated item : new FilteredListIterator<>(animeList.toArray(EMPTY_CFRATED_ARRAY), COMPLETED_AND_DROPPED|WATCHING))
             filtered.add(item);

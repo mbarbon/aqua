@@ -18,18 +18,19 @@
         compare-count 40
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
         sampled-ids (aqua.recommend.user-sample/load-user-sample "maldump/user-sample" user-count)
+        anime-map (aqua.mal-local/load-anime data-source)
         cf-parameters-std (aqua.recommend.CFParameters.)
-        users (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids)
-        lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model")
+        users (aqua.mal-local/load-cf-users-by-id data-source anime-map cf-parameters-std sampled-ids)
+        lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model" anime-map)
         lfd-users (aqua.recommend.lfd/load-user-lfd "maldump/lfd-user-model" lfd users)
         lfd-items (aqua.recommend.lfd-items/load-lfd-items "maldump/lfd-items-model" "maldump/lfd-items-model-airing")
         rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model-unfiltered")
         co-occurrency-model (aqua.recommend.co-occurrency/load-co-occurrency "maldump/co-occurrency-model" "maldump/co-occurrency-model-airing")
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory
                                                                      data-source
+                                                                     anime-map
                                                                      (* 10 compare-count)
-                                                                     "test-users.txt")
-        anime-map (aqua.mal-local/load-anime data-source)]
+                                                                     "test-users.txt")]
     (let [score-pearson (aqua.compare.diversification/make-score-pearson rp-model users 20)
           score-cosine (aqua.compare.diversification/make-score-cosine rp-model users)
           score-lfd (aqua.compare.diversification/make-score-lfd rp-model lfd)

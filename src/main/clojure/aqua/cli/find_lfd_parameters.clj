@@ -59,12 +59,13 @@
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
         sampled-ids (aqua.recommend.user-sample/load-user-sample "maldump/user-sample" user-count)
         cf-parameters-std (aqua.misc/make-cf-parameters 0 0)
-        users (filter has-some-anime (aqua.mal-local/load-cf-users-by-id data-source cf-parameters-std sampled-ids))
+        anime-map (aqua.mal-local/load-anime data-source)
+        users (filter has-some-anime (aqua.mal-local/load-cf-users-by-id data-source anime-map cf-parameters-std sampled-ids))
         test-users-sample (aqua.compare.misc/load-stable-user-sample directory
                                                                      data-source
+                                                                     anime-map
                                                                      (* 10 compare-count)
                                                                      "test-users.txt")
-        anime-map (aqua.mal-local/load-anime data-source)
         rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model-unfiltered")]
     (aqua.misc/normalize-all-ratings users 0.1 -0.1)
     (aqua.misc/normalize-all-ratings test-users-sample 0.1 -0.1)

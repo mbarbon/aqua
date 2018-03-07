@@ -60,7 +60,7 @@
     (apply concat
       (for [batch (partition-all 1000 (map first bucketed-users))]
         (remove #(< (% 2) 5) ; work around the (rare) case where anime stats and anime list are completely out of sync
-          (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-users-by-id data-source cf-parameters batch)]
+          (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-users-by-id data-source nil cf-parameters batch)]
             (let [ids (.completedAndDroppedIds cf-user)]
               [(.userId cf-user) (make-bitset ids) (count ids)])))))))
 
@@ -170,10 +170,9 @@
 (defn count-to-bucket-count [n]
   (bucket-to-count (count-to-bucket n)))
 
-(defn recompute-user-sample [sample-count model-path]
-  (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
+(defn recompute-user-sample [data-source sample-count anime-ids model-path]
+  (let [all-users (active-users data-source)
         anime-ids (non-hentai-anime data-source)
-        all-users (active-users data-source)
         clusters (cluster-lazy-sequence data-source all-users anime-ids)
         users (java.util.ArrayList.)]
     (consume-clusters clusters users sample-count)

@@ -62,15 +62,17 @@
                           (Serialize/readRatedList al-data)))
     user))
 
-(defn- load-cf-users-from-rs [cf-parameters ^java.sql.ResultSet rs]
+(defn- load-cf-users-from-rs [cf-parameters ^java.sql.ResultSet anime-map-to-filter-hentai rs]
   (let [user (aqua.recommend.CFUser.)
+        anime-ids (if anime-map-to-filter-hentai (.keySet anime-map-to-filter-hentai))
         al-data (java.util.zip.GZIPInputStream.
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
     (.setAnimeList user cf-parameters (if (= 1 (.getInt rs 4))
                                         (Serialize/readCFRatedProtobuf al-data)
-                                        (Serialize/readCFRatedList al-data)))
+                                        (Serialize/readCFRatedList al-data))
+                                      anime-ids)
     user))
 
 (defn- load-filtered-cf-users-from-rs [cf-parameters
@@ -78,6 +80,7 @@
                                        ^java.util.Map anime-map-to-filter-hentai
                                        ^java.sql.ResultSet rs]
   (let [user (aqua.recommend.CFUser.)
+        anime-ids (if anime-map-to-filter-hentai (.keySet anime-map-to-filter-hentai))
         al-data (java.util.zip.GZIPInputStream.
                   (io/input-stream (.getBinaryStream rs 3)))
         anime-list (if (= 1 (.getInt rs 4))
@@ -86,7 +89,7 @@
     (if anime-map-to-filter-hentai
       (doseq [^aqua.recommend.CFRated item anime-list]
         (let [item-id (.animedbId item)
-              is-hentai ; when we have an user referring to non-existing anime
+              is-hentai ; when we have an user referring to non-existing/non-interesting anime
                         (if-let [^aqua.mal.data.Anime in-map
                                   (anime-map-to-filter-hentai item-id)]
                           (.isHentai in-map)
@@ -95,7 +98,7 @@
             (.setHentai item)))))
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setFilteredAnimeList user cf-parameters anime-list)
+    (.setFilteredAnimeList user cf-parameters anime-list anime-ids)
     (.set target (- (.getRow rs) 1) user)
     ; return nil to avoid retaining the previous value in the
     ; result list
@@ -116,9 +119,9 @@
     (let [ids (doall-rs rs (fn [^java.sql.ResultSet rs] (.getInt rs 1)))]
       ids)))
 
-(defn load-cf-users-by-id [data-source cf-parameters ids]
+(defn load-cf-users-by-id [data-source anime cf-parameters ids]
   (select-users-by-id data-source ids
-                      (partial load-cf-users-from-rs cf-parameters)))
+                      (partial load-cf-users-from-rs cf-parameters anime)))
 
 (defn load-test-cf-user-ids [data-source user-ids max-count]
   (with-open [connection (.getConnection data-source)]
@@ -141,12 +144,12 @@
        "        ON u.user_id = al.user_id"
        "    WHERE u.username = ?"))
 
-(defn load-cf-user [data-source username cf-parameters]
+(defn load-cf-user [data-source anime cf-parameters username]
   (with-open [connection (.getConnection data-source)
               statement (doto (.prepareStatement connection select-user)
                               (.setString 1 username))
               rs (.executeQuery statement)]
-    (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters)))))
+    (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters anime)))))
 
 (def ^:private select-user-blob
   (str "SELECT LENGTH(al.anime_list) AS blob_length,"
@@ -242,7 +245,7 @@
        "           genre_id = 12"
        "    WHERE sort_order IS NULL"))
 
-(defn load-non-hentai-anime-titles [data-source]
+(defn load-anime-titles [data-source anime-ids]
     (with-open [connection (.getConnection data-source)
                 statement (.createStatement connection)
                 rs (.executeQuery statement select-non-hentai-anime-titles)]

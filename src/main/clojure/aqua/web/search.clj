@@ -9,7 +9,7 @@
   (let [data-source @*data-source-ro
         ; nothing against hentai, just there is not enough data for
         ; meaningful recommendations
-        anime-titles (aqua.mal-local/load-non-hentai-anime-titles data-source)
+        anime-titles (aqua.mal-local/load-anime-titles data-source (set (.keySet @*anime)))
         anime-rank (aqua.mal-local/load-anime-rank data-source)
         suggest (aqua.search.autocomplete/prepare-suggest anime-titles anime-rank)]
     (log/info "Done loading suggester")

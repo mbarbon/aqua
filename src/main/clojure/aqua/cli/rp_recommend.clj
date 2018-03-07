@@ -26,10 +26,10 @@
   (let [directory "maldump"
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
-        _ (println "Loading users")
-        user (aqua.mal-local/load-cf-user data-source username cf-parameters)
-        rp (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model")
         _ (println "Loading anime")
-        anime (aqua.mal-local/load-anime data-source)]
+        anime (aqua.mal-local/load-anime data-source)
+        _ (println "Loading users")
+        user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
+        rp (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model")]
     (println "Running recommender")
     (run-recommender user rp anime)))

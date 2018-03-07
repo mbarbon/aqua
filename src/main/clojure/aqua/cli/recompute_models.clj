@@ -76,13 +76,15 @@
 
 (defn -main [& items]
   (when (some #{"user-sample"} (if (seq items) items all-items))
-    (println "Recomputing user sample")
-    (time (aqua.recommend.user-sample/recompute-user-sample user-sample-count "maldump/user-sample")))
+    (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
+          anime (aqua.mal-local/load-anime data-source)]
+      (println "Recomputing user sample")
+      (time (aqua.recommend.user-sample/recompute-user-sample data-source user-sample-count (.keySet anime) "maldump/user-sample"))))
 
   (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        users (aqua.recommend.user-sample/load-filtered-cf-users "maldump/user-sample" data-source cf-parameters user-count)
-        anime (aqua.mal-local/load-anime data-source)]
+        anime (aqua.mal-local/load-anime data-source)
+        users (aqua.recommend.user-sample/load-filtered-cf-users "maldump/user-sample" data-source cf-parameters user-count anime)]
     (doseq [item (if (seq items) items all-items)]
       (case item
         "user-sample"
