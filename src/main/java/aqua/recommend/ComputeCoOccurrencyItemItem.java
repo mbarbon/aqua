@@ -135,12 +135,12 @@ public class ComputeCoOccurrencyItemItem {
     }
 
     public void findSimilarAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
-        countoCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new CompletedAndDroppedAnime(goodScoreThreshold), alpha);
+        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new CompletedAndDroppedAnime(goodScoreThreshold), alpha);
         fillSimilarAnime();
     }
 
     public void findSimilarAiringAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
-        countoCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(animeMap), alpha);
+        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(animeMap), alpha);
         fillSimilarAnime();
     }
 
@@ -148,7 +148,7 @@ public class ComputeCoOccurrencyItemItem {
         return new ItemItemModel(animeIndexMap, similarAnimeCount, similarAnimeId, similarAnimeScore);
     }
 
-    private void countoCoOccurencies(List<CFUser> users, AnimeIterator watched, AnimeIterator coOccurring, float alpha) {
+    private void countCoOccurencies(List<CFUser> users, AnimeIterator watched, AnimeIterator coOccurring, float alpha) {
         int rowStride = animeIndexMap.size();
         int[] animeTotalOccurrences = new int[rowStride];
 
