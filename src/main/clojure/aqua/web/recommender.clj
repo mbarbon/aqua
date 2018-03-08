@@ -68,8 +68,10 @@
   (reload-users))
 
 (defn- make-list [lookup-anime recommended]
-  (for [^aqua.recommend.ScoredAnime scored-anime recommended]
-    (aqua.web.render/render-anime (lookup-anime (.animedbId scored-anime)) (.tags scored-anime))))
+  (keep some?
+    (for [^aqua.recommend.ScoredAnime scored-anime recommended]
+      (if-let [anime (lookup-anime (.animedbId scored-anime))]
+        (aqua.web.render/render-anime anime (.tags scored-anime))))))
 
 (defn- call-recommender [recommender user known-anime-filter airing-anime-filter known-anime-tagger]
   (case recommender
