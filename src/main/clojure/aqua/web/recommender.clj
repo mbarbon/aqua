@@ -68,7 +68,7 @@
   (reload-users))
 
 (defn- make-list [lookup-anime recommended]
-  (keep some?
+  (filter some?
     (for [^aqua.recommend.ScoredAnime scored-anime recommended]
       (if-let [anime (lookup-anime (.animedbId scored-anime))]
         (aqua.web.render/render-anime anime (.tags scored-anime))))))
