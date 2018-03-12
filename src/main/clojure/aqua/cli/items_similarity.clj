@@ -8,7 +8,8 @@
   (.sort scored-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
   (println (str "\n" model-name))
   (doseq [scored scored-anime]
-    (println (.animedbId scored) (.title (anime (.animedbId scored))) (.score scored))))
+    (if-let [anime (anime (.animedbId scored))]
+      (println (.animedbId scored) (.title anime) (.score scored)))))
 
 (defn -main [animedb-string]
   (println "Starting")
