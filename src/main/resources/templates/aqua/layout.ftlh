@@ -15,10 +15,10 @@
     })(window, document, 'script', 'https://www.google-analytics.com/' + analyticsLibrary, 'ga');
 
     ga('create', 'UA-103130411-1', 'auto');
-
     if (analyticsDebugIfLocalHost) {
       ga('set', 'sendHitTask', null);
     }
+    ga('send', 'pageview')
   </script>
   <!-- End Google Analytics -->
   <meta name=viewport content="width=device-width, initial-scale=1">

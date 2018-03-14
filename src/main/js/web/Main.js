@@ -39,6 +39,7 @@ class Main extends Component<{}, State> {
   ) => void
   autocompleteResultCallback: (Array<Anime>) => void
   queuePositionCallback: (?number) => void
+  trackedPage: string
 
   constructor (props: {}) {
     super(props)
@@ -57,6 +58,7 @@ class Main extends Component<{}, State> {
     )
     this.autocompleteResultCallback = this.autocompleteResult.bind(this)
     this.queuePositionCallback = this.queuePosition.bind(this)
+    this.trackedPage = ''
 
     localAnimeList.pubSub.animeList.subscribe(
       this.recommendFromLocalList.bind(this)
@@ -170,12 +172,21 @@ class Main extends Component<{}, State> {
     }
   }
 
+  trackPage (page: string) {
+    if (window.ga && page != this.trackedPage) {
+      this.trackedPage = page
+      window.ga('send', 'pageview', page)
+    }
+  }
+
   render () {
     const { userMode, recommendations } = this.state
 
     if (userMode === 'loading') {
+      this.trackPage('loading')
       return null
     } else if (recommendations != null && userMode != null) {
+      this.trackPage('recommendations')
       return (
         <UserRecommendations
           malUsername={aquaRecommendations.getMalUsername()}
@@ -188,6 +199,7 @@ class Main extends Component<{}, State> {
         />
       )
     } else if (userMode === 'local') {
+      this.trackPage('localAnimeList')
       return (
         <UserRecommendations
           malUsername={null}
@@ -200,6 +212,7 @@ class Main extends Component<{}, State> {
         />
       )
     } else if (!userMode || !recommendations) {
+      this.trackPage('usermode')
       return (
         <UserMode
           queuePosition={this.state.queuePosition}
