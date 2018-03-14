@@ -89,7 +89,7 @@ public class ComputeRPSimilarAnime {
             int entryIndex = entry.getValue();
             double score = similarityScores.get(entryIndex);
 
-            if (entryIndex == animeIndex || score < 0.2)
+            if (entryIndex == animeIndex)
                 continue;
             topScored.add(new ScoredAnimeId(entryAnimedbId, (float) -score));
         }
