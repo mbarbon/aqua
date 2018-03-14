@@ -20,7 +20,7 @@
 (def user-sample-count 100000)
 
 (def co-occurrency-score-threshold 0.3)
-(def co-occurrency-alpha 0.6)
+(def co-occurrency-alpha 0.7)
 (def co-occurrency-item-count 30)
 (def co-occurrency-item-count-airing 15)
 
