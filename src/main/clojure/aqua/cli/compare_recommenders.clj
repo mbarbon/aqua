@@ -3,6 +3,7 @@
             aqua.compare.recall-planned
             aqua.compare.recall
             aqua.compare.diversification
+            aqua.compare.popularity
             aqua.recommend.rp-similar-anime
             aqua.recommend.co-occurrency
             aqua.recommend.lfd
@@ -19,6 +20,7 @@
         data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
         sampled-ids (aqua.recommend.user-sample/load-user-sample "maldump/user-sample" user-count)
         anime-map (aqua.mal-local/load-anime data-source)
+        anime-rank (aqua.mal-local/load-anime-rank data-source)
         cf-parameters-std (aqua.recommend.CFParameters.)
         users (aqua.mal-local/load-cf-users-by-id data-source anime-map cf-parameters-std sampled-ids)
         lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model" anime-map)
@@ -31,6 +33,32 @@
                                                                      anime-map
                                                                      (* 10 compare-count)
                                                                      "test-users.txt")]
+
+    (let [score-pearson (aqua.compare.popularity/make-score-pearson anime-rank users 20)
+          score-cosine (aqua.compare.popularity/make-score-cosine anime-rank users)
+          score-lfd (aqua.compare.popularity/make-score-lfd anime-rank lfd)
+          score-lfd-cf (aqua.compare.popularity/make-score-lfd-cf anime-rank lfd-users)
+          score-lfd-items (aqua.compare.popularity/make-score-lfd-items anime-rank lfd-items)
+          score-rp (aqua.compare.popularity/make-score-rp anime-rank rp-model)
+          score-co-occurrency (aqua.compare.popularity/make-score-co-occurrency anime-rank co-occurrency-model)
+          test-users (take compare-count test-users-sample)]
+      (println (str "\nStart popularity comparison ("
+                    (count test-users)
+                    " users)"))
+      (timed-score "LFD" (score-lfd test-users anime-map))
+      (timed-score "LFD CF" (score-lfd-cf test-users anime-map))
+      (timed-score "LFD items" (score-lfd-items test-users anime-map))
+      (timed-score "RP" (score-rp test-users anime-map))
+      (timed-score "Co-occurrency" (score-co-occurrency test-users anime-map))
+      (aqua.misc/normalize-all-ratings users 0 0)
+      (aqua.misc/normalize-all-ratings test-users 0 0)
+      (timed-score "Cosine (default)" (score-cosine test-users anime-map))
+      (timed-score "Pearson (default)" (score-pearson test-users anime-map))
+      (aqua.misc/normalize-all-ratings users 0.5 -1)
+      (aqua.misc/normalize-all-ratings test-users 0.5 -1)
+      (timed-score "Cosine (positive unrated)" (score-cosine test-users anime-map))
+      (timed-score "Pearson (positive unrated)" (score-pearson test-users anime-map)))
+
     (let [score-pearson (aqua.compare.diversification/make-score-pearson rp-model users 20)
           score-cosine (aqua.compare.diversification/make-score-cosine rp-model users)
           score-lfd (aqua.compare.diversification/make-score-lfd rp-model lfd)
