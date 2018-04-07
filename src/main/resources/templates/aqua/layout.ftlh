@@ -1,4 +1,5 @@
 <#compress>
+<!DOCTYPE html>
 <html>
 
 <head>
