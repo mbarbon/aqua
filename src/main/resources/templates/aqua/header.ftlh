@@ -1,4 +1,4 @@
-<div class="main-page-head aqua-body" id="main-page-head">
+<header class="main-page-head aqua-body" id="main-page-head">
   <div class="main-page-head-actions"> </div>
   <div class="main-page-logo">
     <a href="/"><img src="/aqua-thumbsup.jpg"></a>
@@ -7,4 +7,4 @@
       <div class="second-head">anime recommendations</div>
     </div>
   </div>
-</div>
+</header>

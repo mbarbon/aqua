@@ -1,5 +1,5 @@
 <#include "header.ftlh">
-<div class="aqua-body">
+<section class="aqua-body">
   <h1>${model.animeDetails.title}</h1>
   <a title="${model.animeDetails.title}" href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}" target="_blank">
     <img class="anime-image" src="${model.animeDetails.image}" alt="Aikatsu!" style="max-width: 168px; max-height: 228px; height: auto;">
@@ -14,9 +14,9 @@
     <div class="details">${model.animeDetails.season}</div>
   </div>
   <div style="clear: both;"></div>
-</div>
+</section>
 <#list model.recommendations.airing>
-<div class="aqua-body">
+<section class="aqua-body">
   <h3 class="recommendation-description">Airing anime people are watching</h3>
   <div class="recommendation-list">
   <#items as anime>
@@ -36,10 +36,10 @@
     </div>
   </#items>
   </div>
-</div>
+</section>
 </#list>
 <#list model.recommendations.completed>
-<div class="aqua-body">
+<section class="aqua-body">
   <h3 class="recommendation-description">People also liked</h3>
   <div class="recommendation-list">
   <#items as anime>
@@ -59,7 +59,7 @@
     </div>
   </#items>
   </div>
-</div>
+</section>
 </#list>
 <#if model.recommendations.completed.isEmpty() && model.recommendations.airing.isEmpty()>
 <div class="aqua-body">

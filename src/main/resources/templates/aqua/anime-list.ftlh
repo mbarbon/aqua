@@ -1,7 +1,7 @@
 <#include "header.ftlh">
 <div class="aqua-body"><h1>Browse all anime</h1></div>
 <#list model.parts as part>
-<div class="aqua-body">
+<section class="aqua-body">
   <h2><a href="/anime/list/${part.headLetter}">${part.headLetter}</a></h2>
   <div class="recommendation-list">
   <#list part.exampleAnime as anime>
@@ -22,5 +22,5 @@
   </#list>
     <a href="/anime/list/${part.headLetter}">More...</a>
   </div>
-</div>
+</section>
 </#list>
