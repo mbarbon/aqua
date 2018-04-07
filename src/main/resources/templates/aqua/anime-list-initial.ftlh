@@ -1,5 +1,4 @@
 <#include "header.ftlh">
-<div class="aqua-body"><h1>Browse all anime</h1></div>
 <div class="aqua-body">
   <h1>${model.anime.size()?c} anime starting with '${model.headLetter}'</h1>
   <div class="recommendation-list">

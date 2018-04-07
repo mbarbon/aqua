@@ -1,5 +1,4 @@
 <#include "header.ftlh">
-<div class="aqua-body"><h1>Browse all anime</h1></div>
 <div class="aqua-body">
   <h1>${model.animeDetails.title}</h1>
   <a title="${model.animeDetails.title}" href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}" target="_blank">
