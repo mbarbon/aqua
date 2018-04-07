@@ -66,3 +66,4 @@
   There are no recommendations for this anime
 </div>
 </#if>
+<#include "footer.ftlh">

@@ -106,6 +106,17 @@ a:hover {
   background: linear-gradient(to right, #d9f4fb, #a9d6f5);
 }
 
+.main-page-foot {
+  padding: 8px;
+  min-height: 50px;
+  background-color: #a9d6f5;
+}
+
+.footer-links {
+  float: right;
+  line-height: 1.5;
+}
+
 @media (max-width: 500px) {
   .main-page-head {
     height: 140px;

@@ -24,3 +24,4 @@
   </div>
 </section>
 </#list>
+<#include "footer.ftlh">
