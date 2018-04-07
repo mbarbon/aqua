@@ -1,5 +1,5 @@
 (ns aqua.mal-scrape
-  (:require clojure.set))
+  )
 
 (defmacro for-soup [[item items] form]
   `(for [~(vary-meta item assoc :tag `org.jsoup.nodes.Element) ~items]
@@ -70,11 +70,16 @@
       [(Integer/valueOf genre-id) (.text genre)])))
 
 (defn- parse-titles [^org.jsoup.nodes.Document doc]
-  (reduce clojure.set/union
+  (apply merge
     (for-soup [span (.select doc "h2:containsOwn(Alternative Titles) ~ div > span:matchesOwn(English:|Synonyms:)")]
       (if-let [^org.jsoup.nodes.TextNode text-node (.nextSibling span)]
         (if (instance? org.jsoup.nodes.TextNode text-node)
-          (set (map #(.trim ^String %) (.split (.text text-node) ","))))))))
+          (let [titles (map #(.trim ^String %) (.split (.text text-node) ","))
+                kind-text (.trim (.text span))
+                title-kind (case kind-text
+                             "English:" 1
+                             "Synonyms:" 2)]
+              (into {} (map vector titles (repeat title-kind)))))))))
 
 (defn- parse-score [scores stats]
   (if-let [score (first (.select stats "div.score:matchesOwn(\\d+\\.?\\d+)"))]

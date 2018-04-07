@@ -447,7 +447,7 @@
        "    WHERE a.animedb_id IN (" (placeholders items) ")"))
 
 (defn- select-anime-titles [items]
-  (str "SELECT animedb_id, title"
+  (str "SELECT animedb_id, title_type, title"
        "    FROM anime_titles"
        "    WHERE animedb_id IN (" (placeholders items) ")"))
 
@@ -498,7 +498,7 @@
                                                    anime-id-to-time)))
         anime (fetch-anime-map anime-ids)]
     (-> anime
-        (join-fields select-anime-titles :title :titles)
+        (join-fields select-anime-titles [:title :title_type] :titles)
         (join-fields select-anime-relations [:related_id :relation] :relations)
         (join-fields select-anime-genres [:genre_id :description :sort_order] :genres)
         vals))))
@@ -523,7 +523,7 @@
        "    WHERE m.mangadb_id IN (" (placeholders items) ")"))
 
 (defn- select-manga-titles [items]
-  (str "SELECT mangadb_id, title"
+  (str "SELECT mangadb_id, title_type, title"
        "    FROM manga_titles"
        "    WHERE mangadb_id IN (" (placeholders items) ")"))
 
@@ -574,7 +574,7 @@
                                                    manga-id-to-time)))
         manga (fetch-manga-map manga-ids)]
     (-> manga
-        (join-fields select-manga-titles :title :titles)
+        (join-fields select-manga-titles [:title :title_type] :titles)
         (join-fields select-manga-relations [:related_id :relation] :relations)
         (join-fields select-manga-genres [:genre_id :description :sort_order] :genres)
         vals))))
@@ -932,9 +932,9 @@
 
 (def ^:private update-anime-titles
   (str "INSERT OR REPLACE INTO anime_titles"
-       "        (animedb_id, title)"
+       "        (animedb_id, title_type, title)"
        "    VALUES"
-       "        (?, ?)"))
+       "        (?, ?, ?)"))
 
 (def ^:private update-anime-genres
   (str "INSERT OR REPLACE INTO anime_genres"
@@ -954,8 +954,8 @@
   (doseq [{:strs [genre_id description sort_order]} genres]
     (execute connection update-anime-genre-names [genre_id description])
     (execute connection update-anime-genres [animedb_id genre_id sort_order]))
-  (doseq [title titles]
-    (execute connection update-anime-titles [animedb_id title]))
+  (doseq [{:strs [title title_type]} titles]
+    (execute connection update-anime-titles [animedb_id title_type title]))
   (doseq [{:strs [related_id relation]} relations]
     (execute connection update-anime-relations [animedb_id related_id relation])))
 
@@ -1011,9 +1011,9 @@
 
 (def ^:private update-manga-titles
   (str "INSERT OR REPLACE INTO manga_titles"
-       "        (mangadb_id, title)"
+       "        (mangadb_id, title_type, title)"
        "    VALUES"
-       "        (?, ?)"))
+       "        (?, ?, ?)"))
 
 (def ^:private update-manga-genres
   (str "INSERT OR REPLACE INTO manga_genres"
@@ -1033,8 +1033,8 @@
   (doseq [[genre_id description sort_order] (map conj genres (range))]
     (execute connection update-anime-genre-names [genre_id description])
     (execute connection update-anime-genres [animedb_id genre_id sort_order]))
-  (doseq [title titles]
-    (execute connection update-anime-titles [animedb_id title]))
+  (doseq [[title title-type] titles]
+    (execute connection update-anime-titles [animedb_id title-type title]))
   (doseq [[related_id relation] relations]
     (execute connection update-anime-relations [animedb_id related_id relation])))
 
@@ -1059,8 +1059,8 @@
   (doseq [[genre_id description sort_order] (map conj genres (range))]
     (execute connection update-manga-genre-names [genre_id description])
     (execute connection update-manga-genres [mangadb_id genre_id sort_order]))
-  (doseq [title titles]
-    (execute connection update-manga-titles [mangadb_id title]))
+  (doseq [[title title-type] titles]
+    (execute connection update-manga-titles [mangadb_id title-type title]))
   (doseq [[related_id relation] relations]
     (execute connection update-manga-relations [mangadb_id related_id relation])))
 
@@ -1085,8 +1085,8 @@
   (doseq [{:strs [genre_id description sort_order]} genres]
     (execute connection update-manga-genre-names [genre_id description])
     (execute connection update-manga-genres [mangadb_id genre_id sort_order]))
-  (doseq [title titles]
-    (execute connection update-manga-titles [mangadb_id title]))
+  (doseq [{:strs [title title_type]} titles]
+    (execute connection update-manga-titles [mangadb_id title_type title]))
   (doseq [{:strs [related_id relation]} relations]
     (execute connection update-manga-relations [mangadb_id related_id relation])))
 

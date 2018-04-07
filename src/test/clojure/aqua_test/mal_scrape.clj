@@ -33,10 +33,10 @@
             [21 "Samurai"]
             [27 "Shounen"]]
            genres))
-    (is (= #{"Gintama"
-             "Gin Tama"
-             "Silver Soul"
-             "Yorinuki Gintama-san"}
+    (is (= {"Gintama" 1
+            "Gin Tama" 2
+            "Silver Soul" 2
+            "Yorinuki Gintama-san" 2}
            titles))
     (is (= {:score 902, :rank 14, :popularity 88}
            scores))))
@@ -52,8 +52,8 @@
             [23 "School"]
             [36 "Slice of Life"]]
            genres))
-    (is (= #{"Keion"
-             "K-On!"}
+    (is (= {"Keion" 2
+            "K-On!" 1}
            titles))
     (is (= {:score 789, :rank 1224, :popularity 269}
            scores))))

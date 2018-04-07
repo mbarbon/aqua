@@ -1,6 +1,5 @@
 (ns aqua.mal-web
-  (:require clojure.set
-            [clojure.tools.logging :as log]
+  (:require [clojure.tools.logging :as log]
             aqua.mal-scrape))
 
 (defn mal-fetch [path query-params callback]
@@ -38,8 +37,7 @@
       (case status
         200 (let [details (aqua.mal-scrape/parse-anime-page body)
                   titles (:titles details)
-                  alternative-titles (clojure.set/difference titles
-                                                             (set [title]))]
+                  alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
         404 nil
         (log-error error status (str "fetching anime " title))))))
@@ -50,8 +48,7 @@
       (case status
         200 (let [details (aqua.mal-scrape/parse-manga-page body)
                   titles (:titles details)
-                  alternative-titles (clojure.set/difference titles
-                                                             (set [title]))]
+                  alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
         404 nil
         (log-error error status (str "fetching manga " title))))))

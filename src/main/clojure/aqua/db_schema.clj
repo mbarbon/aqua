@@ -87,6 +87,7 @@
 (def ^:private create-anime-titles
   (str "CREATE TABLE IF NOT EXISTS anime_titles ("
        "    animedb_id INTEGER NOT NULL,"
+       "    title_type INTEGER NOT NULL,"
        "    title VARCHAR(255) NOT NULL"
        ")"))
 
@@ -148,6 +149,7 @@
 (def ^:private create-manga-titles
   (str "CREATE TABLE IF NOT EXISTS manga_titles ("
        "    mangadb_id INTEGER NOT NULL,"
+       "    title_type INTEGER NOT NULL,"
        "    title VARCHAR(255) NOT NULL"
        ")"))
 
