@@ -50,7 +50,16 @@
     "build": "node react-web/scripts/build.js",
     "test": "node react-web/scripts/test.js --env=jsdom"
   },
-  "proxy": "http://localhost:9000/",
+  "proxy": {
+    "comment": "See react-web/scripts/start.js",
+    "target": "http://localhost:9000",
+    "paths": [
+      "^/anime/.*$",
+      "^/recommend$",
+      "^/autocomplete$",
+      "^/list/anime/.*$"
+    ]
+  },
   "jest": {
     "collectCoverageFrom": ["src/**/*.{js,jsx}"],
     "setupFiles": ["<rootDir>/config/polyfills.js"],
