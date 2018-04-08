@@ -27,3 +27,14 @@
     (-> (.toString writer)
         ring.util.response/response
         (ring.util.response/content-type (get meta :content-type "text/html")))))
+
+(def ^:private dev-react-bundle "/static/js/bundle.js")
+
+(defn- find-react-bundle []
+  (if-let [stream (.getResourceAsStream aqua.mal.Serialize "/public/asset-manifest.json")]
+    (let [mapper (com.fasterxml.jackson.databind.ObjectMapper.)
+          map (.readValue mapper stream java.util.HashMap)]
+      (str "/" (get map "main.js")))
+    dev-react-bundle))
+
+(def jsBundle (find-react-bundle))
