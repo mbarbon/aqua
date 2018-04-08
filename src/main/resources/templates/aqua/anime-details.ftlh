@@ -67,3 +67,4 @@
 </div>
 </#if>
 <#include "footer.ftlh">
+<script type="text/javascript" src="${model.jsBundle}"></script>

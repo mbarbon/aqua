@@ -1,5 +1,9 @@
 <header class="main-page-head aqua-body" id="main-page-head">
-  <div class="main-page-head-actions"> </div>
+<#if model.appInHeader!false>
+  <div id="root">
+    <span id="root-marker"></span>
+  </div>
+</#if>
   <div class="main-page-logo">
     <a href="/"><img src="/aqua-thumbsup.jpg"></a>
     <div class="start-page-head-text">
