@@ -142,21 +142,24 @@ export default class LocalState {
   }
 
   _loadLocalAnimeList (reloadRecommendations: boolean): Promise<void> {
-    return AsyncStorage.multiGet([
-      localAnimeListKey,
-      localListChangedKey
-    ]).then(keys => {
-      let animeListString = keys[0][1]
-      let hasChangesString = keys[1][1]
-      let hasChanges = !!hasChangesString && hasChangesString === 'true'
-      let animeList = removeObjectionableContent(
-        JSON.parse(animeListString) || []
-      )
+    return AsyncStorage.multiGet([localAnimeListKey, localListChangedKey]).then(
+      keys => {
+        let animeListString = keys[0][1]
+        let hasChangesString = keys[1][1]
+        let hasChanges = !!hasChangesString && hasChangesString === 'true'
+        let animeList = removeObjectionableContent(
+          JSON.parse(animeListString) || []
+        )
 
-      // order is important here
-      aquaRecommendations.setLocalUser()
-      localAnimeList.setAnimeList(animeList, reloadRecommendations, hasChanges)
-    })
+        // order is important here
+        aquaRecommendations.setLocalUser()
+        localAnimeList.setAnimeList(
+          animeList,
+          reloadRecommendations,
+          hasChanges
+        )
+      }
+    )
   }
 
   setLocalAnimeList (animeList: Array<LocalAnime>) {
