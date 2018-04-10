@@ -179,6 +179,7 @@ export default class LocalState {
   ) {
     return AsyncStorage.multiSet([
       [cachedRecommendationsKey, JSON.stringify(recommendations)],
+      [localListChangedKey, 'false'],
       [cachedRecommendationsTimeKey, updateTime.toString()],
       [cachedRecommendationsForKey, userMode]
     ])
