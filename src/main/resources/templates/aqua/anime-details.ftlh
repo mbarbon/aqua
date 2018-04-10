@@ -12,6 +12,17 @@
 </#if>
     </div>
     <div class="details">${model.animeDetails.season}</div>
+    <div class="details aqua-select-stars"
+         data-animedbId="${model.animeDetails.animedbId?c}"
+         data-title="${model.animeDetails.title}"
+         data-image="${model.animeDetails.image}"
+         data-episodes="${model.animeDetails.episodes?c}"
+         data-franchiseEpisodes="${model.animeDetails.franchiseEpisodes?c}"
+         data-genres="${model.animeDetails.genres}"
+         data-season="${model.animeDetails.season}"
+         data-tags="${model.animeDetails.tags!}"
+         data-status="${model.animeDetails.status?c}">
+    </div>
   </div>
   <div style="clear: both;"></div>
 </section>
@@ -55,6 +66,18 @@
   </#if>
         </div>
         <div class="details">${anime.season}</div>
+        <div class="details aqua-select-stars"
+             data-animedbId="${anime.animedbId?c}"
+             data-animedbId="${anime.animedbId?c}"
+             data-title="${anime.title}"
+             data-image="${anime.image}"
+             data-episodes="${anime.episodes?c}"
+             data-franchiseEpisodes="${anime.franchiseEpisodes?c}"
+             data-genres="${anime.genres}"
+             data-season="${anime.season}"
+             data-tags="${anime.tags!}"
+             data-status="${anime.status?c}">
+        </div>
       </div>
     </div>
   </#items>
