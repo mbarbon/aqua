@@ -18,7 +18,7 @@
   (mal-fetch "/malappinfo.php" {"u" username
                                 "type" kind
                                 "status" "all"}
-    (fn [error status body]
+    (fn [error status body _]
       (try
         (if error
           (callback nil error)
@@ -33,7 +33,7 @@
 
 (defn fetch-anime-details [animedb-id title]
   (mal-fetch (str "/anime/" animedb-id) {}
-    (fn [error status body]
+    (fn [error status body _]
       (case status
         200 (let [details (aqua.mal-scrape/parse-anime-page body)
                   titles (:titles details)
@@ -44,7 +44,7 @@
 
 (defn fetch-manga-details [mangadb-id title]
   (mal-fetch (str "/manga/" mangadb-id) {}
-    (fn [error status body]
+    (fn [error status body _]
       (case status
         200 (let [details (aqua.mal-scrape/parse-manga-page body)
                   titles (:titles details)
@@ -55,7 +55,7 @@
 
 (defn fetch-active-users []
   (mal-fetch "/users.php" {}
-    (fn [error status body]
+    (fn [error status body _]
       (case status
         200 (aqua.mal-scrape/parse-users-page body)
         (log-error error status "fetching user sample")))))
@@ -64,7 +64,7 @@
   (mal-fetch "/malappinfo.php" {"u" username
                                 "type" kind
                                 "status" "all"}
-    (fn [error status body]
+    (fn [error status body _]
       (case status
         200 (aqua.mal.Serialize/readMalAppInfo body)
         (log-error error status (str "fetching anime list for " username))))))

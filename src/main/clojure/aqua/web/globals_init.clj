@@ -19,7 +19,7 @@
   (log/info "Done loading anime"))
 
 (defn init [directory state-directory]
-  (reset! *background (java.util.concurrent.Executors/newScheduledThreadPool 5))
+  (reset! *background (java.util.concurrent.Executors/newScheduledThreadPool 7))
   (reset! *maldump-directory directory)
   (reset! *state-directory state-directory)
   (reset! *cf-parameters (aqua.misc/make-cf-parameters 0.5 -1))

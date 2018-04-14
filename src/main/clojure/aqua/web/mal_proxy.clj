@@ -2,12 +2,13 @@
   (:require aqua.mal-local
             aqua.slowpoke
             aqua.web.render
+            clojure.java.io
             [aqua.web.globals :refer [*data-source-ro *data-source-rw *background *anime *anime-list-by-letter]]))
 
 (def ^:private title-letters-numbers "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 (def ^:private title-letters "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-(defn- init-slowpoke []
+(defn- init-slowpoke [directory]
   (letfn [(schedule [make-function interval]
             (let [start (int (+ 3 (* (Math/random) 5)))]
               (.scheduleWithFixedDelay @*background
@@ -19,6 +20,8 @@
     (schedule aqua.slowpoke/make-refresh-anime 300)
     (schedule aqua.slowpoke/make-refresh-manga 300)
     (schedule aqua.slowpoke/make-refresh-users 300)
+    (schedule (fn [rw ro] (aqua.slowpoke/make-refresh-images rw ro (clojure.java.io/file directory "images")))
+              45)
     (schedule aqua.slowpoke/make-fetch-new-users 30)))
 
 (defn- recompute-anime-list-by-letter []
@@ -43,11 +46,11 @@
                                :example-anime (take 4 (shuffle anime-list))
                                :anime anime-list}])))))
 
-(defn init [{:keys [slowpoke]}]
+(defn init [{:keys [slowpoke mal-data-directory]}]
   (aqua.mal-local/setup-tables @*data-source-rw)
   (aqua.mal.Http/init)
   (if slowpoke
-    (init-slowpoke))
+    (init-slowpoke mal-data-directory))
   (.scheduleWithFixedDelay
     @*background
     (aqua.slowpoke/make-process-refresh-queue @*data-source-rw @*data-source-ro)

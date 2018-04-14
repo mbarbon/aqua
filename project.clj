@@ -20,6 +20,7 @@
                  [ch.qos.logback/logback-classic "1.2.2"]
                  [org.asynchttpclient/async-http-client "2.0.37"]
                  [org.freemarker/freemarker "2.3.27-incubating"]
+                 [com.mortennobel/java-image-scaling "0.8.6"]
                  [ring "1.5.0"]
                  [compojure "1.5.1"]
                  [slester/ring-browser-caching "0.1.1"]

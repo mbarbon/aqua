@@ -202,6 +202,19 @@
        "    description VARCHAR(30)"
        ")"))
 
+(def ^:private create-image-cache
+  (str "CREATE TABLE IF NOT EXISTS image_cache ("
+       "    url VARCHAR(128) NOT NULL PRIMARY KEY,"
+       "    expires INTEGER NOT NULL,"
+       "    etag VARCHAR(32) NOT NULL,"
+       "    cached_path VARCHAR(40) NOT NULL,",
+       "    resized_path VARCHAR(40) NOT NULL",
+       ")"))
+
+(def ^:private create-image-cache-expires-index
+  (str "CREATE INDEX IF NOT EXISTS image_cache_expires_index"
+       "    ON image_cache (expires)"))
+
 (def ^:private create-refresh-queue
   (str "CREATE TABLE IF NOT EXISTS user_refresh_queue ("
        "    username VARCHAR(20) PRIMARY KEY,"
@@ -245,4 +258,6 @@
   insert-relation-name-7
   create-anime-genre-names
   create-manga-genre-names
+  create-image-cache
+  create-image-cache-expires-index
   create-refresh-queue]))

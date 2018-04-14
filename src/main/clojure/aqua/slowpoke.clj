@@ -2,6 +2,7 @@
   (:require [clojure.tools.logging :as log]
             clojure.set
             aqua.mal-local
+            aqua.mal-images
             aqua.mal-web)
   (:use aqua.db-utils))
 
@@ -9,6 +10,7 @@
 (def ^:private refresh-manga-interval 8600)
 (def ^:private refresh-user-interval 2300)
 (def ^:private fetch-new-user-interval 1900)
+(def ^:private check-image-interval 5800)
 
 (defmacro doseq-slowly [interval bindings & body]
   `(let [interval# ~interval]
@@ -233,6 +235,55 @@
         (with-web-result [mal-app-info @(aqua.mal-web/fetch-manga-list user)]
           (aqua.mal-local/store-user-manga-list data-source-rw user mal-app-info))))))
 
+(def ^:private select-images-needing-update
+  (str "SELECT a.image AS url, ic.etag AS etag FROM anime AS a"
+       "    LEFT JOIN image_cache AS ic"
+       "      ON ic.url = a.image"
+       "    WHERE ic.expires < strftime('%s', 'now') OR ic.expires IS NULL"
+       " UNION ALL "
+       "SELECT m.image, ic.etag FROM manga AS m"
+       "    LEFT JOIN image_cache AS ic"
+       "      ON ic.url = m.image"
+       "    WHERE ic.expires < strftime('%s', 'now') OR ic.expires IS NULL"
+       " LIMIT 30"))
+
+(defn- images-needing-update [data-source-ro]
+  (with-query data-source-ro rs select-images-needing-update []
+    (doall (resultset-seq rs))))
+
+(defn- fetch-cdn-image [url etag]
+  (aqua.mal.Http/getCDN url etag 5000
+    (fn [error status body response]
+      (case status
+        200 {:url     url
+             :changed true
+             :image   (com.google.common.io.ByteStreams/toByteArray body)
+             :type    (.getHeader response "Content-Type")
+             :etag    (.getHeader response "ETag")
+             :expires (.getHeader response "Expires")}
+        304 {:url     url
+             :changed false
+             :etag    etag
+             :expires (.getHeader response "Expires")}
+        404 {:url     url
+             :changed false}
+        (do
+          (if error
+            (log/warn (str "Error '" (.getMessage error) "' while fetching " url))
+            (log/warn (str "HTTP error " status " while fetching " url)))
+          {:url     url
+           :changed false})))))
+
+(defn refresh-images [data-source-rw data-source-ro directory]
+  (log/info "Fetching images needing refresh")
+  (let [images (images-needing-update data-source-ro)]
+    (if (empty? images)
+      (log/info "No images to refresh")
+      (doseq-slowly check-image-interval [{:keys [url etag]} images]
+        (log/info "Refreshing image data for" url)
+        (with-web-result [image-data @(fetch-cdn-image url etag)]
+          (aqua.mal-images/store-cached-image data-source-rw directory image-data))))))
+
 (defn- clean-refresh-queue [data-source-rw]
   (with-connection data-source-rw connection
     (execute connection clean-expired-user-refresh [])))
@@ -292,3 +343,9 @@
     "refresh-users"
     (fn []
       (refresh-users data-source-rw data-source-ro))))
+
+(defn make-refresh-images [data-source-rw data-source-ro directory]
+  (wrap-background-task
+    "refresh-images"
+    (fn []
+      (refresh-images data-source-rw data-source-ro (.getAbsoluteFile directory)))))
