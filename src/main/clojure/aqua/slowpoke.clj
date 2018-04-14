@@ -5,6 +5,11 @@
             aqua.mal-web)
   (:use aqua.db-utils))
 
+(def ^:private refresh-anime-interval 8700)
+(def ^:private refresh-manga-interval 8600)
+(def ^:private refresh-user-interval 2300)
+(def ^:private fetch-new-user-interval 1900)
+
 (defmacro doseq-slowly [interval bindings & body]
   `(let [interval# ~interval]
      (doseq ~bindings
@@ -114,7 +119,7 @@
                                      [(* 86400 15)]
                            (doall (resultset-seq rs)))]
     (if (seq anime-to-refresh)
-      (doseq-slowly 8700 [{:keys [animedb_id title]} anime-to-refresh]
+      (doseq-slowly refresh-anime-interval [{:keys [animedb_id title]} anime-to-refresh]
         (log/info "Fetching new anime details for" title)
         (with-web-result [details @(aqua.mal-web/fetch-anime-details animedb_id title)]
           (aqua.mal-local/store-anime-details data-source-rw animedb_id title details))))))
@@ -134,7 +139,7 @@
                                      [(* 86400 15)]
                            (doall (resultset-seq rs)))]
     (if (seq manga-to-refresh)
-      (doseq-slowly 8700 [{:keys [mangadb_id title]} manga-to-refresh]
+      (doseq-slowly refresh-manga-interval [{:keys [mangadb_id title]} manga-to-refresh]
         (log/info "Fetching new manga details for" title)
         (with-web-result [details @(aqua.mal-web/fetch-manga-details mangadb_id title)]
           (aqua.mal-local/store-manga-details data-source-rw mangadb_id title details))))))
@@ -156,7 +161,7 @@
           new-users (clojure.set/difference (set user-sample) (set existing-users))]
       (if (empty? new-users)
         (log/info "No new users found")
-        (doseq-slowly 1200 [username new-users]
+        (doseq-slowly fetch-new-user-interval [username new-users]
           (log/info "Fetching user data for" username)
           (with-web-result [mal-app-info @(aqua.mal-web/fetch-anime-list username)]
             (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info))
@@ -221,7 +226,7 @@
   (let [users (users-needing-update data-source-ro)]
     (if (empty? users)
       (log/info "No users to refresh")
-      (doseq-slowly 2300 [user users]
+      (doseq-slowly refresh-user-interval [user users]
         (log/info "Refreshing user data for" user)
         (with-web-result [mal-app-info @(aqua.mal-web/fetch-anime-list user)]
           (aqua.mal-local/store-user-anime-list data-source-rw user mal-app-info))
