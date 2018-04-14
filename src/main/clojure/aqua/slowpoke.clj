@@ -236,15 +236,16 @@
           (aqua.mal-local/store-user-manga-list data-source-rw user mal-app-info))))))
 
 (def ^:private select-images-needing-update
-  (str "SELECT a.image AS url, ic.etag AS etag FROM anime AS a"
+  (str "SELECT a.image AS url, ic.etag AS etag, ic.expires AS expires FROM anime AS a"
        "    LEFT JOIN image_cache AS ic"
        "      ON ic.url = a.image"
        "    WHERE ic.expires < strftime('%s', 'now') OR ic.expires IS NULL"
        " UNION ALL "
-       "SELECT m.image, ic.etag FROM manga AS m"
+       "SELECT m.image AS url, ic.etag AS etag, ic.expires AS expires FROM manga AS m"
        "    LEFT JOIN image_cache AS ic"
        "      ON ic.url = m.image"
        "    WHERE ic.expires < strftime('%s', 'now') OR ic.expires IS NULL"
+       " ORDER BY expires"
        " LIMIT 30"))
 
 (defn- images-needing-update [data-source-ro]
