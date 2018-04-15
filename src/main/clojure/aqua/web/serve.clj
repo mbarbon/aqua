@@ -108,6 +108,10 @@
                                         {:content-type "text/xml"}
                                         {:anime (vals @aqua.web.globals/*anime)}))
 
+  (GET "/images/cover/*" {{file-path :*} :route-params}
+    (ring.util.response/file-response file-path {:root        (aqua.web.templates/image-root)
+                                                 :index-files false}))
+
   (route/resources "/"))
 
 (defroutes app-routes
@@ -199,11 +203,12 @@
         no-csrf (assoc security :anti-forgery false)
         modified-site-defaults (dissoc (assoc site-defaults :security no-csrf) :static)]
     (-> app-routes
+      ; wrap-defaults comes first so it can add the default content-type for wrap-browser-caching
+      (wrap-defaults modified-site-defaults)
       (ring.middleware.browser-caching/wrap-browser-caching {"text/javascript" 604800 ; 7 days
                                                              "image/jpeg"      604800
                                                              "text/html"       604800
-                                                             "text/css"        604800})
-      (wrap-defaults modified-site-defaults))))
+                                                             "text/css"        604800}))))
 
 (def service-app
   (let [security (site-defaults :security)
