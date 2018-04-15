@@ -57,7 +57,8 @@
       "^/anime/.*$",
       "^/recommend$",
       "^/autocomplete$",
-      "^/list/anime/.*$"
+      "^/list/anime/.*$",
+      "^/images/cover/.*$"
     ]
   },
   "jest": {

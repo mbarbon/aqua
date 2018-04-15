@@ -7,7 +7,7 @@
   <#list part.exampleAnime as anime>
     <div class="recommendation-item">
       <a title="${anime.title}" href="/anime/details/${anime.animedbId?c}">
-      <img class="recommendation-image anime-list-image" src="${anime.image}" alt="${anime.title}"></a>
+      <img class="recommendation-image anime-list-image" src="${anime.smallImage}" alt="${anime.title}"></a>
       <div class="recommendation-details">
         <div class="header"><a href="/anime/details/${anime.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
         <div class="details" title="${anime.genres}">${anime.genres}</div>

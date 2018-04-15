@@ -17,7 +17,8 @@
 (defn render-anime [^aqua.mal.data.Anime anime tags]
   {:animedbId (.animedbId anime)
    :title (.title anime)
-   :image (.image anime)
+   :image (.localImage anime "/images/cover/")
+   :smallImage (.smallLocalImage anime "/images/cover/")
    :episodes (.episodes anime)
    :franchiseEpisodes (if-let [franchise (.franchise anime)]
                         (.episodes franchise)

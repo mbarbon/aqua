@@ -33,7 +33,7 @@
   <#items as anime>
     <div class="recommendation-item">
       <a title="${anime.title}" href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}">
-      <img class="recommendation-image anime-list-image" src="${anime.image}" alt="${anime.title}"></a>
+      <img class="recommendation-image anime-list-image" src="${anime.smallImage}" alt="${anime.title}"></a>
       <div class="recommendation-details">
         <div class="header"><a href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
         <div class="details" title="${anime.genres}">${anime.genres}</div>
@@ -56,7 +56,7 @@
   <#items as anime>
     <div class="recommendation-item">
       <a title="${anime.title}" href="/anime/details/${anime.animedbId?c}">
-      <img class="recommendation-image anime-list-image" src="${anime.image}" alt="${anime.title}"></a>
+      <img class="recommendation-image anime-list-image" src="${anime.smallImage}" alt="${anime.title}"></a>
       <div class="recommendation-details">
         <div class="header"><a href="/anime/details/${anime.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
         <div class="details" title="${anime.genres}">${anime.genres}</div>
@@ -70,7 +70,7 @@
              data-animedbId="${anime.animedbId?c}"
              data-animedbId="${anime.animedbId?c}"
              data-title="${anime.title}"
-             data-image="${anime.image}"
+             data-image="${anime.smallImage}"
              data-episodes="${anime.episodes?c}"
              data-franchiseEpisodes="${anime.franchiseEpisodes?c}"
              data-genres="${anime.genres}"

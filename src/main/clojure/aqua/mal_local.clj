@@ -274,7 +274,11 @@
         (:animedb_id item)))))
 
 (def ^:private select-anime
-  "SELECT animedb_id, title, status, episodes, start, end, image, type FROM anime")
+  (str "SELECT animedb_id, title, status, episodes, start, end, image, type,"
+       "       expires, etag, cached_path, resized_path"
+       "    FROM anime"
+       "      LEFT JOIN image_cache"
+       "        ON image = url"))
 
 (defn- load-anime-list [data-source]
   (let [hentai-id-set (set (load-hentai-anime-ids data-source))
@@ -302,6 +306,13 @@
             (set! (.endedAiring anime) (if-let [end (:end item)] end 0))
             (set! (.genres anime) (.get genres-map animedb-id))
             (set! (.isHentai anime) (.contains hentai-id-set animedb-id))
+            (if (:cached_path item)
+              (let [local-cover (aqua.mal.data.LocalCover.)]
+                (set! (.coverPath local-cover) (:cached_path item))
+                (set! (.smallCoverPath local-cover) (:resized_path item))
+                (set! (.etag local-cover) (:etag item))
+                (set! (.expires local-cover) (:expires item))
+                (set! (.localCover anime) local-cover)))
             (if-let [franchise (.get franchise-map animedb-id)]
               (do
                 (.add (.anime franchise) anime)

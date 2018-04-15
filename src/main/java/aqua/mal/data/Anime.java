@@ -25,6 +25,7 @@ public class Anime {
     public long startedAiring;
     public long endedAiring;
     public boolean isHentai;
+    public LocalCover localCover;
 
     public boolean isCompleted() {
         return status == FINISHED ||
@@ -37,6 +38,22 @@ public class Anime {
 
     public boolean isOld() {
         return (System.currentTimeMillis() / 1000 - startedAiring) > 365 * 86400;
+    }
+
+    public String localImage(String root) {
+        if (localCover == null) {
+            return image;
+        } else {
+            return root + localCover.coverPath;
+        }
+    }
+
+    public String smallLocalImage(String root) {
+        if (localCover == null) {
+            return image;
+        } else {
+            return root + localCover.smallCoverPath;
+        }
     }
 
     @Override
