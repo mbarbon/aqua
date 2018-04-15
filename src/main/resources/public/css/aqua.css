@@ -249,9 +249,17 @@ a:hover {
   font-size: 110%;
 }
 
-.anime-image {
+.anime-details-image {
   float: left;
-  width: 160px;
+  max-width: 168px;
+  max-height: 228px;
+  height: auto;
+}
+
+.anime-list-image {
+  max-width: 84px;
+  max-height: 114px;
+  height: auto;
 }
 
 @media (max-width: 600px) {

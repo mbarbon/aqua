@@ -2,7 +2,7 @@
 <section class="aqua-body">
   <h1>${model.animeDetails.title}</h1>
   <a title="${model.animeDetails.title}" href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}" target="_blank">
-    <img class="anime-image" src="${model.animeDetails.image}" alt="Aikatsu!" style="max-width: 168px; max-height: 228px; height: auto;">
+    <img class="anime-details-image" src="${model.animeDetails.image}" alt="${model.animeDetails.title}">
   </a>
   <div class="anime-details">
     <div class="details" title="${model.animeDetails.genres}">${model.animeDetails.genres}</div>
@@ -33,7 +33,7 @@
   <#items as anime>
     <div class="recommendation-item">
       <a title="${anime.title}" href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}">
-      <img class="recommendation-image" src="${anime.image}" alt="${anime.title}" style="max-width: 84px; max-height: 114px; height: auto;"></a>
+      <img class="recommendation-image anime-list-image" src="${anime.image}" alt="${anime.title}"></a>
       <div class="recommendation-details">
         <div class="header"><a href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
         <div class="details" title="${anime.genres}">${anime.genres}</div>
@@ -56,7 +56,7 @@
   <#items as anime>
     <div class="recommendation-item">
       <a title="${anime.title}" href="/anime/details/${anime.animedbId?c}">
-      <img class="recommendation-image" src="${anime.image}" alt="${anime.title}" style="max-width: 84px; max-height: 114px; height: auto;"></a>
+      <img class="recommendation-image anime-list-image" src="${anime.image}" alt="${anime.title}"></a>
       <div class="recommendation-details">
         <div class="header"><a href="/anime/details/${anime.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
         <div class="details" title="${anime.genres}">${anime.genres}</div>
