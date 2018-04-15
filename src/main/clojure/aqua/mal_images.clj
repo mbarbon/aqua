@@ -42,7 +42,7 @@
         expires (if-let [expires-header (:expires image-data)]
                   (aqua.mal.Http/parseDate expires-header)
                   ; give it another day
-                  (+ 86400 (/ 1000 (java.lang.System/currentTimeMillis))))]
+                  (+ 86400 (long (/ 1000 (java.lang.System/currentTimeMillis)))))]
     (when (and changed path)
       (write-file (io/file directory path) (io/file directory tmp-path) (:image image-data))
       (let [image (javax.imageio.ImageIO/read (java.io.ByteArrayInputStream. (:image image-data)))
