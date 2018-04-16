@@ -100,8 +100,9 @@
         (aqua.web.recommender/recommend user))))
 
   (GET "/autocomplete" {params :params}
-    (ring.util.response/response
-      (aqua.web.search/autocomplete (params :term))))
+    (-> (aqua.web.search/autocomplete (params :term))
+        ring.util.response/response
+        (ring.util.response/header "Cache-Control" "public, max-age=300")))
 
   (GET "/sitemaps/anime.xml" []
     (aqua.web.templates/render-template "aqua/sitemaps/anime.ftlh"

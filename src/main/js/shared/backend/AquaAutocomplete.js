@@ -1,6 +1,7 @@
 // @flow
 // XXX: shared
 import { PubSub1 } from '../helpers/PubSub'
+import DelayedAction from '../helpers/DelayedAction'
 import type { Anime } from './types'
 
 let objectionable = {
@@ -28,26 +29,22 @@ export default class AquaAutocomplete {
   term: ?string
   completions: ?Array<Anime>
   pubSub: PubSub1<Array<Anime>>
+  delay: DelayedAction
 
   constructor () {
     this.term = null
     this.completions = null
     this.pubSub = new PubSub1()
+    this.delay = new DelayedAction()
   }
 
   setTerm (term: string) {
     this.term = term
 
     if (this.term.length) {
-      fetchCompletions(term)
-        .then(completions => {
-          this.completions = filterObjectionableContent(completions)
-          this.pubSub.notify(this.completions)
-        })
-        .catch(error => {
-          console.error(error)
-        })
+      this.delay.setAction(250, this._fetchCompletions.bind(this, this.term))
     } else {
+      this.delay.cancel()
       this.completions = []
       this.pubSub.notify(this.completions)
     }
@@ -55,5 +52,16 @@ export default class AquaAutocomplete {
 
   getAnime () {
     return this.completions
+  }
+
+  _fetchCompletions (term: string) {
+    fetchCompletions(term)
+      .then(completions => {
+        this.completions = filterObjectionableContent(completions)
+        this.pubSub.notify(this.completions)
+      })
+      .catch(error => {
+        console.error(error)
+      })
   }
 }
