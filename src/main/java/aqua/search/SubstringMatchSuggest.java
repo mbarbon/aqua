@@ -5,12 +5,17 @@ import com.carrotsearch.hppc.IntIntMap;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
-public class Suggest {
+public class SubstringMatchSuggest {
+    private static final Pattern SPLIT_NONWORD = Pattern.compile("\\W+");
+
     private static class Entry {
         public String string;
         public int start;
@@ -67,21 +72,22 @@ public class Suggest {
         }
     }
 
-    private final List<Entry> entries = new ArrayList<>();
+    private final List<Entry> entries;
     private final IntIntMap animeRank;
 
-    public Suggest(Map<String, Collection<Integer>> searchMap, Map<Integer, Integer> animeRank) {
+    public SubstringMatchSuggest(List<AnimeTitle> animeTitles, Map<Integer, Integer> animeRank) {
         this.animeRank = HPPCUtils.convertMap(animeRank);
-
-        for (Map.Entry<String, Collection<Integer>> entry : searchMap.entrySet())
-            insertEntry(entry.getKey(), Ints.toArray(entry.getValue()));
-        entries.sort(Suggest::compareEntries);
+        this.entries = makeEntryList(animeTitles);
     }
 
-    public int[] suggest(List<String> parts, int limit) {
+    public int[] suggest(String query, int limit) {
+        List<String> parts = splitWords(query);
         Map<Integer, Suggestion> suggestionMap = new HashMap<>();
 
         for (String part : parts) {
+            if (part.isEmpty()) {
+                continue;
+            }
             Map<Integer, Suggestion> thisPart = new HashMap<>();
             int firstIndex = findFirst(part, 0, entries.size());
 
@@ -116,7 +122,7 @@ public class Suggest {
 
         List<Suggestion> suggestions = new ArrayList<>(suggestionMap.values());
 
-        suggestions.sort(Suggest::sortSuggestions);
+        suggestions.sort(SubstringMatchSuggest::sortSuggestions);
 
         return suggestions.stream()
             .limit(limit)
@@ -124,7 +130,30 @@ public class Suggest {
             .toArray();
     }
 
-    private void insertEntry(String string, int[] animedbIds) {
+    private static List<Entry> makeEntryList(List<AnimeTitle> titles) {
+        Map<String, Set<Integer>> searchMap = new HashMap<>();
+        for (AnimeTitle animeTitle : titles) {
+            for (String word : splitWords(animeTitle.title)) {
+                if (word.isEmpty()) {
+                    continue;
+                }
+                Set<Integer> animedbIds = searchMap.computeIfAbsent(word, w -> new HashSet<>());
+                animedbIds.add(animeTitle.animedbId);
+            }
+        }
+
+        List<Entry> entries = new ArrayList<>();
+        for (Map.Entry<String, Set<Integer>> entry : searchMap.entrySet())
+            insertEntry(entries, entry.getKey(), Ints.toArray(entry.getValue()));
+        entries.sort(SubstringMatchSuggest::compareEntries);
+        return entries;
+    }
+
+    private static List<String> splitWords(String title) {
+        return Arrays.asList(SPLIT_NONWORD.split(title.toLowerCase()));
+    }
+
+    private static void insertEntry(List<Entry> entries, String string, int[] animedbIds) {
         for (int i = 0, max = Math.max(1, string.length() - 1); i < max; ++i)
             entries.add(new Entry(string, i, animedbIds));
     }

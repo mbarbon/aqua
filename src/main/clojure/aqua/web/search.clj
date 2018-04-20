@@ -1,6 +1,5 @@
 (ns aqua.web.search
-  (:require aqua.search.autocomplete
-            aqua.web.render
+  (:require aqua.web.render
             [clojure.tools.logging :as log]
             [aqua.web.globals :refer [*data-source-ro *suggest *anime]]))
 
@@ -9,9 +8,9 @@
   (let [data-source @*data-source-ro
         ; nothing against hentai, just there is not enough data for
         ; meaningful recommendations
-        anime-titles (aqua.mal-local/load-anime-titles data-source (set (.keySet @*anime)))
+        anime-titles (map #(aqua.search.AnimeTitle. %) (aqua.mal-local/load-anime-titles data-source (set (.keySet @*anime))))
         anime-rank (aqua.mal-local/load-anime-rank data-source)
-        suggest (aqua.search.autocomplete/prepare-suggest anime-titles anime-rank)]
+        suggest (aqua.search.SubstringMatchSuggest. anime-titles anime-rank)]
     (log/info "Done loading suggester")
     (reset! *suggest suggest)))
 
@@ -22,6 +21,6 @@
   (rebuild-suggester))
 
 (defn autocomplete [term]
-  (let [suggestions (aqua.search.autocomplete/get-suggestions @*suggest term @*anime)]
+  (let [suggestions (map @*anime (.suggest @*suggest term 15))]
     (for [anime suggestions]
       (aqua.web.render/render-anime anime nil))))
