@@ -188,7 +188,8 @@
   (aqua.web.globals-init/init (:mal-data-directory options)
                               (:state-directory options))
   (aqua.web.search/init)
-  (aqua.web.recommender/init)
+  (if (:recommendations options)
+    (aqua.web.recommender/init))
   (aqua.web.background/schedule reload "Reload user models" 43200 86400)
   (aqua.web.mal-proxy/init options))
 
@@ -238,6 +239,13 @@
     :assoc-fn (fn [m k _] (assoc m k true))]
    [nil "--no-slowpoke" "Disable slowpoke"
     :id :slowpoke
+    :assoc-fn (fn [m k _] (assoc m k false))]
+   [nil "--recommendations" "Enable recommendations"
+    :default true
+    :id :recommendations
+    :assoc-fn (fn [m k _] (assoc m k true))]
+   [nil "--no-recommendations" "Disable recommendations"
+    :id :recommendations
     :assoc-fn (fn [m k _] (assoc m k false))]
    ["-h" "--help"]])
 
