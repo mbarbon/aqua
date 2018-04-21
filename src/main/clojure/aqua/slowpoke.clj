@@ -217,7 +217,8 @@
                         [(max old-inactive-budget-min (int (* users-count old-inactive-budget-fraction)))]
               (doall (map :username (resultset-seq rs)))))]
     (let [min-last-change (with-query data-source-ro rs query-min-last-change []
-                            (:min_change (first (resultset-seq rs))))
+                            (or (:min_change (first (resultset-seq rs)))
+                                0))
           update-buckets (user-update-buckets min-last-change)
           users (mapcat fetch-user-bucket (rest update-buckets) update-buckets)
           old-users (fetch-old-users (count users))]

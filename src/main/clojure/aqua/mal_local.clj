@@ -608,13 +608,13 @@
 (def ^:private update-changed-anime-user
   (str "INSERT OR REPLACE INTO users"
        "        (user_id, username, last_update, last_change, last_anime_change, last_manga_change)"
-       "    VALUES (?, ?, STRFTIME('%s', 'now'), MAX(?, (SELECT last_manga_change FROM users WHERE user_id = ?)), ?,"
+       "    VALUES (?, ?, STRFTIME('%s', 'now'), MAX(?, COALESCE((SELECT last_manga_change FROM users WHERE user_id = ?), 0)), ?,"
        "            (SELECT last_manga_change FROM users WHERE user_id = ?))"))
 
 (def ^:private update-changed-manga-user
   (str "INSERT OR REPLACE INTO users"
        "        (user_id, username, last_update, last_change, last_anime_change, last_manga_change)"
-       "    VALUES (?, ?, STRFTIME('%s', 'now'), MAX(?, (SELECT last_anime_change FROM users WHERE user_id = ?)),"
+       "    VALUES (?, ?, STRFTIME('%s', 'now'), MAX(?, COALESCE((SELECT last_anime_change FROM users WHERE user_id = ?), 0)),"
        "            (SELECT last_anime_change FROM users WHERE user_id = ?),"
        "            ?)"))
 
