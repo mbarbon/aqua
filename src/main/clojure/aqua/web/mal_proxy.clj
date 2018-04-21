@@ -47,7 +47,6 @@
                                :anime anime-list}])))))
 
 (defn init [{:keys [slowpoke mal-data-directory]}]
-  (aqua.mal-local/setup-tables @*data-source-rw)
   (aqua.mal.Http/init)
   (if slowpoke
     (init-slowpoke mal-data-directory))

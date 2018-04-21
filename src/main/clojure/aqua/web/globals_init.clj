@@ -27,6 +27,7 @@
     (reset! *data-source-rw data-source))
   (let [data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")]
     (reset! *data-source-ro data-source))
+  (aqua.mal-local/setup-tables @*data-source-rw)
   (reload-anime))
 
 (defn reload []
