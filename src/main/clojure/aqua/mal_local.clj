@@ -235,16 +235,19 @@
        "    FROM anime AS a"
        " UNION "
        "SELECT at.animedb_id AS animedb_id, at.title AS title"
-       "    FROM anime_titles AS at"))
+       "    FROM anime_titles AS at"
+       " ORDER BY animedb_id"))
 
 (defn load-anime-titles [data-source anime-ids]
-    (with-open [connection (.getConnection data-source)
-                statement (.createStatement connection)
-                rs (.executeQuery statement select-all-anime-titles)]
+  (letfn [(make-animetitle [index item]
+            (aqua.search.AnimeTitle. (:animedb_id item)
+                                     (:title item)
+                                     (short (mod index 65536))))]
+    (with-query data-source rs select-all-anime-titles []
       (doall
-        (filter #(anime-ids (first %))
-          (for [item (resultset-seq rs)]
-            [(:animedb_id item) (:title item)])))))
+        (map-indexed make-animetitle
+          (filter #(anime-ids (:animedb_id %))
+            (resultset-seq rs)))))))
 
 (def ^:private select-anime-rank
   "SELECT animedb_id, rank FROM anime_details")

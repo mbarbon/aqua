@@ -60,13 +60,13 @@ public class SubstringMatchSuggest {
         }
     }
 
-    private static class Suggestion {
+    private static class PrefixMatch {
         public int matches = 1;
         public int matchRank = Integer.MAX_VALUE;
         public int animeRank;
         public int animedbId;
 
-        public Suggestion(int animedbId, int animeRank) {
+        public PrefixMatch(int animedbId, int animeRank) {
             this.animedbId = animedbId;
             this.animeRank = animeRank;
         }
@@ -80,15 +80,15 @@ public class SubstringMatchSuggest {
         this.entries = makeEntryList(animeTitles);
     }
 
-    public int[] suggest(String query, int limit) {
+    public Suggestion[] suggest(String query, int limit) {
         List<String> parts = splitWords(query);
-        Map<Integer, Suggestion> suggestionMap = new HashMap<>();
+        Map<Integer, PrefixMatch> suggestionMap = new HashMap<>();
 
         for (String part : parts) {
             if (part.isEmpty()) {
                 continue;
             }
-            Map<Integer, Suggestion> thisPart = new HashMap<>();
+            Map<Integer, PrefixMatch> thisPart = new HashMap<>();
             int firstIndex = findFirst(part, 0, entries.size());
 
             for (; firstIndex < entries.size(); ++firstIndex) {
@@ -104,14 +104,14 @@ public class SubstringMatchSuggest {
                     rank = entry.string.length() - part.length();
 
                 for (int animeId : entry.animedbIds) {
-                    Suggestion suggestion = thisPart.computeIfAbsent(animeId, i -> new Suggestion(i, animeRank.getOrDefault(animeId, Integer.MAX_VALUE)));
+                    PrefixMatch suggestion = thisPart.computeIfAbsent(animeId, i -> new PrefixMatch(i, animeRank.getOrDefault(animeId, Integer.MAX_VALUE)));
 
                     suggestion.matchRank = Math.min(rank, suggestion.matchRank);
                 }
             }
 
-            for (Map.Entry<Integer, Suggestion> entry : thisPart.entrySet()) {
-                Suggestion suggestion = suggestionMap.get(entry.getKey());
+            for (Map.Entry<Integer, PrefixMatch> entry : thisPart.entrySet()) {
+                PrefixMatch suggestion = suggestionMap.get(entry.getKey());
                 if (suggestion != null) {
                     suggestion.matches += 1;
                     suggestion.matchRank += entry.getValue().matchRank;
@@ -120,14 +120,17 @@ public class SubstringMatchSuggest {
             }
         }
 
-        List<Suggestion> suggestions = new ArrayList<>(suggestionMap.values());
 
+        List<PrefixMatch> suggestions = new ArrayList<>(suggestionMap.values());
         suggestions.sort(SubstringMatchSuggest::sortSuggestions);
-
-        return suggestions.stream()
-            .limit(limit)
-            .mapToInt(e -> e.animedbId)
-            .toArray();
+        Suggestion[] result = new Suggestion[Math.min(limit, suggestions.size())];
+        int index = 0;
+        for (PrefixMatch suggestion : suggestions) {
+            result[index++] = new Suggestion(suggestion.animedbId);
+            if (index >= limit)
+                break;
+        }
+        return result;
     }
 
     private static List<Entry> makeEntryList(List<AnimeTitle> titles) {
@@ -194,7 +197,7 @@ public class SubstringMatchSuggest {
         return 0;
     }
 
-    private static int sortSuggestions(Suggestion a, Suggestion b) {
+    private static int sortSuggestions(PrefixMatch a, PrefixMatch b) {
         if (a.matches != b.matches)
             return b.matches - a.matches;
         if (a.matchRank != b.matchRank)
