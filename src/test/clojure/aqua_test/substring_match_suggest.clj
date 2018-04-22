@@ -13,7 +13,7 @@
 
 (deftest sanity
   (let [suggester (make-suggest [[1 "Koutetsujou no Kabaneri"] [2 "Cowboy Bebop"] [3 "K-on!"]])
-        suggest (fn [term] (com.google.common.primitives.Ints/asList (.suggest suggester term 5)))]
+        suggest (fn [term] (map #(.animedbId %) (.suggest suggester term 5)))]
     (is (= [3 1] (suggest "k-on")))
     (is (= [3 1] (suggest "K on")))
     (is (= [2] (suggest "Cowboy")))
@@ -21,9 +21,9 @@
 
 (deftest sanity-rank
   (let [suggester (make-suggest-rank [[1 "K-on!"] [2 "K-on!!"] [3 "K-on! Movie"]] {1 7 2 5 3 1})
-        suggest (fn [term] (com.google.common.primitives.Ints/asList (.suggest suggester term 5)))]
+        suggest (fn [term] (map #(.animedbId %) (.suggest suggester term 5)))]
     (is (= [3 2 1] (suggest "k-on!"))))
 
   (let [suggester (make-suggest-rank [[1 "K-on!"] [2 "K-on!!"] [3 "K-on! Movie"]] {1 1 2 2 3 3})
-        suggest (fn [term] (com.google.common.primitives.Ints/asList (.suggest suggester term 5)))]
+        suggest (fn [term] (map #(.animedbId %) (.suggest suggester term 5)))]
     (is (= [1 2 3] (suggest "k-on!")))))
