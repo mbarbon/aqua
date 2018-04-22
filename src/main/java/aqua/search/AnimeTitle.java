@@ -19,4 +19,20 @@ public class AnimeTitle {
         this.title = title;
         this.titleId = titleId;
     }
+
+    @Override
+    public int hashCode() {
+        return animedbId + (titleId >> 14);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof AnimeTitle)
+            return equals((AnimeTitle) o);
+        return false;
+    }
+
+    public boolean equals(AnimeTitle o) {
+        return animedbId == o.animedbId && titleId == o.titleId;
+    }
 }
