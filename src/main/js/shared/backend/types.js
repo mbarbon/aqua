@@ -2,6 +2,7 @@
 type Anime = {
   animedbId: number,
   title: string,
+  displayTitle?: string,
   image: string,
   episodes: number,
   franchiseEpisodes: number,
