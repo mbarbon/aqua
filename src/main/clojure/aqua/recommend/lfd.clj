@@ -100,7 +100,11 @@
 (defn- load-user-lfd-v1 [in lfd users]
   (let [read-int (fn [] (Integer/valueOf (read-line)))
         reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)
-        user-map (into {} (for [user users] [(.userId user) user]))]
+        user-map (into {} (for [user users]
+                            ; Dubious, but sometimes convenient
+                            (if user
+                              [(.userId user) user]
+                              [-1 nil])))]
     (binding [*in* in]
       (let [rank (read-int)
             user-factors (make-array Float/TYPE (read-int))
