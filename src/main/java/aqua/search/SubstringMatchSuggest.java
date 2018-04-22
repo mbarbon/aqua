@@ -2,7 +2,6 @@ package aqua.search;
 
 import aqua.recommend.HPPCUtils;
 import com.carrotsearch.hppc.IntIntMap;
-import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,16 +14,18 @@ import java.util.regex.Pattern;
 
 public class SubstringMatchSuggest {
     private static final Pattern SPLIT_NONWORD = Pattern.compile("\\W+");
+    private static final AnimeTitle[] EMPTY_ANIME_TITLES = new AnimeTitle[0];
+    private static final Suggestion[] EMPTY_SUGGESTIONS = new Suggestion[0];
 
     private static class Entry {
-        public String string;
-        public int start;
-        public int[] animedbIds;
+        public final String string;
+        public final int start;
+        public final AnimeTitle[] animeTitles;
 
-        public Entry(String string, int start, int[] animedbIds) {
+        public Entry(String string, int start, AnimeTitle[] animeTitles) {
             this.string = string;
             this.start = start;
-            this.animedbIds = animedbIds;
+            this.animeTitles = animeTitles;
         }
 
         public boolean matchesStringPrefix(String s) {
@@ -63,11 +64,11 @@ public class SubstringMatchSuggest {
     private static class PrefixMatch {
         public int matches = 1;
         public int matchRank = Integer.MAX_VALUE;
-        public int animeRank;
-        public int animedbId;
+        public final int animeRank;
+        public final AnimeTitle animeTitle;
 
-        public PrefixMatch(int animedbId, int animeRank) {
-            this.animedbId = animedbId;
+        public PrefixMatch(AnimeTitle animeTitle, int animeRank) {
+            this.animeTitle = animeTitle;
             this.animeRank = animeRank;
         }
     }
@@ -82,13 +83,13 @@ public class SubstringMatchSuggest {
 
     public Suggestion[] suggest(String query, int limit) {
         List<String> parts = splitWords(query);
-        Map<Integer, PrefixMatch> suggestionMap = new HashMap<>();
+        Map<AnimeTitle, PrefixMatch> suggestionMap = new HashMap<>();
 
         for (String part : parts) {
             if (part.isEmpty()) {
                 continue;
             }
-            Map<Integer, PrefixMatch> thisPart = new HashMap<>();
+            Map<AnimeTitle, PrefixMatch> thisPart = new HashMap<>();
             int firstIndex = findFirst(part, 0, entries.size());
 
             for (; firstIndex < entries.size(); ++firstIndex) {
@@ -103,51 +104,55 @@ public class SubstringMatchSuggest {
                 else
                     rank = entry.string.length() - part.length();
 
-                for (int animeId : entry.animedbIds) {
-                    PrefixMatch suggestion = thisPart.computeIfAbsent(animeId, i -> new PrefixMatch(i, animeRank.getOrDefault(animeId, Integer.MAX_VALUE)));
+                for (AnimeTitle animeTitle : entry.animeTitles) {
+                    PrefixMatch suggestion = thisPart.computeIfAbsent(animeTitle, i -> new PrefixMatch(i, animeRank.getOrDefault(i.animedbId, Integer.MAX_VALUE)));
 
                     suggestion.matchRank = Math.min(rank, suggestion.matchRank);
                 }
             }
 
-            for (Map.Entry<Integer, PrefixMatch> entry : thisPart.entrySet()) {
+            for (Map.Entry<AnimeTitle, PrefixMatch> entry : thisPart.entrySet()) {
                 PrefixMatch suggestion = suggestionMap.get(entry.getKey());
                 if (suggestion != null) {
                     suggestion.matches += 1;
                     suggestion.matchRank += entry.getValue().matchRank;
-                } else
+                } else {
                     suggestionMap.put(entry.getKey(), entry.getValue());
+                }
             }
         }
 
 
+        Set<Integer> seenAnime = new HashSet<>();
         List<PrefixMatch> suggestions = new ArrayList<>(suggestionMap.values());
         suggestions.sort(SubstringMatchSuggest::sortSuggestions);
-        Suggestion[] result = new Suggestion[Math.min(limit, suggestions.size())];
-        int index = 0;
+        List<Suggestion> result = new ArrayList<>(limit);
         for (PrefixMatch suggestion : suggestions) {
-            result[index++] = new Suggestion(suggestion.animedbId);
-            if (index >= limit)
+            AnimeTitle animeTitle = suggestion.animeTitle;
+            if (!seenAnime.add(animeTitle.animedbId))
+                continue;
+            result.add(new Suggestion(animeTitle.animedbId, animeTitle.title));
+            if (result.size() >= limit)
                 break;
         }
-        return result;
+        return result.toArray(EMPTY_SUGGESTIONS);
     }
 
     private static List<Entry> makeEntryList(List<AnimeTitle> titles) {
-        Map<String, Set<Integer>> searchMap = new HashMap<>();
+        Map<String, Set<AnimeTitle>> searchMap = new HashMap<>();
         for (AnimeTitle animeTitle : titles) {
             for (String word : splitWords(animeTitle.title)) {
                 if (word.isEmpty()) {
                     continue;
                 }
-                Set<Integer> animedbIds = searchMap.computeIfAbsent(word, w -> new HashSet<>());
-                animedbIds.add(animeTitle.animedbId);
+                Set<AnimeTitle> titlesForWord = searchMap.computeIfAbsent(word, w -> new HashSet<>());
+                titlesForWord.add(animeTitle);
             }
         }
 
         List<Entry> entries = new ArrayList<>();
-        for (Map.Entry<String, Set<Integer>> entry : searchMap.entrySet())
-            insertEntry(entries, entry.getKey(), Ints.toArray(entry.getValue()));
+        for (Map.Entry<String, Set<AnimeTitle>> entry : searchMap.entrySet())
+            insertEntry(entries, entry.getKey(), entry.getValue());
         entries.sort(SubstringMatchSuggest::compareEntries);
         return entries;
     }
@@ -156,9 +161,9 @@ public class SubstringMatchSuggest {
         return Arrays.asList(SPLIT_NONWORD.split(title.toLowerCase()));
     }
 
-    private static void insertEntry(List<Entry> entries, String string, int[] animedbIds) {
+    private static void insertEntry(List<Entry> entries, String string, Set<AnimeTitle> animedbIds) {
         for (int i = 0, max = Math.max(1, string.length() - 1); i < max; ++i)
-            entries.add(new Entry(string, i, animedbIds));
+            entries.add(new Entry(string, i, animedbIds.toArray(EMPTY_ANIME_TITLES)));
     }
 
     private int findFirst(String part, int start, int end) {

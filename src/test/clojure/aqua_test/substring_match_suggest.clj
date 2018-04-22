@@ -27,3 +27,19 @@
   (let [suggester (make-suggest-rank [[1 "K-on!"] [2 "K-on!!"] [3 "K-on! Movie"]] {1 1 2 2 3 3})
         suggest (fn [term] (map #(.animedbId %) (.suggest suggester term 5)))]
     (is (= [1 2 3] (suggest "k-on!")))))
+
+(deftest return-matched-title
+  (let [suggester (make-suggest [[1 "Gakkougurashi!" 7] [1 "School-Live!" 8]
+                                 [2 "Higurashi no Naku Koro ni" 9] [2 "When the Cicadas Cry" 10] [2 "The Moment the Cicadas Cry" 11]])
+        suggest (fn [term] (map #(vector (.animedbId %) (.title %)) (.suggest suggester term 5)))]
+    (is (= [[2 "Higurashi no Naku Koro ni"] [1 "Gakkougurashi!"]] (suggest "gurashi")))
+
+    (is (= [[2 "The Moment the Cicadas Cry"]] (suggest "cicada")))
+
+    (is (= [[2 "The Moment the Cicadas Cry"]] (suggest "moment cicada")))
+    (is (= [[2 "The Moment the Cicadas Cry"]] (suggest "cicada moment")))
+
+    (is (= [[2 "When the Cicadas Cry"]] (suggest "when cicada")))
+    (is (= [[2 "When the Cicadas Cry"]] (suggest "cicada when")))
+
+    (is (= [[1 "School-Live!"]] (suggest "school")))))
