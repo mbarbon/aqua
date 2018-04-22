@@ -34,11 +34,12 @@ class AnimeListItem extends PureComponent<Props> {
     let { anime, onChange, onRemove } = this.props
     let onClick = this.props.onClick || malLinkClick
     let makeLink = this.props.makeLink || malLink
+    let title = anime.displayTitle || anime.title
 
     return (
       <div className='recommendation-item'>
         <a
-          title={anime.title}
+          title={title}
           onClick={onClick.bind(anime)}
           href={makeLink(anime)}
           target='_blank'
@@ -51,7 +52,7 @@ class AnimeListItem extends PureComponent<Props> {
             }}
             className='recommendation-image'
             src={anime.image}
-            alt={anime.title}
+            alt={title}
           />
         </a>
         <div className='recommendation-details'>
@@ -59,10 +60,10 @@ class AnimeListItem extends PureComponent<Props> {
             <a
               onClick={onClick.bind(anime)}
               href={makeLink(anime)}
-              title={anime.title}
+              title={title}
               target='_blank'
             >
-              {anime.title}
+              {title}
             </a>
           </div>
           <div className='details' title={anime.genres}>

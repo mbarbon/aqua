@@ -26,5 +26,6 @@
         anime-map @*anime
         suggestions (.suggest suggest term 15)]
     (for [^aqua.search.Suggestion search-suggestion suggestions]
-      (let [anime (anime-map (.animedbId search-suggestion))]
-        (aqua.web.render/render-anime anime nil)))))
+      (let [anime (anime-map (.animedbId search-suggestion))
+            rendered (aqua.web.render/render-anime anime nil)]
+        (assoc rendered :displayTitle (.title search-suggestion))))))
