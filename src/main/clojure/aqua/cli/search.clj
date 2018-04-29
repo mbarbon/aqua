@@ -59,10 +59,13 @@
     (Thread/sleep 150)
     (let [current-input (-> console-reader
                           (.getCursorBuffer)
-                          (.toString))]
+                          (.toString)
+                          (clojure.string/trim))]
       (if (not= input current-input)
         (let [start-time (System/currentTimeMillis)
-              suggestions (.suggest (:suggest suggest) current-input 25)
+              suggestions (if (empty? current-input)
+                            []
+                            (.suggest (:suggest suggest) current-input 25))
               end-time (System/currentTimeMillis)]
           (draw-suggestions console-reader suggest suggestions (- end-time start-time))))
       (recur current-input))))
@@ -71,7 +74,7 @@
   (while true
     (.readLine console-reader (prompt suggest))))
 
-(defn- run-main [suggester-name]
+(defn- run-interactive [suggester-name]
   (let [console-reader (jline.console.ConsoleReader.)
         suggest (make-suggester suggester-name)
         thr1 (future (read-forever console-reader suggest))
@@ -80,9 +83,17 @@
       (deref thr1 1000 nil)
       (deref thr2 1000 nil))))
 
+(defn- run-once [suggester-name query]
+  (let [suggest (make-suggester suggester-name)
+        suggestions (.suggest (:suggest suggest) query 25)]
+    (println)
+    (doseq [suggestion suggestions]
+      (println (.title suggestion)))))
+
 (defn- do-main
   ([] (do-main "substring"))
-  ([suggester-name] (run-main suggester-name)))
+  ([suggester-name] (run-interactive suggester-name))
+  ([suggester-name & words] (run-once suggester-name (clojure.string/join " " words))))
 
 (defn -main [& args]
   (apply do-main args))
