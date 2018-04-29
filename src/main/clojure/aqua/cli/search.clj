@@ -24,7 +24,7 @@
   (to-home)
   (println)
   (doseq [suggestion suggestions]
-    (println "  " (.title suggestion)))
+    (printf "  %5d   %s\n" (.animedbId suggestion) (.title suggestion)))
   (println)
   (printf "Took %dms" took)
   (to-home)
@@ -88,7 +88,7 @@
         suggestions (.suggest (:suggest suggest) query 25)]
     (println)
     (doseq [suggestion suggestions]
-      (println (.title suggestion)))))
+      (printf "%6d   %s\n" (.animedbId suggestion) (.title suggestion)))))
 
 (defn- do-main
   ([] (do-main "substring"))
