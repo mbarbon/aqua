@@ -144,9 +144,10 @@ public class SubstringMatchSuggest {
         return entries;
     }
 
-    private static void insertEntry(List<Entry> entries, String string, Set<AnimeTitle> animedbIds) {
+    private static void insertEntry(List<Entry> entries, String string, Set<AnimeTitle> animeTitles) {
+        AnimeTitle[] animedbTitlesArray = animeTitles.toArray(SearchUtils.EMPTY_ANIME_TITLES);
         for (int i = 0, max = Math.max(1, string.length() - 1); i < max; ++i)
-            entries.add(new Entry(string, i, animedbIds.toArray(SearchUtils.EMPTY_ANIME_TITLES)));
+            entries.add(new Entry(string, i, animedbTitlesArray));
     }
 
     private int findFirst(String part, int start, int end) {
