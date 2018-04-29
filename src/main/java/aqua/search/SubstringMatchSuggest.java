@@ -122,7 +122,6 @@ public class SubstringMatchSuggest {
             }
         }
 
-
         Set<Integer> seenAnime = new HashSet<>();
         List<PrefixMatch> suggestions = new ArrayList<>(suggestionMap.values());
         suggestions.sort(SubstringMatchSuggest::sortSuggestions);
