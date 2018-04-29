@@ -46,6 +46,7 @@
           _ (println "Creating suggester")
           suggest (case suggester-name
                     "substring" (aqua.search.SubstringMatchSuggest. anime-titles anime-rank)
+                    "fuzzy"     (aqua.search.FuzzyPrefixMatchSuggest. anime-titles anime-rank)
                     (throw (Exception. (str "Invlaid suggester name '" suggester-name "'"))))
           _ (System/gc)
           final-memory (- (.totalMemory runtime) (.freeMemory runtime))]
