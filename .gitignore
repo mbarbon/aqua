@@ -1,6 +1,7 @@
 /maldump/
 /slowpoke/examples/
 /.lein-repl-history
+/.lein-failures
 /.nrepl-port
 /target/
 /sample-users.txt
