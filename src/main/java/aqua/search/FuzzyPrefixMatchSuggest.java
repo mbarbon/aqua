@@ -1,5 +1,7 @@
 package aqua.search;
 
+import aqua.recommend.HPPCUtils;
+import com.carrotsearch.hppc.IntIntMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -115,12 +117,14 @@ public class FuzzyPrefixMatchSuggest {
 
     private static class FuzzyPrefixMatch {
         public final AnimeTitle animeTitle;
+        public final int animeRank;
         public int skipped, distance;
         public int level;
         public int matches;
 
-        public FuzzyPrefixMatch(AnimeTitle animeTitle) {
+        public FuzzyPrefixMatch(AnimeTitle animeTitle, int animeRank) {
             this.animeTitle = animeTitle;
+            this.animeRank = animeRank;
         }
 
         public void update(XYZ entry, TrieNode trieNode, int level) {
@@ -139,12 +143,23 @@ public class FuzzyPrefixMatchSuggest {
             level = Math.max(level, o.level);
             matches++;
         }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "[%s] skipped=%d distance=%d level=%d matches=%d",
+                animeTitle.title,
+                skipped, distance, level, matches
+            );
+        }
     }
 
     private final WordEntry[] words;
     private final TrieNode prefixes;
+    private final IntIntMap animeRank;
 
     public FuzzyPrefixMatchSuggest(List<AnimeTitle> animeTitles, Map<Integer, Integer> animeRank) {
+        this.animeRank = HPPCUtils.convertMap(animeRank);
         this.words = makeWords(animeTitles);
         this.prefixes = makePrefixes(this.words);
     }
@@ -188,9 +203,10 @@ public class FuzzyPrefixMatchSuggest {
             Map<AnimeTitle, FuzzyPrefixMatch> wordMatches = matchXXX(word);
 
             for (Map.Entry<AnimeTitle, FuzzyPrefixMatch> entry : wordMatches.entrySet()) {
-                FuzzyPrefixMatch match = suggestionMap.computeIfAbsent(entry.getKey(), FuzzyPrefixMatch::new);
-
-                match.merge(entry.getValue());
+                FuzzyPrefixMatch match = suggestionMap.putIfAbsent(entry.getKey(), entry.getValue());
+                if (match != null) {
+                    match.merge(entry.getValue());
+                }
             }
         }
 
@@ -336,10 +352,10 @@ public class FuzzyPrefixMatchSuggest {
         return result;
     }
 
-    private static void collectTitles(Map<AnimeTitle, FuzzyPrefixMatch> result, XYZ entry, TrieNode trieNode, int level) {
+    private void collectTitles(Map<AnimeTitle, FuzzyPrefixMatch> result, XYZ entry, TrieNode trieNode, int level) {
         for (WordEntry wordEntry : trieNode.directMatches) {
             for (AnimeTitle title : wordEntry.titles) {
-                FuzzyPrefixMatch match = result.computeIfAbsent(title, FuzzyPrefixMatch::new);
+                FuzzyPrefixMatch match = result.computeIfAbsent(title, i -> new FuzzyPrefixMatch(i, animeRank.getOrDefault(i.animedbId, Integer.MAX_VALUE)));
 
                 match.update(entry, trieNode, level);
             }
@@ -352,14 +368,16 @@ public class FuzzyPrefixMatchSuggest {
     }
 
     private static int sortSuggestions(FuzzyPrefixMatch a, FuzzyPrefixMatch b) {
+        if (a.matches != b.matches)
+            return b.matches - a.matches;
         int aScore = a.distance * 10 / a.matches;
         int bScore = b.distance * 10 / b.matches;
         if (aScore != bScore)
             return aScore - bScore;
         if (a.skipped != b.skipped)
             return a.skipped - b.skipped;
-        if (a.matches != b.matches)
-            return b.matches - a.matches;
+        if (a.animeRank != b.animeRank)
+            return a.animeRank - b.animeRank;
         return a.level - b.level;
     }
 }
