@@ -1,22 +1,17 @@
 package aqua.search;
 
 import aqua.recommend.HPPCUtils;
+import aqua.search.SearchUtils.PartialSuggestion;
 import com.carrotsearch.hppc.IntIntMap;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public class SubstringMatchSuggest {
-    private static final Pattern SPLIT_NONWORD = Pattern.compile("\\W+");
-    private static final AnimeTitle[] EMPTY_ANIME_TITLES = new AnimeTitle[0];
-    private static final Suggestion[] EMPTY_SUGGESTIONS = new Suggestion[0];
-
     private static class Entry {
         public final String string;
         public final int start;
@@ -61,7 +56,7 @@ public class SubstringMatchSuggest {
         }
     }
 
-    private static class PrefixMatch {
+    private static class PrefixMatch implements PartialSuggestion {
         public int matches = 1;
         public int matchRank = Integer.MAX_VALUE;
         public final int animeRank;
@@ -70,6 +65,11 @@ public class SubstringMatchSuggest {
         public PrefixMatch(AnimeTitle animeTitle, int animeRank) {
             this.animeTitle = animeTitle;
             this.animeRank = animeRank;
+        }
+
+        @Override
+        public AnimeTitle animeTitle() {
+            return animeTitle;
         }
     }
 
@@ -82,7 +82,7 @@ public class SubstringMatchSuggest {
     }
 
     public Suggestion[] suggest(String query, int limit) {
-        List<String> parts = splitWords(query);
+        List<String> parts = SearchUtils.splitWords(query);
         Map<AnimeTitle, PrefixMatch> suggestionMap = new HashMap<>();
 
         for (String part : parts) {
@@ -122,25 +122,13 @@ public class SubstringMatchSuggest {
             }
         }
 
-        Set<Integer> seenAnime = new HashSet<>();
-        List<PrefixMatch> suggestions = new ArrayList<>(suggestionMap.values());
-        suggestions.sort(SubstringMatchSuggest::sortSuggestions);
-        List<Suggestion> result = new ArrayList<>(limit);
-        for (PrefixMatch suggestion : suggestions) {
-            AnimeTitle animeTitle = suggestion.animeTitle;
-            if (!seenAnime.add(animeTitle.animedbId))
-                continue;
-            result.add(new Suggestion(animeTitle.animedbId, animeTitle.title));
-            if (result.size() >= limit)
-                break;
-        }
-        return result.toArray(EMPTY_SUGGESTIONS);
+        return SearchUtils.selectTopK(suggestionMap.values(), SubstringMatchSuggest::sortSuggestions, limit);
     }
 
     private static List<Entry> makeEntryList(List<AnimeTitle> titles) {
         Map<String, Set<AnimeTitle>> searchMap = new HashMap<>();
         for (AnimeTitle animeTitle : titles) {
-            for (String word : splitWords(animeTitle.title)) {
+            for (String word : SearchUtils.splitWords(animeTitle.title)) {
                 if (word.isEmpty()) {
                     continue;
                 }
@@ -156,13 +144,9 @@ public class SubstringMatchSuggest {
         return entries;
     }
 
-    private static List<String> splitWords(String title) {
-        return Arrays.asList(SPLIT_NONWORD.split(title.toLowerCase()));
-    }
-
     private static void insertEntry(List<Entry> entries, String string, Set<AnimeTitle> animedbIds) {
         for (int i = 0, max = Math.max(1, string.length() - 1); i < max; ++i)
-            entries.add(new Entry(string, i, animedbIds.toArray(EMPTY_ANIME_TITLES)));
+            entries.add(new Entry(string, i, animedbIds.toArray(SearchUtils.EMPTY_ANIME_TITLES)));
     }
 
     private int findFirst(String part, int start, int end) {
