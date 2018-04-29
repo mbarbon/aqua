@@ -146,7 +146,10 @@ public class SubstringMatchSuggest {
 
     private static void insertEntry(List<Entry> entries, String string, Set<AnimeTitle> animeTitles) {
         AnimeTitle[] animedbTitlesArray = animeTitles.toArray(SearchUtils.EMPTY_ANIME_TITLES);
-        for (int i = 0, max = Math.max(1, string.length() - 1); i < max; ++i)
+        int prefix = string.length() > 10 ? string.length() / 2 + 2 :
+                     string.length() > 5  ? string.length() - 3 :
+                                            string.length() - 2;
+        for (int i = 0, max = Math.max(1, prefix); i < max; ++i)
             entries.add(new Entry(string, i, animedbTitlesArray));
     }
 
