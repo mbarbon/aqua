@@ -11,13 +11,15 @@
 (defn- make-suggest [titles]
   (make-suggest-rank titles {}))
 
-; (deftest sanity
-;   (let [suggester (make-suggest [[1 "Koutetsujou no Kabaneri"] [2 "Cowboy Bebop"] [3 "K-on!"]])
-;         suggest (fn [term] (map #(.animedbId %) (.suggest suggester term 5)))]
-;     (is (= [3 1] (suggest "k-on")))
-;     (is (= [3 1] (suggest "K on")))
-;     (is (= [2] (suggest "Cowboy")))
-;     (is (= [3 2 1] (suggest "o")))))
+(deftest sanity
+  (let [suggester (make-suggest [[1 "Koutetsujou no Kabaneri"] [2 "Cowboy Bebop"] [3 "K-on!"]])
+        suggest (fn [term] (map #(.animedbId %) (.suggest suggester term 5)))]
+    (is (= [3 1] (suggest "k-on")))
+    (is (= [3 1] (suggest "K on")))
+    (is (= [2] (suggest "Cowboy")))
+    (is (= [3] (suggest "o")))
+    (is (= [1] (suggest "no")))
+    (is (= [3] (suggest "on")))))
 
 (deftest single-word-sanity
   (let [suggester (make-suggest [[1 "Koutetsujou no Kabaneri"]])
