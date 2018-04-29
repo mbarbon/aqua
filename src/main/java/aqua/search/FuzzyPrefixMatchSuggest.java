@@ -16,7 +16,6 @@ public class FuzzyPrefixMatchSuggest {
     private static final Pattern SPLIT_NONWORD = Pattern.compile("[^a-z0-9]+");
     private static final AnimeTitle[] EMPTY_ANIME_TITLES = new AnimeTitle[0];
     private static final Suggestion[] EMPTY_SUGGESTIONS = new Suggestion[0];
-    private static final WordEntry[] EMPTY_WORD_ENTRY = new WordEntry[0];
 
     private static class WordEntry {
         public final String word;
@@ -58,27 +57,92 @@ public class FuzzyPrefixMatchSuggest {
         throw new IllegalArgumentException(String.format("Invalid trie character '%c'", c));
     }
 
-    private static class TrieNode {
-        public static final TrieNode[] EMPTY_TRIE_CHILDREN = new TrieNode[0];
-
-        public final TrieNode[] children;
-        public final WordEntry[] directMatches;
-
-        public TrieNode(TrieNode[] children, WordEntry[] directMatches) {
-            this.children = children;
-            this.directMatches = directMatches;
+    // The histogram of the distribution of number of children is
+    //
+    // [13560, 30318, 3108, 1020, 487, 266, 167, 110, 78, 50, (0 .. 9 children)
+    //     41,    30,   21,   12,  26,  18,  17,  16, 12, 12, (10 .. 19 children)
+    //      8,    11,    6,    8,   2,   3,   1,   0,  0,  1, (20 .. 29 children)
+    //      0,     0,    0,    0,   0,   0,   1]              (30 .. 36 children)
+    //
+    // so it definitely makes sense to specialize the 0 and 1 case; moving to a sorted array
+    // makes sense memory-wise, not necessarily complexity-wise
+    private interface TrieNode {
+        @FunctionalInterface
+        interface TrieNodeOperation {
+            void apply(TrieNode node);
         }
 
-        public TrieNode advance(char c) {
+        TrieNode advance(char character);
+
+        WordEntry directMatch();
+
+        void applyToChildren(TrieNodeOperation operation);
+    }
+
+    private static class TrieNodeFull implements TrieNode {
+        public static final TrieNode[] EMPTY_TRIE_CHILDREN = new TrieNode[0];
+
+        private final TrieNode[] children;
+        private final WordEntry directMatch;
+
+        public TrieNodeFull(TrieNode[] children, WordEntry directMatch) {
+            this.children = children;
+            this.directMatch = directMatch;
+        }
+
+        @Override
+        public TrieNode advance(char character) {
             return children != EMPTY_TRIE_CHILDREN ?
-                children[charIndex(c)] :
+                children[charIndex(character)] :
                 null;
+        }
+
+        @Override
+        public WordEntry directMatch() {
+            return directMatch;
+        }
+
+        @Override
+        public void applyToChildren(TrieNodeOperation operation) {
+            for (TrieNode child : children) {
+                if (child != null) {
+                    operation.apply(child);
+                }
+            }
+        }
+    }
+
+    private static class TrieNodeSingleChild implements TrieNode {
+        private final int childIndex;
+        private final TrieNode child;
+        private final WordEntry directMatch;
+
+        public TrieNodeSingleChild(int childIndex, TrieNode child, WordEntry directMatch) {
+            this.childIndex = childIndex;
+            this.child = child;
+            this.directMatch = directMatch;
+        }
+
+        @Override
+        public TrieNode advance(char character) {
+            return childIndex == charIndex(character) ? child : null;
+        }
+
+        @Override
+        public WordEntry directMatch() {
+            return directMatch;
+        }
+
+        @Override
+        public void applyToChildren(TrieNodeOperation operation) {
+            operation.apply(child);
         }
     }
 
     public static class MutableTrieNode {
         public MutableTrieNode[] children;
-        public List<WordEntry> directMatches;
+        public int childrenCount;
+        public WordEntry directMatch;
 
         public MutableTrieNode advance(char c) {
             if (children == null) {
@@ -87,31 +151,44 @@ public class FuzzyPrefixMatchSuggest {
             int index = charIndex(c);
             if (children[index] == null) {
                 children[index] = new MutableTrieNode();
+                childrenCount++;
             }
             return children[index];
         }
 
         public void addTitles(WordEntry wordEntry) {
-            if (directMatches == null) {
-                directMatches = new ArrayList<>();
+            if (directMatch != null) {
+                throw new IllegalStateException(String.format(
+                    "Leaf trie node is being reached twice: '%s'",
+                    wordEntry.word
+                ));
             }
-            directMatches.add(wordEntry);
+            directMatch = wordEntry;
         }
 
         public TrieNode toImmutableNode() {
-            TrieNode[] immutableChildren = TrieNode.EMPTY_TRIE_CHILDREN;
-            if (children != null) {
-                immutableChildren = new TrieNode[children.length];
-                for (int i = 0, max = children.length; i < max; ++i) {
-                    immutableChildren[i] = children[i] != null ?
-                        children[i].toImmutableNode() :
-                        null;
+            if (childrenCount == 1) {
+                for (int i = 0; i < children.length; ++i) {
+                    if (children[i] != null) {
+                        return new TrieNodeSingleChild(i, children[i].toImmutableNode(), directMatch);
+                    }
                 }
+                throw new IllegalStateException("Can't get here");
+            } else {
+                TrieNode[] immutableChildren = TrieNodeFull.EMPTY_TRIE_CHILDREN;
+                if (children != null) {
+                    immutableChildren = new TrieNode[children.length];
+                    for (int i = 0, max = children.length; i < max; ++i) {
+                        immutableChildren[i] = children[i] != null ?
+                            children[i].toImmutableNode() :
+                            null;
+                    }
+                }
+                return new TrieNodeFull(
+                    immutableChildren,
+                    directMatch
+                );
             }
-            return new TrieNode(
-                immutableChildren,
-                directMatches != null ? directMatches.toArray(EMPTY_WORD_ENTRY) : EMPTY_WORD_ENTRY
-            );
         }
     }
 
@@ -127,7 +204,7 @@ public class FuzzyPrefixMatchSuggest {
             this.animeRank = animeRank;
         }
 
-        public void update(XYZ entry, TrieNode trieNode, int level) {
+        public void update(FuzzyMatchState entry, TrieNode trieNode, int level) {
             int skipped = Math.abs(entry.wordOffset - entry.prefixOffset);
             if (this.matches == 0 || this.skipped > skipped || (this.skipped == skipped && this.distance > entry.distance)) {
                 this.skipped = skipped;
@@ -200,7 +277,7 @@ public class FuzzyPrefixMatchSuggest {
         Map<AnimeTitle, FuzzyPrefixMatch> suggestionMap = new HashMap<>();
 
         for (String word : splitWords(query)) {
-            Map<AnimeTitle, FuzzyPrefixMatch> wordMatches = matchXXX(word);
+            Map<AnimeTitle, FuzzyPrefixMatch> wordMatches = matchWordPrefix(word);
 
             for (Map.Entry<AnimeTitle, FuzzyPrefixMatch> entry : wordMatches.entrySet()) {
                 FuzzyPrefixMatch match = suggestionMap.putIfAbsent(entry.getKey(), entry.getValue());
@@ -229,12 +306,12 @@ public class FuzzyPrefixMatchSuggest {
         return Arrays.asList(SPLIT_NONWORD.split(title.toLowerCase()));
     }
 
-    private static class XYZ {
+    private static class FuzzyMatchState {
         final TrieNode trieNode;
         final int wordOffset, prefixOffset;
         final int distance, maxDistance;
 
-        public XYZ(TrieNode trieNode, int wordOffset, int prefixOffset, int distance, int maxDistance) {
+        public FuzzyMatchState(TrieNode trieNode, int wordOffset, int prefixOffset, int distance, int maxDistance) {
             this.trieNode = trieNode;
             this.wordOffset = wordOffset;
             this.prefixOffset = prefixOffset;
@@ -249,12 +326,12 @@ public class FuzzyPrefixMatchSuggest {
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof XYZ)
-                return equals((XYZ) o);
+            if (o instanceof FuzzyMatchState)
+                return equals((FuzzyMatchState) o);
             return false;
         }
 
-        public boolean equals(XYZ o) {
+        public boolean equals(FuzzyMatchState o) {
             return wordOffset == o.wordOffset &&
                 prefixOffset == o.prefixOffset &&
                 distance == o.distance &&
@@ -269,39 +346,35 @@ public class FuzzyPrefixMatchSuggest {
             return distance < maxDistance;
         }
 
-        public void addExact(Set<XYZ> partials, String prefix) {
+        public void addExact(Set<FuzzyMatchState> partials, String prefix) {
             TrieNode nextTrieNode = trieNode.advance(prefix.charAt(prefixOffset));
             if (nextTrieNode != null) {
-                partials.add(new XYZ(nextTrieNode, wordOffset + 1, prefixOffset + 1, distance, maxDistance));
+                partials.add(new FuzzyMatchState(nextTrieNode, wordOffset + 1, prefixOffset + 1, distance, maxDistance));
             }
         }
 
-        public void addDeletion(Set<XYZ> partials, String prefix) {
-            for (TrieNode child : trieNode.children) {
-                if (child != null) {
-                    partials.add(new XYZ(child, wordOffset + 1, prefixOffset, distance + 1, maxDistance));
-                }
-            }
+        public void addDeletion(Set<FuzzyMatchState> partials, String prefix) {
+            trieNode.applyToChildren(child -> {
+                partials.add(new FuzzyMatchState(child, wordOffset + 1, prefixOffset, distance + 1, maxDistance));
+            });
         }
 
-        public void addInsertion(Set<XYZ> partials, String prefix) {
+        public void addInsertion(Set<FuzzyMatchState> partials, String prefix) {
             if (prefixOffset + 1 < prefix.length()) {
-                partials.add(new XYZ(trieNode, wordOffset, prefixOffset + 1, distance + 1, maxDistance));
+                partials.add(new FuzzyMatchState(trieNode, wordOffset, prefixOffset + 1, distance + 1, maxDistance));
             }
         }
 
-        public void addReplacement(Set<XYZ> partials, String prefix) {
+        public void addReplacement(Set<FuzzyMatchState> partials, String prefix) {
             if (prefixOffset + 1 < prefix.length()) {
-                for (TrieNode child : trieNode.children) {
-                    if (child != null) {
-                        partials.add(new XYZ(child, wordOffset + 1, prefixOffset + 1, distance + 1,
-                            maxDistance));
-                    }
-                }
+                trieNode.applyToChildren(child -> {
+                    partials.add(new FuzzyMatchState(child, wordOffset + 1, prefixOffset + 1, distance + 1,
+                        maxDistance));
+                });
             }
         }
 
-        public void addTransposition(Set<XYZ> partials, String prefix) {
+        public void addTransposition(Set<FuzzyMatchState> partials, String prefix) {
             if (prefixOffset + 2 < prefix.length()) {
                 TrieNode firstChar = trieNode.advance(prefix.charAt(prefixOffset));
                 TrieNode secondChar = firstChar != null ?
@@ -309,26 +382,26 @@ public class FuzzyPrefixMatchSuggest {
                     null;
 
                 if (secondChar != null) {
-                    partials.add(new XYZ(secondChar, wordOffset + 2, prefixOffset + 2, distance + 1, maxDistance));
+                    partials.add(new FuzzyMatchState(secondChar, wordOffset + 2, prefixOffset + 2, distance + 1, maxDistance));
                 }
             }
         }
     }
 
-    private Map<AnimeTitle, FuzzyPrefixMatch> matchXXX(String prefix) {
-        Set<XYZ> currentPartials = new HashSet<>();
-        Set<XYZ> acceptedPartials = new HashSet<>();
+    private Map<AnimeTitle, FuzzyPrefixMatch> matchWordPrefix(String prefix) {
+        Set<FuzzyMatchState> currentPartials = new HashSet<>();
+        Set<FuzzyMatchState> acceptedPartials = new HashSet<>();
         int maxDistance =
             prefix.length() <= 2 ? 0 :
                 prefix.length() <= 5 ? 1 :
                     2;
 
-        currentPartials.add(new XYZ(prefixes, 0, 0, 0, maxDistance));
+        currentPartials.add(new FuzzyMatchState(prefixes, 0, 0, 0, maxDistance));
 
         while (!currentPartials.isEmpty()) {
-            Set<XYZ> newPartials = new HashSet<>();
+            Set<FuzzyMatchState> newPartials = new HashSet<>();
 
-            for (XYZ partial : currentPartials) {
+            for (FuzzyMatchState partial : currentPartials) {
                 if (partial.canConsume(prefix)) {
                     partial.addExact(newPartials, prefix);
                     if (partial.canError()) {
@@ -346,25 +419,25 @@ public class FuzzyPrefixMatchSuggest {
         }
 
         Map<AnimeTitle, FuzzyPrefixMatch> result = new HashMap<>(acceptedPartials.size());
-        for (XYZ entry : acceptedPartials) {
+        for (FuzzyMatchState entry : acceptedPartials) {
             collectTitles(result, entry, entry.trieNode,0);
         }
         return result;
     }
 
-    private void collectTitles(Map<AnimeTitle, FuzzyPrefixMatch> result, XYZ entry, TrieNode trieNode, int level) {
-        for (WordEntry wordEntry : trieNode.directMatches) {
-            for (AnimeTitle title : wordEntry.titles) {
-                FuzzyPrefixMatch match = result.computeIfAbsent(title, i -> new FuzzyPrefixMatch(i, animeRank.getOrDefault(i.animedbId, Integer.MAX_VALUE)));
+    private void collectTitles(Map<AnimeTitle, FuzzyPrefixMatch> result, FuzzyMatchState entry, TrieNode trieNode, int level) {
+        WordEntry directMatch = trieNode.directMatch();
+        if (directMatch != null) {
+            for (AnimeTitle title : directMatch.titles) {
+                FuzzyPrefixMatch match = result.computeIfAbsent(title, i -> new FuzzyPrefixMatch(i,
+                    animeRank.getOrDefault(i.animedbId, Integer.MAX_VALUE)));
 
                 match.update(entry, trieNode, level);
             }
         }
-        for (TrieNode child : trieNode.children) {
-            if (child != null) {
-                collectTitles(result, entry, child, level + 1);
-            }
-        }
+        trieNode.applyToChildren(child -> {
+            collectTitles(result, entry, child, level + 1);
+        });
     }
 
     private static int sortSuggestions(FuzzyPrefixMatch a, FuzzyPrefixMatch b) {
@@ -376,8 +449,10 @@ public class FuzzyPrefixMatchSuggest {
             return aScore - bScore;
         if (a.skipped != b.skipped)
             return a.skipped - b.skipped;
+        if (a.level != b.level)
+            return a.level - b.level;
         if (a.animeRank != b.animeRank)
             return a.animeRank - b.animeRank;
-        return a.level - b.level;
+        return 0;
     }
 }
