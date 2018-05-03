@@ -11,7 +11,7 @@
         ; meaningful recommendations
         anime-titles (aqua.mal-local/load-anime-titles data-source (set (.keySet @*anime)))
         anime-rank (aqua.mal-local/load-anime-rank data-source)
-        suggest (aqua.search.SubstringMatchSuggest. anime-titles anime-rank)]
+        suggest (aqua.search.FuzzyPrefixMatchSuggest. anime-titles anime-rank)]
     (log/info "Done loading suggester")
     (reset! *suggest suggest)))
 
@@ -22,7 +22,7 @@
   (rebuild-suggester))
 
 (defn autocomplete [term]
-  (let [^aqua.search.SubstringMatchSuggest suggest @*suggest
+  (let [^aqua.search.FuzzyPrefixMatchSuggest suggest @*suggest
         anime-map @*anime
         suggestions (.suggest suggest term 15)]
     (for [^aqua.search.Suggestion search-suggestion suggestions]
