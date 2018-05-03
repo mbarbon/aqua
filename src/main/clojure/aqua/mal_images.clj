@@ -37,6 +37,7 @@
 
 (defn store-cached-image [data-source-rw directory image-data]
   (let [changed (:changed image-data)
+        missing (:missing image-data)
         [path tmp-path] (out-path (:url image-data) (:type image-data) "")
         [resized-path tmp-resized-path] (out-path (:url image-data) "image/jpeg" "-84x114")
         expires (if-let [expires-header (:expires image-data)]
@@ -53,6 +54,7 @@
         (javax.imageio.ImageIO/write scaled "jpeg" (io/file directory tmp-resized-path))
         (.renameTo (io/file directory tmp-resized-path) (io/file directory resized-path))))
     (with-connection data-source-rw conn
-      (if-not path
-        (execute conn update-entry [expires (:url image-data)])
-        (execute conn insert-entry [(:url image-data) expires (:etag image-data) (str path) (str resized-path)])))))
+      (cond
+        missing (execute conn insert-entry [(:url image-data) expires "" "" ""])
+        (not path) (execute conn update-entry [expires (:url image-data)])
+        :else (execute conn insert-entry [(:url image-data) expires (:etag image-data) (str path) (str resized-path)])))))

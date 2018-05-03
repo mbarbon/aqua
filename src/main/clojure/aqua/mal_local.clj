@@ -309,7 +309,7 @@
             (set! (.endedAiring anime) (if-let [end (:end item)] end 0))
             (set! (.genres anime) (.get genres-map animedb-id))
             (set! (.isHentai anime) (.contains hentai-id-set animedb-id))
-            (if (:cached_path item)
+            (if-not (empty? (:cached_path item)) ; empty string is for placeholder entries for URLs returning 404
               (let [local-cover (aqua.mal.data.LocalCover.)]
                 (set! (.coverPath local-cover) (:cached_path item))
                 (set! (.smallCoverPath local-cover) (:resized_path item))

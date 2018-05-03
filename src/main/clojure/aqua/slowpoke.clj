@@ -266,17 +266,15 @@
              :etag    (.getHeader response "ETag")
              :expires (.getHeader response "Expires")}
         304 {:url     url
-             :changed false
              :etag    etag
              :expires (.getHeader response "Expires")}
         404 {:url     url
-             :changed false}
+             :missing true}
         (do
           (if error
             (log/warn (str "Error '" (.getMessage error) "' while fetching " url))
             (log/warn (str "HTTP error " status " while fetching " url)))
-          {:url     url
-           :changed false})))))
+          {:url     url})))))
 
 (defn refresh-images [data-source-rw data-source-ro directory]
   (log/info "Fetching images needing refresh")
