@@ -9,7 +9,6 @@
                  [com.fasterxml.jackson.dataformat/jackson-dataformat-xml "2.8.7"]
                  [io.protostuff/protostuff-core "1.6.0"]
                  [io.protostuff/protostuff-runtime "1.6.0"]
-                 [jline/jline "2.14.5"]
                  [com.carrotsearch/hppc "0.7.3"]
                  [com.google.guava/guava "21.0"]
                  [com.googlecode.matrix-toolkits-java/mtj "1.0.2"]
@@ -40,8 +39,9 @@
                                      "-XX:+PrintGCDetails"]}
              :serve-jvm9 {:jvm-opts ["-Xms100M" "-Xmx100M"
                                      "-Xlog:gc:stdout:time"]}
-             :dev {:resource-paths ["src/test/resources"]}
+             :dev {:resource-paths ["src/test/resources"]
+                   :dependencies   [[jline/jline "2.14.5"]]}
              :repl {:global-vars {*warn-on-reflection* true}}
-             :uberjar {:aot  :all
+             :uberjar {:aot  [#"^(?!aqua\.cli|aqua\.compare).*$"] ; exclude dev helper namespaces
                        :resource-paths ["build"]
                        :main aqua.web.serve}})
