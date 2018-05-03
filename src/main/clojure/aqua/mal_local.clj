@@ -1059,12 +1059,13 @@
        "    (?, strftime('%s', 'now'))"))
 
 (defn store-anime-details [data-source animedb-id title
-                           {:keys [relations genres titles scores]}]
+                           {:keys [relations genres titles scores missing]}]
   (with-transaction data-source connection
-    (store-anime-side-tables-scraped connection animedb-id genres titles relations)
-    (execute connection
-             update-anime-details
-             [animedb-id (:rank scores) (:popularity scores) (:score scores)])
+    (when-not missing
+      (store-anime-side-tables-scraped connection animedb-id genres titles relations)
+      (execute connection
+               update-anime-details
+               [animedb-id (:rank scores) (:popularity scores) (:score scores)]))
     (execute connection update-anime-details-update [animedb-id])))
 
 (defn- store-manga-side-tables-scraped [connection mangadb_id genres titles relations]
@@ -1085,12 +1086,13 @@
        "    (?, strftime('%s', 'now'))"))
 
 (defn store-manga-details [data-source mangadb-id title
-                           {:keys [relations genres titles scores]}]
+                           {:keys [relations genres titles scores missing]}]
   (with-transaction data-source connection
-    (store-manga-side-tables-scraped connection mangadb-id genres titles relations)
-    (execute connection
-             update-manga-details
-             [mangadb-id (:rank scores) (:popularity scores) (:score scores)])
+    (when-not missing
+      (store-manga-side-tables-scraped connection mangadb-id genres titles relations)
+      (execute connection
+               update-manga-details
+               [mangadb-id (:rank scores) (:popularity scores) (:score scores)]))
     (execute connection update-manga-details-update [mangadb-id])))
 
 (defn- store-manga-side-tables-sync [connection mangadb_id genres titles relations]

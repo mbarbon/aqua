@@ -39,7 +39,7 @@
                   titles (:titles details)
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
-        404 nil
+        404 {:missing true}
         (log-error error status (str "fetching anime " title))))))
 
 (defn fetch-manga-details [mangadb-id title]
@@ -50,7 +50,7 @@
                   titles (:titles details)
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
-        404 nil
+        404 {:missing true}
         (log-error error status (str "fetching manga " title))))))
 
 (defn fetch-active-users []
