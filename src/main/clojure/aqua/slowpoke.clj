@@ -110,9 +110,10 @@
   (str "SELECT a.animedb_id, a.title"
        "    FROM anime AS a"
        "      LEFT JOIN anime_details_update au"
-       "        ON a.animedb_id = au.animedb_id AND"
-       "           last_update > strftime('%s', 'now') - ?"
-       "    WHERE last_update IS NULL"
+       "        ON a.animedb_id = au.animedb_id"
+       "    WHERE last_update IS NULL OR"
+       "          last_update < strftime('%s', 'now') - ?"
+       "    ORDER BY last_update"
        "    LIMIT 30"))
 
 (defn- refresh-anime [data-source-rw data-source-ro]
@@ -130,9 +131,10 @@
   (str "SELECT m.mangadb_id, m.title"
        "    FROM manga AS m"
        "      LEFT JOIN manga_details_update mu"
-       "        ON m.mangadb_id = mu.mangadb_id AND"
-       "           last_update > strftime('%s', 'now') - ?"
-       "    WHERE last_update IS NULL"
+       "        ON m.mangadb_id = mu.mangadb_id"
+       "    WHERE last_update IS NULL OR"
+       "          last_update < strftime('%s', 'now') - ?"
+       "    ORDER BY last_update"
        "    LIMIT 30"))
 
 (defn- refresh-manga [data-source-rw data-source-ro]
