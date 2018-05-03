@@ -21,10 +21,10 @@
            (if (> remaining# 0)
              (Thread/sleep remaining#)))))))
 
-(defmacro with-web-result [args body]
+(defmacro with-web-result [args & body]
   `(try
-     (if-let ~args
-       ~body)
+     (when-let ~args
+       ~@body)
      (catch java.util.concurrent.ExecutionException e#
        ; should probably just ignore all ExecutionExceptions
        (if-not (instance? java.util.concurrent.TimeoutException (.getCause e#))
