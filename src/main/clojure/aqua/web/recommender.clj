@@ -128,6 +128,6 @@
           airing (.similarAnime (.airing co-occurrency) animedb-id)]
       (.sort completed aqua.recommend.ScoredAnimeId/SORT_SCORE)
       (.sort airing aqua.recommend.ScoredAnimeId/SORT_SCORE)
-      {:animeDetails (aqua.web.render/render-anime anime nil)
+      {:animeDetails (aqua.web.render/add-medium-cover anime (aqua.web.render/render-anime anime nil))
         :recommendations {:airing (make-list lookup-anime (take 5 airing))
                           :completed (make-list lookup-anime (take 15 completed))}})))

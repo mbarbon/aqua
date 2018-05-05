@@ -1,7 +1,8 @@
 (ns aqua.mal-local
   (:require [clojure.java.io :as io]
              clojure.string
-             aqua.db-schema)
+             aqua.db-schema
+             aqua.mal-images)
   (:use aqua.db-utils)
   (:import (aqua.mal Serialize)))
 
@@ -278,7 +279,7 @@
 
 (def ^:private select-anime
   (str "SELECT animedb_id, title, status, episodes, start, end, image, type,"
-       "       expires, etag, cached_path, resized_path"
+       "       expires, etag, cached_path, resized_path, sizes"
        "    FROM anime"
        "      LEFT JOIN image_cache"
        "        ON image = url"))
@@ -312,7 +313,8 @@
             (if-not (empty? (:cached_path item)) ; empty string is for placeholder entries for URLs returning 404
               (let [local-cover (aqua.mal.data.LocalCover.)]
                 (set! (.coverPath local-cover) (:cached_path item))
-                (set! (.smallCoverPath local-cover) (:resized_path item))
+                (set! (.smallCoverPath local-cover) (aqua.mal-images/cover-size item "84x114"))
+                (set! (.mediumCoverPath local-cover) (aqua.mal-images/cover-size item "168x228"))
                 (set! (.etag local-cover) (:etag item))
                 (set! (.expires local-cover) (:expires item))
                 (set! (.localCover anime) local-cover)))

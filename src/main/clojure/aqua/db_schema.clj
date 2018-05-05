@@ -208,7 +208,8 @@
        "    expires INTEGER NOT NULL,"
        "    etag VARCHAR(32) NOT NULL,"
        "    cached_path VARCHAR(40) NOT NULL,",
-       "    resized_path VARCHAR(40) NOT NULL",
+       "    resized_path VARCHAR(40) NOT NULL,",
+       "    sizes VARCHAR(20) NOT NULL",
        ")"))
 
 (def ^:private create-image-cache-expires-index

@@ -2,7 +2,7 @@
 <section class="aqua-body">
   <h1>${model.animeDetails.title}</h1>
   <a title="${model.animeDetails.title}" href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}" target="_blank">
-    <img class="anime-details-image" src="${model.animeDetails.image}" alt="${model.animeDetails.title}">
+    <img class="anime-details-image" src="${model.animeDetails.mediumImage}" alt="${model.animeDetails.title}">
   </a>
   <div class="anime-details">
     <div class="details" title="${model.animeDetails.genres}">${model.animeDetails.genres}</div>
@@ -15,7 +15,7 @@
     <div class="details aqua-select-stars"
          data-animedbId="${model.animeDetails.animedbId?c}"
          data-title="${model.animeDetails.title}"
-         data-image="${model.animeDetails.image}"
+         data-image="${model.animeDetails.smallImage}"
          data-episodes="${model.animeDetails.episodes?c}"
          data-franchiseEpisodes="${model.animeDetails.franchiseEpisodes?c}"
          data-genres="${model.animeDetails.genres}"

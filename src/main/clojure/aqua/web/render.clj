@@ -30,3 +30,7 @@
    :tags tags
    :seriesType (.seriesType anime)
    :status (.status anime)})
+
+(defn add-medium-cover [^aqua.mal.data.Anime anime rendered-anime]
+  (assoc rendered-anime
+         :mediumImage (.mediumLocalImage anime "/images/cover/")))
