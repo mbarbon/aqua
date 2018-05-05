@@ -32,10 +32,10 @@
   <div class="recommendation-list">
   <#items as anime>
     <div class="recommendation-item">
-      <a title="${anime.title}" href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}">
+      <a title="${anime.title}" href="https://myanimelist.net/anime/${anime.animedbId?c}">
       <img class="recommendation-image anime-list-image" src="${anime.smallImage}" alt="${anime.title}"></a>
       <div class="recommendation-details">
-        <div class="header"><a href="https://myanimelist.net/anime/${model.animeDetails.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
+        <div class="header"><a href="https://myanimelist.net/anime/${anime.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
         <div class="details" title="${anime.genres}">${anime.genres}</div>
         <div class="details">${anime.episodes} eps
   <#if anime.franchiseEpisodes != 0>
