@@ -1,6 +1,6 @@
 (ns aqua.compare.misc
-  (require aqua.recommend.user-sample
-           aqua.mal-local))
+  (:require aqua.recommend.user-sample
+            aqua.mal-local))
 
 (defn stable-shuffle [^java.util.Collection items]
   (let [rnd (java.util.Random. 1643789325)
