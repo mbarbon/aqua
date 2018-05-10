@@ -66,7 +66,7 @@
         (.readArray reader anime-indices)
         (if anime-map
           (dotimes [n (alength anime-indices)]
-            (if-let [anime (anime-map (aget anime-indices n))]
+            (if-let [^aqua.mal.data.Anime anime (anime-map (aget anime-indices n))]
               ; mark as Hentai if present
               (if (.isHentai anime)
                 (aset-int anime-indices n (- (aget anime-indices n))))
@@ -100,7 +100,7 @@
 (defn- load-user-lfd-v1 [in lfd users]
   (let [read-int (fn [] (Integer/valueOf (read-line)))
         reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)
-        user-map (into {} (for [user users]
+        user-map (into {} (for [^aqua.recommend.CFUser user users]
                             ; Dubious, but sometimes convenient
                             (if user
                               [(.userId user) user]

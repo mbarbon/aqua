@@ -168,7 +168,7 @@
 
 (defn load-user-sample [path size]
   (aqua.recommend.model-files/with-open-model path 1 in version
-    (doall (take size (for [line (line-seq in)]
+    (doall (take size (for [^String line (line-seq in)]
                         (Integer/valueOf line))))))
 
 ; the only purpose of this function is to avoid doubling memory usage
