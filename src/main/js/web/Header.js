@@ -66,7 +66,7 @@ class UserHeader extends PureComponent<{
           )}
         </div>
         <div className='main-page-logo'>
-          <img src='/aqua-thumbsup.jpg' />
+          <img src='/img/aqua-thumbsup.jpg' />
           <div className='start-page-head-text'>
             <div className='first-head'>Aqua</div>
             <div className='second-head'>anime recommendations</div>
@@ -84,7 +84,7 @@ class NoUserHeader extends PureComponent<{}> {
         <div className='main-page-head-actions'> </div>
         <div className='main-page-logo'>
           <a href='/'>
-            <img src='/aqua-thumbsup.jpg' />
+            <img src='/img/aqua-thumbsup.jpg' />
           </a>
           <div className='start-page-head-text'>
             <div className='first-head'>Aqua</div>
