@@ -170,36 +170,6 @@
         (.read is bytes)
         [bytes (.getInt rs 3)]))))
 
-; relations should be reflexive, but not all of them are in the scraped DB
-; (e.g. the page failed to parse)
-(def ^:private select-relations
-  "SELECT animedb_id, related_id FROM anime_relations UNION SELECT related_id, animedb_id FROM anime_relations")
-
-(defn- load-relation-map [data-source]
-  (with-open [connection (.getConnection data-source)
-              statement (.createStatement connection)
-              rs (.executeQuery statement select-relations)]
-    (into {}
-      (for [item (resultset-seq rs)]
-        (let [left-id (:animedb_id item)
-              right-id (:related_id item)]
-          (if (> left-id right-id)
-            [left-id right-id]
-            [right-id left-id]))))))
-
-(defn- transitive-map-closure [relation-map]
-  (let [additional-relations (into {}
-                               (remove empty?
-                                 (for [[left-id right-id] relation-map]
-                                   (let [left-child (get relation-map left-id Long/MAX_VALUE)
-                                         right-child (get relation-map right-id Long/MAX_VALUE)
-                                         root-id (min left-id left-child right-child)]
-                                     (if (< root-id right-id)
-                                       [left-id root-id])))))]
-    (if-not (empty? additional-relations)
-      (transitive-map-closure (conj relation-map additional-relations))
-      relation-map)))
-
 (def ^:private select-genre-names
   "SELECT genre, description FROM anime_genre_names")
 
@@ -284,18 +254,10 @@
        "      LEFT JOIN image_cache"
        "        ON image = url"))
 
-(defn- load-anime-list [data-source]
+(defn- load-anime-only [data-source]
   (let [hentai-id-set (set (load-hentai-anime-ids data-source))
-        relation-map (transitive-map-closure (load-relation-map data-source))
-        genres-map (load-genres-map data-source)
-        franchise-map (java.util.HashMap.)]
-    (doseq [franchise-id (.values relation-map)]
-      (if-let [franchise (.get franchise-map franchise-id)]
-        nil
-        (.put franchise-map franchise-id (aqua.mal.data.Franchise. franchise-id))))
-    (with-open [connection (.getConnection data-source)
-                statement (.createStatement connection)
-                rs (.executeQuery statement select-anime)]
+        genres-map (load-genres-map data-source)]
+    (with-query data-source rs select-anime []
       (doall
         (for [item (resultset-seq rs)]
           (let [animedb-id (:animedb_id item)
@@ -318,26 +280,47 @@
                 (set! (.etag local-cover) (:etag item))
                 (set! (.expires local-cover) (:expires item))
                 (set! (.localCover anime) local-cover)))
-            (if-let [franchise (.get franchise-map animedb-id)]
-              (do
-                (.add (.anime franchise) anime)
-                (set! (.franchise anime) franchise)))
-            (if-let [franchise-id (relation-map animedb-id)]
-              (let [franchise (.get franchise-map franchise-id)]
-                (set! (.franchise anime) franchise)
-                (.add (.anime franchise) anime)))
             anime))))))
 
+(def ^:private select-relations
+  (str "SELECT animedb_id AS left, related_id AS right"
+       "    FROM anime_relations"
+       "    WHERE animedb_id < related_id"
+       " UNION "
+       "SELECT related_id AS left, animedb_id AS right"
+       "    FROM anime_relations"
+       "    WHERE animedb_id > related_id"
+       "  ORDER BY left ASC"))
+
+(defn- load-relation-pairs [data-source]
+  (with-query data-source rs select-relations []
+    (doall
+      (for [{:keys [left right]} (resultset-seq rs)]
+        [left right]))))
+
 (defn load-all-anime [data-source]
-  (into {}
-    (for [anime (load-anime-list data-source)]
-      [(.animedbId anime) anime])))
+  (let [all-relations (load-relation-pairs data-source)
+        anime-map (into {} (for [^aqua.mal.data.Anime anime (load-anime-only data-source)]
+                             [(.animedbId anime) anime]))]
+    (doseq [[left right] all-relations]
+      (let [^aqua.mal.data.Anime left-anime (anime-map left)
+            ^aqua.mal.data.Anime right-anime (anime-map right)]
+        (when (and left-anime right-anime)
+          (let [left-franchise (or (.franchise left-anime) (aqua.mal.data.Franchise. left [left-anime]))
+                right-franchise (or (.franchise right-anime) (aqua.mal.data.Franchise. right [right-anime]))
+                all-anime (concat [] (.anime left-franchise) (.anime right-franchise))
+                merged-franchise (aqua.mal.data.Franchise. (.franchiseId left-franchise) all-anime)]
+
+        (doseq [^aqua.mal.data.Anime anime (.anime merged-franchise)]
+          (set! (.franchise anime) merged-franchise))))))
+
+    anime-map))
 
 (defn load-anime [data-source]
-  (into {}
-    (for [anime (remove #(or (.isHentai %)
-                             (= (.seriesType %) aqua.mal.data.Anime/SPECIAL)) (load-anime-list data-source))]
-      [(.animedbId anime) anime])))
+  (letfn [(hentai-or-special [^aqua.mal.data.Anime anime]
+            (or (.isHentai anime) (= (.seriesType anime) aqua.mal.data.Anime/SPECIAL)))]
+    (into {}
+      (remove #(hentai-or-special (val %)) (load-all-anime data-source)))))
 
 (def ^:private select-case-correct-username
   (str "SELECT username FROM users where username = ? COLLATE nocase"))

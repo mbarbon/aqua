@@ -1,20 +1,26 @@
 package aqua.mal.data;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.collect.ImmutableSet;
+import java.util.Collection;
+import java.util.Set;
 
 public class Franchise {
     public int franchiseId;
-    public List<Anime> anime;
+    public Set<Anime> anime;
 
-    public Franchise(int franchiseId) {
+    public Franchise(int franchiseId, Collection<Anime> anime) {
         this.franchiseId = franchiseId;
-        this.anime = new ArrayList<>();
+        this.anime = ImmutableSet.copyOf(anime);
     }
 
     public int episodes() {
         return anime.stream()
             .mapToInt(a -> a.episodes)
             .sum();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Franchise %d", franchiseId);
     }
 }
