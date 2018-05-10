@@ -174,32 +174,22 @@
   "SELECT genre, description FROM anime_genre_names")
 
 (defn- load-genre-names [data-source]
-  (with-open [connection (.getConnection data-source)
-              statement (.createStatement connection)
-              rs (.executeQuery statement select-genre-names)]
+  (with-query data-source rs select-genre-names []
     (into {}
-      (for [item (resultset-seq rs)]
-        [(:genre item) (:description item)]))))
+      (for [{:keys [genre description]} (resultset-seq rs)]
+        [genre description]))))
 
 (def ^:private select-anime-genres-map
   "SELECT animedb_id, genre_id, sort_order FROM anime_genres ORDER BY animedb_id, sort_order")
 
 (defn- load-genres-map [data-source]
-  (let [genre-names (load-genre-names data-source)
-        genres-map (java.util.HashMap.)]
-    (with-open [connection (.getConnection data-source)
-                statement (.createStatement connection)
-                rs (.executeQuery statement select-anime-genres-map)]
-      (doseq [item (resultset-seq rs)]
-        (let [anime-id (:animedb_id item)
-              is-first (= 0 (:sort_order item))
-              genres-list (if is-first
-                            (let [genres-list (java.util.ArrayList.)]
-                              (.put genres-map anime-id genres-list)
-                              genres-list)
-                            (.get genres-map anime-id))]
-          (.add genres-list (genre-names (:genre_id item)))))
-      genres-map)))
+  (let [genre-names (load-genre-names data-source)]
+    (letfn [(concat-to-map-value [coll key value]
+              (assoc coll key (conj (or (coll key) []) value)))
+            (merge-genres [coll {:keys [animedb_id genre_id]}]
+              (concat-to-map-value coll animedb_id (genre-names genre_id)))]
+      (with-query data-source rs select-anime-genres-map []
+        (reduce merge-genres {} (resultset-seq rs))))))
 
 (def ^:private select-all-anime-titles
   (str "SELECT a.animedb_id AS animedb_id, a.title AS title"
@@ -240,9 +230,7 @@
        "           genre_id = 12"))
 
 (defn- load-hentai-anime-ids [data-source]
-  (with-open [connection (.getConnection data-source)
-              statement (.createStatement connection)
-              rs (.executeQuery statement select-hentai-anime-ids)]
+  (with-query data-source rs select-hentai-anime-ids []
     (doall
       (for [item (resultset-seq rs)]
         (:animedb_id item)))))
@@ -270,8 +258,8 @@
             (set! (.episodes anime) (:episodes item))
             (set! (.startedAiring anime) (if-let [start (:start item)] start 0))
             (set! (.endedAiring anime) (if-let [end (:end item)] end 0))
-            (set! (.genres anime) (.get genres-map animedb-id))
-            (set! (.isHentai anime) (.contains hentai-id-set animedb-id))
+            (set! (.genres anime) (genres-map animedb-id))
+            (set! (.isHentai anime) (boolean (hentai-id-set animedb-id)))
             (if-not (empty? (:cached_path item)) ; empty string is for placeholder entries for URLs returning 404
               (let [local-cover (aqua.mal.data.LocalCover.)]
                 (set! (.coverPath local-cover) (:cached_path item))
