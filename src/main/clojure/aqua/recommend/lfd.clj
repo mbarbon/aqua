@@ -59,10 +59,10 @@
         reader (no.uib.cipr.matrix.io.MatrixVectorReader. in)]
     (binding [*in* in]
       (let [lambda (read-double)
-            anime-indices (make-array Integer/TYPE (read-int))
+            anime-indices (int-array (read-int))
             cols (read-int)
             rows (read-int)
-            factors-data (make-array Double/TYPE (* rows cols))]
+            factors-data (double-array (* rows cols))]
         (.readArray reader anime-indices)
         (if anime-map
           (dotimes [n (alength anime-indices)]
@@ -107,8 +107,8 @@
                               [-1 nil])))]
     (binding [*in* in]
       (let [rank (read-int)
-            user-factors (make-array Float/TYPE (read-int))
-            user-int-map (make-array Integer/TYPE (read-int))]
+            user-factors (float-array (read-int))
+            user-int-map (int-array (read-int))]
         (.readArray reader user-int-map)
         (.readArray reader user-factors)
         (aqua.recommend.LatentFactorDecompositionUsers. lfd

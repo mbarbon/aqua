@@ -20,9 +20,9 @@
     (binding [*in* in]
       (let [similar-count (read-int)
             scores-count (read-int)
-            anime-indices (make-array Integer/TYPE (read-int))
-            similar-ids (make-array Integer/TYPE scores-count)
-            similar-scores (make-array Float/TYPE scores-count)]
+            anime-indices (int-array (read-int))
+            similar-ids (int-array scores-count)
+            similar-scores (float-array scores-count)]
         (.readArray reader anime-indices)
         (.readArray reader similar-ids)
         (.readArray reader similar-scores)

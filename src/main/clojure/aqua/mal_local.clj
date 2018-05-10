@@ -153,7 +153,7 @@
     (if (.next rs)
       (let [byte-size (.getInt rs 1)
             is (.getBinaryStream rs 2)
-            bytes (make-array Byte/TYPE byte-size)]
+            bytes (byte-array byte-size)]
         (.read is bytes)
         [bytes (.getInt rs 3)]))))
 
