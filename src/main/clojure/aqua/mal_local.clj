@@ -63,7 +63,7 @@
                           (Serialize/readRatedList al-data)))
     user))
 
-(defn- load-cf-users-from-rs [cf-parameters ^java.sql.ResultSet anime-map-to-filter-hentai rs]
+(defn- load-cf-users-from-rs [cf-parameters ^java.util.Map anime-map-to-filter-hentai ^java.sql.ResultSet rs]
   (let [user (aqua.recommend.CFUser.)
         anime-ids (if anime-map-to-filter-hentai (.keySet anime-map-to-filter-hentai))
         al-data (java.util.zip.GZIPInputStream.
@@ -110,24 +110,14 @@
     (with-query data-source rs query []
       (doall-rs rs loader))))
 
-(defn- selected-cf-user-ids [connection max-count query]
-  (with-open [statement (doto (.prepareStatement connection query
-                                                 java.sql.ResultSet/TYPE_FORWARD_ONLY
-                                                 java.sql.ResultSet/CONCUR_READ_ONLY)
-                              (.setInt 1 max-count)
-                              (.setFetchSize 1000))
-              rs (.executeQuery statement)]
-    (let [ids (doall-rs rs (fn [^java.sql.ResultSet rs] (.getInt rs 1)))]
-      ids)))
-
 (defn load-cf-users-by-id [data-source anime cf-parameters ids]
   (select-users-by-id data-source ids
                       (partial load-cf-users-from-rs cf-parameters anime)))
 
 (defn load-test-cf-user-ids [data-source user-ids max-count]
-  (with-open [connection (.getConnection data-source)]
-    (let [query (select-test-user-ids user-ids)]
-      (selected-cf-user-ids connection max-count query))))
+  (let [query (select-test-user-ids user-ids)]
+    (with-query data-source rs query [max-count]
+      (doall-rs (fn [^java.sql.ResultSet rs] (.getInt rs 1))))))
 
 (defn load-filtered-cf-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
   ; this allocates and throws away an ArrayList, it's fine
@@ -146,10 +136,7 @@
        "    WHERE u.username = ?"))
 
 (defn load-cf-user [data-source anime cf-parameters username]
-  (with-open [connection (.getConnection data-source)
-              statement (doto (.prepareStatement connection select-user)
-                              (.setString 1 username))
-              rs (.executeQuery statement)]
+  (with-query data-source rs select-user [username]
     (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters anime)))))
 
 (def ^:private select-user-blob
@@ -214,13 +201,11 @@
   "SELECT animedb_id, rank FROM anime_details")
 
 (defn load-anime-rank [data-source]
-    (with-open [connection (.getConnection data-source)
-                statement (.createStatement connection)
-                rs (.executeQuery statement select-anime-rank)]
-      (into {}
-        (doall
-          (for [item (resultset-seq rs)]
-            [(:animedb_id item) (:rank item)])))))
+  (with-query data-source rs select-anime-rank []
+    (into {}
+      (doall
+        (for [{:keys [animedb_id rank]} (resultset-seq rs)]
+          [animedb_id rank])))))
 
 (def ^:private select-hentai-anime-ids
   (str "SELECT a.animedb_id AS animedb_id"
