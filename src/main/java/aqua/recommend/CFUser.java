@@ -108,6 +108,7 @@ public class CFUser {
 
     public void setFilteredAnimeList(CFParameters cfParameters, List<CFRated> animeList, Set<Integer> animeIds) {
         List<CFRated> filtered = new ArrayList<>(animeList.size());
+        // copying the list to an array here makes filtering faster and reduces garbage
         for (CFRated item : new FilteredListIterator<>(animeList.toArray(EMPTY_CFRATED_ARRAY), COMPLETED_AND_DROPPED|WATCHING)) {
             if (animeIds == null || animeIds.contains(item.animedbId)) {
                 filtered.add(item);
