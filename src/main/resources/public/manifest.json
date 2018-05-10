@@ -4,11 +4,21 @@
   "icons": [
     {
       "src": "favicon.ico",
-      "sizes": "192x192",
+      "sizes": "16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "img/icons/pwa-xxhdpi.png",
+      "sizes": "144x144",
       "type": "image/png"
+    },
+    {
+      "src": "img/icons/pwa.svg",
+      "sizes": "32x32 64x64 128x128 192x192 256x256 512x512",
+      "type": "image/svg+xml"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
