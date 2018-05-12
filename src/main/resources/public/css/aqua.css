@@ -265,10 +265,10 @@ a:hover {
 @media (max-width: 600px) {
   .anime-details {
     font-size: 100%;
-    width: 250px;
-    width: -webkit-calc(100% - 80px - 1ex);
-    width: -moz-calc(100% - 80px - 1ex);
-    width: calc(100% - 80px - 1ex);
+    width: 190px;
+    width: -webkit-calc(100% - 140px - 1ex);
+    width: -moz-calc(100% - 140px - 1ex);
+    width: calc(100% - 140px - 1ex);
   }
 
   .anime-details .details {
@@ -277,7 +277,25 @@ a:hover {
     white-space: nowrap;
   }
 
+  .anime-details-image {
+    width: 140px;
+  }
+
   .anime-image {
+    width: 80px;
+  }
+}
+
+@media (max-width: 320px) {
+  .anime-details {
+    font-size: 100%;
+    width: 200px;
+    width: -webkit-calc(100% - 80px - 1ex);
+    width: -moz-calc(100% - 80px - 1ex);
+    width: calc(100% - 80px - 1ex);
+  }
+
+  .anime-details-image {
     width: 80px;
   }
 }
