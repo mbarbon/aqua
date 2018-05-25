@@ -15,6 +15,7 @@
     })(window, document, 'script', 'https://www.google-analytics.com/' + analyticsLibrary, 'ga');
 
     ga('create', 'UA-103130411-1', 'auto');
+    ga('set', 'anonymizeIp', true);
 
     if (analyticsDebugIfLocalHost) {
       ga('set', 'sendHitTask', null);
