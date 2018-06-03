@@ -85,15 +85,18 @@
     (execute connection update-user-refresh [queue-status inc-attempts username])))
 
 (defn- update-user-item-list-cb [kind data-source username store-items]
-  (let [response-callback (fn [mal-app-info error]
+  (let [response-callback (fn [mal-app-info error status]
                             (try
-                              (if error
-                                (do
-                                  (log/info error "Error while downloading " kind " list for " username)
-                                  queue-status-failed)
-                                (do
-                                  (store-items data-source username mal-app-info)
-                                  queue-status-complete))
+                              (cond
+                                error (do
+                                        (log/info error "Error while downloading " kind " list for " username)
+                                        queue-status-failed)
+                                status (do
+                                        (log/info "HTTP error " status " while downloading " kind " list for " username)
+                                        queue-status-failed)
+                                :else (do
+                                        (store-items data-source username mal-app-info)
+                                        queue-status-complete))
                               (catch Exception e (do
                                                    (log/info e "Error while downloading " kind " list for " username)
                                                    queue-status-failed))))]

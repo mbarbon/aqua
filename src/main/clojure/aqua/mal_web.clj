@@ -20,9 +20,10 @@
                                 "status" "all"}
     (fn [error status body _]
       (try
-        (if error
-          (callback nil error)
-          (callback (aqua.mal.Serialize/readMalAppInfo body) nil))
+        (cond
+          error (callback nil error nil)
+          (= status 200) (callback (aqua.mal.Serialize/readMalAppInfo body) nil nil)
+          :else (callback nil nil status))
         (catch Exception e (callback nil e))))))
 
 (defn fetch-anime-list-cb [username callback]
