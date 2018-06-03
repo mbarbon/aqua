@@ -40,6 +40,7 @@
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
         404 {:missing true}
+        503 {:snooze true}
         (log-error error status (str "fetching anime " title))))))
 
 (defn fetch-manga-details [mangadb-id title]
@@ -51,13 +52,15 @@
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
         404 {:missing true}
+        503 {:snooze true}
         (log-error error status (str "fetching manga " title))))))
 
 (defn fetch-active-users []
   (mal-fetch "/users.php" {}
     (fn [error status body _]
       (case status
-        200 (aqua.mal-scrape/parse-users-page body)
+        200 {:user-sample (aqua.mal-scrape/parse-users-page body)}
+        503 {:snooze true}
         (log-error error status "fetching user sample")))))
 
 (defn- fetch-item-list [kind username]
@@ -66,7 +69,8 @@
                                 "status" "all"}
     (fn [error status body _]
       (case status
-        200 (aqua.mal.Serialize/readMalAppInfo body)
+        200 {:mal-app-info (aqua.mal.Serialize/readMalAppInfo body)}
+        404 {:snooze true}
         (log-error error status (str "fetching anime list for " username))))))
 
 (defn fetch-anime-list [username]

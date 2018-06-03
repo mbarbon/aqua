@@ -34,6 +34,7 @@
   :pom-addition [:properties
                     ["maven.compiler.source" "1.8"]
                     ["maven.compiler.target" "1.8"]]
+  :aot [aqua.scrape.pause-scrape-exception]
   :profiles {:serve-jvm8 {:jvm-opts ["-Xms100M" "-Xmx100M"
                                      "-XX:+PrintGCDateStamps"
                                      "-XX:+PrintGCDetails"]}
