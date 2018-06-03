@@ -73,8 +73,10 @@
 
 (defn fetch-user [username-nocase accepts-gzip accepts-protobuf]
   (let [username (aqua.mal-local/case-correct-username @*data-source-ro username-nocase)
-        last-user-update (aqua.mal-local/last-user-update @*data-source-ro username)]
-    (if (> last-user-update (- (/ (System/currentTimeMillis) 1000) (* 3600 6)))
+        last-user-update (aqua.mal-local/last-user-update @*data-source-ro username)
+        last-attempted-refresh (aqua.slowpoke/last-user-refresh @*data-source-ro username)]
+    (if (or (> last-user-update (- (/ (System/currentTimeMillis) 1000) (* 3600 6)))
+            (and (> last-user-update 0) (> last-attempted-refresh 0)))
       (let [[bytes blob-type] (aqua.mal-local/load-user-anime-list @*data-source-ro username)
             stream (java.io.ByteArrayInputStream. bytes)]
         (cond

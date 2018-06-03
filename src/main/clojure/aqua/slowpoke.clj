@@ -80,6 +80,17 @@
       (.getInt rs 1)
       1)))
 
+(def ^:private get-queue-refresh
+  (str "SELECT status_change"
+       "    FROM user_refresh_queue"
+       "    WHERE username = ? AND status IN (2, 3)"))
+
+(defn last-user-refresh [data-source username]
+  (with-query data-source rs get-queue-refresh [username]
+    (if (.next rs)
+      (.getInt rs 1)
+      0)))
+
 (defn- set-user-refresh-status [data-source username queue-status inc-attempts]
   (with-connection data-source connection
     (execute connection update-user-refresh [queue-status inc-attempts username])))
