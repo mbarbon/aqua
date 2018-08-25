@@ -95,7 +95,7 @@
   (let [data (aqua.mal.Serialize/readMalAppInfo (test-resource "malappinfo.anime.xml"))
         user (.user data)
         anime-list (.anime data)
-        anime (first anime-list)]
+        anime (first (filter #(= 1 (.animedbId %)) anime-list))]
     (is (= 5621220 (.userId user)))
     (is (= "mattia_y" (.username user)))
     (is (= 8 (.watching user)))
@@ -122,7 +122,7 @@
   (let [data (aqua.mal.Serialize/readMalAppInfo (test-resource "malappinfo.manga.xml"))
         user (.user data)
         manga-list (.manga data)
-        manga (first manga-list)]
+        manga (first (filter #(= 3468 (.mangadbId %)) manga-list))]
     (is (= 5621220 (.userId user)))
     (is (= "mattia_y" (.username user)))
     (is (= 8 (.reading user)))
@@ -145,3 +145,36 @@
     (is (= 8 (.score manga)))
     (is (= 2 (.userStatus manga)))
     (is (= 1480719007 (.lastUpdated manga)))))
+
+(deftest parse-anime-list
+  (let [anime-list (aqua.mal.data.ListPageItem/convertAnimeList (aqua.mal.Serialize/readAnimeList (test-resource "anime_load.json")))
+        anime (first (filter #(= 1 (.animedbId %)) anime-list))]
+    (is (= 300 (count anime-list)))
+
+    (is (= 1 (.animedbId anime)))
+    (is (= "Cowboy Bebop" (.title anime)))
+    (is (= 1 (.seriesType anime)))
+    (is (= 26 (.episodes anime)))
+    (is (= 2 (.seriesStatus anime)))
+    (is (= "1998-04-03" (.start anime)))
+    (is (= "1999-04-24" (.end anime)))
+    (is (= "https://myanimelist.cdn-dena.com/images/anime/4/19644.jpg" (.image anime)))
+    (is (= 8 (.score anime)))
+    (is (= 2 (.userStatus anime)))))
+
+(deftest parse-manga-list
+  (let [manga-list (aqua.mal.data.ListPageItem/convertMangaList (aqua.mal.Serialize/readMangaList (test-resource "manga_load.json")))
+        manga (first (filter #(= 3468 (.mangadbId %)) manga-list))]
+    (is (= 34 (count manga-list)))
+
+    (is (= 3468 (.mangadbId manga)))
+    (is (= "Usagi Drop" (.title manga)))
+    (is (= 1 (.seriesType manga)))
+    (is (= 62 (.chapters manga)))
+    (is (= 10 (.volumes manga)))
+    (is (= 2 (.seriesStatus manga)))
+    (is (= "2005-10-08" (.start manga)))
+    (is (= "2011-12-08" (.end manga)))
+    (is (= "https://myanimelist.cdn-dena.com/images/manga/2/203854.jpg" (.image manga)))
+    (is (= 8 (.score manga)))
+    (is (= 2 (.userStatus manga)))))

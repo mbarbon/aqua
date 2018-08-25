@@ -1,5 +1,6 @@
 package aqua.mal;
 
+import aqua.mal.data.ListPageItem;
 import aqua.mal.data.MalAppInfo;
 import aqua.mal.data.Rated;
 import aqua.mal.data.User;
@@ -101,6 +102,10 @@ public class Serialize {
         new TypeReference<List<Rated>>() {};
     private static final TypeReference CFRATED_LIST =
         new TypeReference<List<CFRated>>() {};
+    private static final TypeReference ANIME_LIST_ITEM_LIST =
+        new TypeReference<List<ListPageItem.AnimePageItem>>() {};
+    private static final TypeReference MANGA_LIST_ITEM_LIST =
+        new TypeReference<List<ListPageItem.MangaPageItem>>() {};
     private static final Schema<RatedProtostuff> RATED_SCHEMA_LIST = RuntimeSchema.getSchema(RatedProtostuff.class);
     private static final Schema<CFRatedProtostuff> CFRATED_SCHEMA_LIST = RuntimeSchema.getSchema(CFRatedProtostuff.class);
     private static final Schema<Rated> RATED_SCHEMA = RuntimeSchema.getSchema(Rated.class);
@@ -144,6 +149,16 @@ public class Serialize {
             RATED_SCHEMA_LIST,
             linkedBuffer
         );
+    }
+
+    public static List<ListPageItem.AnimePageItem> readAnimeList(InputStream is) throws IOException {
+        List<ListPageItem.AnimePageItem> rated = JSON_MAPPER.readValue(is, ANIME_LIST_ITEM_LIST);
+        return rated;
+    }
+
+    public static List<ListPageItem.MangaPageItem> readMangaList(InputStream is) throws IOException {
+        List<ListPageItem.MangaPageItem> rated = JSON_MAPPER.readValue(is, MANGA_LIST_ITEM_LIST);
+        return rated;
     }
 
     public static List<CFRated> readCFRatedList(InputStream is) throws IOException {
