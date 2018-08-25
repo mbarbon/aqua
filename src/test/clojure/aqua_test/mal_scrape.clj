@@ -13,6 +13,39 @@
     (is (= "FlamyXD" (nth users 0)))
     (is (= "WonderFuture" (nth users 19)))))
 
+(defn- floor-with [v m]
+  (- v (mod v m)))
+
+(deftest parse-fuzzy-date
+  (let [now (java.time.ZonedDateTime/now (java.time.ZoneId/of "America/Los_Angeles"))
+        yesterday (.minusDays now 1)
+        seconds-ago-4 (.toEpochSecond (.minusSeconds now 4))
+        minutes-ago-1 (floor-with (.toEpochSecond (.minusMinutes now 1)) 60)
+        hours-ago-2 (floor-with (.toEpochSecond (.minusHours now 2)) 3600)
+        yesterday-3-10 (.toEpochSecond (java.time.OffsetDateTime/parse (format "%04d-%02d-%02dT10:10:00+00:00" (.getYear yesterday) (.getMonthValue yesterday) (.getDayOfMonth yesterday))))
+        aug-18 (.toEpochSecond (java.time.OffsetDateTime/parse (format "%04d-08-18T22:10:00+00:00" (.getYear now))))
+        jun-14 (.toEpochSecond (java.time.OffsetDateTime/parse "2017-06-14T08:17:00+00:00"))]
+    ; time zone is America/Los_Angeles (PST)
+    (is (= seconds-ago-4 (aqua.mal-scrape/parse-fuzzy-date "4 seconds ago")))
+    (is (= minutes-ago-1 (aqua.mal-scrape/parse-fuzzy-date "1 minute ago")))
+    (is (= hours-ago-2 (aqua.mal-scrape/parse-fuzzy-date "2 hours ago")))
+    (is (= yesterday-3-10 (aqua.mal-scrape/parse-fuzzy-date "Yesterday, 3:10 AM")))
+    (is (= yesterday-3-10 (aqua.mal-scrape/parse-fuzzy-date "Yesterday, 3:10 AM")))
+    (is (= aug-18 (aqua.mal-scrape/parse-fuzzy-date "Aug 18, 3:10 PM")))
+    (is (= jun-14 (aqua.mal-scrape/parse-fuzzy-date "Jun 14, 2017 1:17 AM")))))
+
+(deftest parse-profile
+  (let [profile-data (aqua.mal-scrape/parse-profile-page (test-resource "profile.html"))
+        now (java.time.ZonedDateTime/now (java.time.ZoneId/of "America/Los_Angeles"))
+        minutes-ago-14 (floor-with (.toEpochSecond (.minusMinutes now 14)) 60)
+        mar-14 (.toEpochSecond (java.time.OffsetDateTime/parse (format "%04d-03-14T15:19:00+00:00" (.getYear now))))]
+    (is (= minutes-ago-14 (:anime-update profile-data)))
+    (is (= mar-14 (:manga-update profile-data)))
+    (is (= 560 (:anime-count profile-data)))
+    (is (= 34 (:manga-count profile-data)))
+    (is (= 5621220 (:user-id profile-data)))
+    (is (= "mattia_y" (:username profile-data)))))
+
 (deftest parse-anime
   (let [anime-data (aqua.mal-scrape/parse-anime-page (test-resource "gintama.main.html"))
         {:keys [relations genres titles scores]} anime-data]

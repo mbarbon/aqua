@@ -1,5 +1,5 @@
 (ns aqua.mal-scrape
-  )
+  (:require [clojure.string]))
 
 (defmacro for-soup [[item items] form]
   `(for [~(vary-meta item assoc :tag `org.jsoup.nodes.Element) ~items]
@@ -8,6 +8,9 @@
 (def ^:private users-base "https://myanimelist.net/users.php")
 (def ^:private anime-base "https://myanimelist.net/anime/318/Hand_Maid_May")
 (def ^:private manga-base "https://myanimelist.net/manga/318/Futari_Ecchi")
+(def ^:private profile-base "https://myanimelist.net/profile/mattia_y")
+
+(def ^:private pst-tz  (java.time.ZoneId/of "America/Los_Angeles"))
 
 (def ^:private relation-names
   {"Side story:" 1
@@ -128,3 +131,106 @@
      :genres genres
      :titles titles
      :scores scores}))
+
+(defn- parse-date-parser-for-formatter [builder]
+  (let [formatter (.toFormatter builder java.util.Locale/US)]
+    (fn [lower]
+      (try
+        (.atZone (java.time.LocalDateTime/parse lower formatter) pst-tz)
+        (catch java.time.format.DateTimeParseException e
+          nil)))))
+
+(defn- parse-yesterday [builder]
+  (let [formatter (.toFormatter builder java.util.Locale/US)]
+    (fn [lower]
+      (try
+        (if (clojure.string/starts-with? lower "yesterday, ")
+          (.atZone (java.time.LocalDateTime/parse (subs lower 11) formatter) pst-tz))
+        (catch java.time.format.DateTimeParseException e
+          nil)))))
+
+(defn- parse-hour-ago [now]
+  (fn [lower]
+    (let [[_ delta] (re-find #"^([0-9]+) hours? ago$" lower)]
+      (if delta
+        (.withSecond (.withMinute (.minusHours now (Long/valueOf delta)) 0) 0)))))
+
+(defn- parse-minute-ago [now]
+  (fn [lower]
+    (let [[_ delta] (re-find #"^([0-9]+) minutes? ago$" lower)]
+      (if delta
+        (.withSecond (.minusMinutes now (Long/valueOf delta)) 0)))))
+
+(defn- parse-second-ago [now]
+  (fn [lower]
+    (let [[_ delta] (re-find #"^([0-9]+) seconds? ago$" lower)]
+      (if delta
+        (.minusSeconds now (Long/valueOf delta))))))
+
+(defn- formatter-builder []
+  (-> (java.time.format.DateTimeFormatterBuilder.)
+      (.parseCaseInsensitive)))
+
+(defn- date-parsers []
+  (let [now (java.time.ZonedDateTime/now pst-tz)
+        yesterday (.minusDays now 1)
+        full-date (-> (formatter-builder)
+                      (.appendPattern "MMM d, yyyy h:m a"))
+        missing-year (-> (formatter-builder)
+                         (.appendPattern "MMM d, h:m a")
+                         (.parseDefaulting java.time.temporal.ChronoField/YEAR (.getYear now)))
+        time-yesterday (-> (formatter-builder)
+                           (.appendPattern "h:m a")
+                           (.parseDefaulting java.time.temporal.ChronoField/YEAR (.getYear yesterday))
+                           (.parseDefaulting java.time.temporal.ChronoField/MONTH_OF_YEAR (.getMonthValue yesterday))
+                           (.parseDefaulting java.time.temporal.ChronoField/DAY_OF_MONTH (.getDayOfMonth yesterday)))]
+  [(parse-date-parser-for-formatter full-date)
+   (parse-date-parser-for-formatter missing-year)
+   (parse-yesterday time-yesterday)
+   (parse-hour-ago now)
+   (parse-minute-ago now)
+   (parse-second-ago now)]))
+
+(defn parse-fuzzy-date [str]
+  (let [lower (clojure.string/lower-case str)
+        parsed (some identity
+                 (for [parser (date-parsers)]
+                   (parser lower)))]
+    (if parsed
+      (.toEpochSecond parsed))))
+
+(defn- parse-update-time [spans]
+  (if-let [date-span (.first spans)]
+    (parse-fuzzy-date (.text date-span))))
+
+(defn- parse-comments-link [link-list]
+  ; https://myanimelist.net/comments.php?id=5621220
+  (if-let [link (first link-list)]
+    (let [[_ user-id] (re-find #"/comments\.php\?id=(\d+)" (.attr link "href"))]
+      (Long/valueOf user-id))))
+
+(defn- parse-list-link [link-list]
+  ; https://myanimelist.net/animelist/mattia_y
+  (if-let [link (first link-list)]
+    (let [[_ username] (re-find #"/animelist/(.+)" (.attr link "href"))]
+      username)))
+
+(defn- parse-count [anime-stats]
+  (if-let [total (first anime-stats)]
+    (Long/valueOf (clojure.string/replace (.text total) "," ""))))
+
+(defn parse-profile-page [stream]
+  (let [doc (org.jsoup.Jsoup/parse stream "utf-8" profile-base)
+        anime-stats (.select doc "div.anime.stats ul.stats-data li span:eq(1)")
+        manga-stats (.select doc "div.manga.stats ul.stats-data li span:eq(1)")
+        anime-updates (.select doc "div.anime.updates div.data div span")
+        manga-updates (.select doc "div.manga.updates div.data div span")
+        user-id (parse-comments-link (.select doc "div.user-comments h2 a[href*=comments.php]"))
+        username (parse-list-link (.select doc "div.user-profile div.user-button a[href*=/animelist/]"))]
+    (if (and user-id username)
+      {:anime-update (parse-update-time anime-updates)
+       :manga-update (parse-update-time manga-updates)
+       :anime-count (parse-count anime-stats)
+       :manga-count (parse-count manga-stats)
+       :user-id user-id
+       :username username})))
