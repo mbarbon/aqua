@@ -18,9 +18,10 @@ import java.util.concurrent.Future;
 
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 
 public class Http {
@@ -72,29 +73,31 @@ public class Http {
     }
 
     public static Future<Object> get(String url, Map<String, String> queryParams, int timeout, IFn callback) {
-        BoundRequestBuilder builder =
-            CLIENT
-                .prepareGet(url)
-                .setRequestTimeout(timeout);
+        RequestBuilder builder = new RequestBuilder()
+            .setMethod("GET")
+            .setUrl(url)
+            .setRequestTimeout(timeout);
 
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
             builder.addQueryParam(entry.getKey(), entry.getValue());
         }
+        Request request = builder.build();
 
-        return builder.execute(new HttpHandler(callback));
+        return CLIENT.executeRequest(request, new HttpHandler(callback));
     }
 
     public static Future<Object> getCDN(String url, String etag, int timeout, IFn callback) {
-        BoundRequestBuilder builder =
-            CLIENT
-                .prepareGet(url)
-                .setRequestTimeout(timeout);
+        RequestBuilder builder = new RequestBuilder()
+            .setMethod("GET")
+            .setUrl(url)
+            .setRequestTimeout(timeout);
 
         if (etag != null) {
             builder = builder.setHeader("If-None-Match", etag);
         }
+        Request request = builder.build();
 
-        return builder.execute(new HttpHandler(callback));
+        return CLIENT.executeRequest(request, new HttpHandler(callback));
     }
 
     public static long parseDate(String httpDate) {
