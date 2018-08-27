@@ -44,7 +44,15 @@
     (is (= 560 (:anime-count profile-data)))
     (is (= 34 (:manga-count profile-data)))
     (is (= 5621220 (:user-id profile-data)))
-    (is (= "mattia_y" (:username profile-data)))))
+    (is (= "mattia_y" (:username profile-data))))
+
+  (let [profile-data (aqua.mal-scrape/parse-profile-page (test-resource "profile_private.html"))]
+    (is (= 0 (:anime-update profile-data)))
+    (is (= 0 (:manga-update profile-data)))
+    (is (= 191 (:anime-count profile-data)))
+    (is (= 9 (:manga-count profile-data)))
+    (is (= 5661231 (:user-id profile-data)))
+    (is (= "clarity" (:username profile-data)))))
 
 (deftest parse-anime
   (let [anime-data (aqua.mal-scrape/parse-anime-page (test-resource "gintama.main.html"))

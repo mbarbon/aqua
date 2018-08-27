@@ -201,12 +201,19 @@
 
 (defn- parse-update-time [spans]
   (if-let [date-span (.first spans)]
-    (parse-fuzzy-date (.text date-span))))
+    (parse-fuzzy-date (.text date-span))
+    0))
 
 (defn- parse-comments-link [link-list]
   ; https://myanimelist.net/comments.php?id=5621220
   (if-let [link (first link-list)]
     (let [[_ user-id] (re-find #"/comments\.php\?id=(\d+)" (.attr link "href"))]
+      (Long/valueOf user-id))))
+
+(defn- parse-sns-link [link-list]
+  ; https://myanimelist.net/rss.php?type=blog&id=5661231
+  (if-let [link (first link-list)]
+    (let [[_ user-id] (re-find #"/rss\.php\?type=\w+&id=(\d+)" (.attr link "href"))]
       (Long/valueOf user-id))))
 
 (defn- parse-list-link [link-list]
@@ -225,7 +232,9 @@
         manga-stats (.select doc "div.manga.stats ul.stats-data li span:eq(1)")
         anime-updates (.select doc "div.anime.updates div.data div span")
         manga-updates (.select doc "div.manga.updates div.data div span")
-        user-id (parse-comments-link (.select doc "div.user-comments h2 a[href*=comments.php]"))
+        user-id-comments (parse-comments-link (.select doc "div.user-comments h2 a[href*=comments.php]"))
+        user-id-sns (parse-sns-link (.select doc "div.user-profile-sns a[href~=rss\\.php.*\\bid=]"))
+        user-id (or user-id-comments user-id-sns)
         username (parse-list-link (.select doc "div.user-profile div.user-button a[href*=/animelist/]"))]
     (if (and user-id username)
       {:anime-update (parse-update-time anime-updates)
