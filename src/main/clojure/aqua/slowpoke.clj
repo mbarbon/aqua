@@ -12,6 +12,7 @@
 (def ^:private refresh-user-interval 2300)
 (def ^:private fetch-new-user-interval 1900)
 (def ^:private check-image-interval 5800)
+(def ^:private throttled-interval 1950)
 
 (defmacro doseq-slowly [interval bindings & body]
   `(let [interval# ~interval]
@@ -121,6 +122,10 @@
   (let [response-callback (update-user-item-list-cb "manga" data-source username aqua.mal-local/store-user-manga-list)]
     (aqua.mal-web/fetch-manga-list-cb username response-callback)))
 
+(defn- throttled []
+  (log/warn "Throttled")
+  (Thread/sleep throttled-interval))
+
 (def ^:private anime-needing-update
   (str "SELECT a.animedb_id, a.title"
        "    FROM anime AS a"
@@ -140,9 +145,10 @@
       (doseq-slowly refresh-anime-interval [{:keys [animedb_id title]} anime-to-refresh]
         (log/info "Fetching new anime details for" title)
         (with-web-result [details @(aqua.mal-web/fetch-anime-details animedb_id title)]
-          (if (:snooze details)
-            (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting anime scrape after MAL error")
-            (aqua.mal-local/store-anime-details data-source-rw animedb_id title details)))))))
+          (cond
+            (:snooze details) (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting anime scrape after MAL error")
+            (:throttle details) (throttled)
+            :del (aqua.mal-local/store-anime-details data-source-rw animedb_id title details)))))))
 
 (def ^:private manga-needing-update
   (str "SELECT m.mangadb_id, m.title"
@@ -163,9 +169,10 @@
       (doseq-slowly refresh-manga-interval [{:keys [mangadb_id title]} manga-to-refresh]
         (log/info "Fetching new manga details for" title)
         (with-web-result [details @(aqua.mal-web/fetch-manga-details mangadb_id title)]
-          (if (:snooze details)
-            (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting manga scrape after MAL error")
-            (aqua.mal-local/store-manga-details data-source-rw mangadb_id title details)))))))
+          (cond
+            (:snooze details) (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting manga scrape after MAL error")
+            (:throttle details) (throttled)
+            :else (aqua.mal-local/store-manga-details data-source-rw mangadb_id title details)))))))
 
 (defn ^:private already-existing-users [users]
   (str "SELECT username"
@@ -175,30 +182,33 @@
        "    )"))
 
 (defn- refresh-user [data-source-rw username]
-  (with-web-result [{:keys [mal-app-info snooze]} @(aqua.mal-web/fetch-anime-list username)]
-    (if snooze
-      (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
-      (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info)))
-  (with-web-result [{:keys [mal-app-info snooze]} @(aqua.mal-web/fetch-manga-list username)]
-    (if snooze
-      (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
-      (aqua.mal-local/store-user-manga-list data-source-rw username mal-app-info))))
+  (with-web-result [{:keys [mal-app-info snooze throttle]} @(aqua.mal-web/fetch-anime-list username)]
+    (cond
+      snooze (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
+      throttle (throttled)
+      :else (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info)))
+  (with-web-result [{:keys [mal-app-info snooze throttle]} @(aqua.mal-web/fetch-manga-list username)]
+    (cond
+      snooze (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
+      throttle (throttled)
+      :else (aqua.mal-local/store-user-manga-list data-source-rw username mal-app-info))))
 
 (defn- fetch-new-users [data-source-rw data-source-ro]
   (log/info "Fetching new user sample")
-  (with-web-result [{:keys [user-sample snooze]} @(aqua.mal-web/fetch-active-users)]
-    (if snooze
-      (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
-      (let [existing-users (with-query data-source-ro rs
-                                      (already-existing-users user-sample)
-                                      user-sample
-                            (doall (map :username (resultset-seq rs))))
-            new-users (clojure.set/difference (set user-sample) (set existing-users))]
-        (if (empty? new-users)
-          (log/info "No new users found")
-          (doseq-slowly fetch-new-user-interval [username new-users]
-            (log/info "Fetching user data for" username)
-            (refresh-user data-source-rw username)))))))
+  (with-web-result [{:keys [user-sample snooze throttle]} @(aqua.mal-web/fetch-active-users)]
+    (cond
+      snooze (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
+      throttle (throttled)
+      :else (let [existing-users (with-query data-source-ro rs
+                                            (already-existing-users user-sample)
+                                            user-sample
+                                  (doall (map :username (resultset-seq rs))))
+                  new-users (clojure.set/difference (set user-sample) (set existing-users))]
+              (if (empty? new-users)
+                (log/info "No new users found")
+                (doseq-slowly fetch-new-user-interval [username new-users]
+                  (log/info "Fetching user data for" username)
+                  (refresh-user data-source-rw username)))))))
 
 (def ^:private old-inactive-budget-fraction 0.1)
 (def ^:private old-inactive-budget-min 20)

@@ -34,6 +34,7 @@
       (case status
         200 {:profile (aqua.mal-scrape/parse-profile-page body)}
         404 {:missing true}
+        429 {:throttle true}
         503 {:snooze true}
         (log-error error status "fetching profile page")))))
 
@@ -67,6 +68,7 @@
       (fn [items error status]
         (cond
           (= status 404) (deliver answer {:snooze true})
+          (= status 429) (deliver answer {:throttle true})
           (= status 400) (deliver answer {:items []}) ; Private list
           (or status error) (do
                               (log-error error status (str "fetching " kind " list for " username))
@@ -82,6 +84,7 @@
       (or (nil? items-res) (nil? profile-res)) nil
       (:missing profile-res) {:mal-app-info missing-user}
       (or (:snooze items-res) (:snooze profile-res)) {:snooze true}
+      (or (:throttle items-res) (:throttle profile-res)) {:throttle true}
       :else {:mal-app-info
               (aqua.mal.data.ListPageItem/makeAnimeList
                 (:user-id profile)
@@ -99,6 +102,7 @@
       (or (nil? items-res) (nil? profile-res)) nil
       (:missing profile-res) {:mal-app-info missing-user}
       (or (:snooze items-res) (:snooze profile-res)) {:snooze true}
+      (or (:throttle items-res) (:throttle profile-res)) {:throttle true}
       :else {:mal-app-info
               (aqua.mal.data.ListPageItem/makeMangaList
                 (:user-id profile)
@@ -114,6 +118,7 @@
       (cond
         (nil? res) (callback nil "Unknown" nil)
         (:snooze res) (callback nil "Snooze" nil)
+        (:throttle res) (callback nil nil 429)
         (:mal-app-info res) (callback (:mal-app-info res) nil nil)))))
 
 (defn fetch-manga-list-cb [username callback]
@@ -122,6 +127,7 @@
       (cond
         (nil? res) (callback nil "Unknown" nil)
         (:snooze res) (callback nil "Snooze" nil)
+        (:throttle res) (callback nil nil 429)
         (:mal-app-info res) (callback (:mal-app-info res) nil nil)))))
 
 (defn fetch-anime-details [animedb-id title]
@@ -133,6 +139,7 @@
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
         404 {:missing true}
+        429 {:throttle true}
         503 {:snooze true}
         (log-error error status (str "fetching anime " title))))))
 
@@ -145,6 +152,7 @@
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
         404 {:missing true}
+        429 {:throttle true}
         503 {:snooze true}
         (log-error error status (str "fetching manga " title))))))
 
@@ -153,6 +161,7 @@
     (fn [error status body _]
       (case status
         200 {:user-sample (aqua.mal-scrape/parse-users-page body)}
+        429 {:throttle true}
         503 {:snooze true}
         (log-error error status "fetching user sample")))))
 
@@ -164,6 +173,7 @@
       (case status
         200 {:mal-app-info (aqua.mal.Serialize/readMalAppInfo body)}
         404 {:snooze true}
+        429 {:throttle true}
         (log-error error status (str "fetching anime list for " username))))))
 
 (defn fetch-anime-list [username]
