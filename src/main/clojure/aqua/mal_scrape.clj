@@ -140,6 +140,15 @@
         (catch java.time.format.DateTimeParseException e
           nil)))))
 
+(defn- parse-today [builder]
+  (let [formatter (.toFormatter builder java.util.Locale/US)]
+    (fn [lower]
+      (try
+        (if (clojure.string/starts-with? lower "today, ")
+          (.atZone (java.time.LocalDateTime/parse (subs lower 7) formatter) pst-tz))
+        (catch java.time.format.DateTimeParseException e
+          nil)))))
+
 (defn- parse-yesterday [builder]
   (let [formatter (.toFormatter builder java.util.Locale/US)]
     (fn [lower]
@@ -179,6 +188,11 @@
         missing-year (-> (formatter-builder)
                          (.appendPattern "MMM d, h:m a")
                          (.parseDefaulting java.time.temporal.ChronoField/YEAR (.getYear now)))
+        time-today (-> (formatter-builder)
+                       (.appendPattern "h:m a")
+                       (.parseDefaulting java.time.temporal.ChronoField/YEAR (.getYear now))
+                       (.parseDefaulting java.time.temporal.ChronoField/MONTH_OF_YEAR (.getMonthValue now))
+                       (.parseDefaulting java.time.temporal.ChronoField/DAY_OF_MONTH (.getDayOfMonth now)))
         time-yesterday (-> (formatter-builder)
                            (.appendPattern "h:m a")
                            (.parseDefaulting java.time.temporal.ChronoField/YEAR (.getYear yesterday))
@@ -186,6 +200,7 @@
                            (.parseDefaulting java.time.temporal.ChronoField/DAY_OF_MONTH (.getDayOfMonth yesterday)))]
   [(parse-date-parser-for-formatter full-date)
    (parse-date-parser-for-formatter missing-year)
+   (parse-today time-today)
    (parse-yesterday time-yesterday)
    (parse-hour-ago now)
    (parse-minute-ago now)

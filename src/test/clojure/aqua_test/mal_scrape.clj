@@ -22,6 +22,7 @@
         seconds-ago-4 (.toEpochSecond (.minusSeconds now 4))
         minutes-ago-1 (floor-with (.toEpochSecond (.minusMinutes now 1)) 60)
         hours-ago-2 (floor-with (.toEpochSecond (.minusHours now 2)) 3600)
+        today-2-46 (.toEpochSecond (java.time.OffsetDateTime/parse (format "%04d-%02d-%02dT09:46:00+00:00" (.getYear now) (.getMonthValue now) (.getDayOfMonth now))))
         yesterday-3-10 (.toEpochSecond (java.time.OffsetDateTime/parse (format "%04d-%02d-%02dT10:10:00+00:00" (.getYear yesterday) (.getMonthValue yesterday) (.getDayOfMonth yesterday))))
         aug-18 (.toEpochSecond (java.time.OffsetDateTime/parse (format "%04d-08-18T22:10:00+00:00" (.getYear now))))
         jun-14 (.toEpochSecond (java.time.OffsetDateTime/parse "2017-06-14T08:17:00+00:00"))]
@@ -29,6 +30,7 @@
     (is (= seconds-ago-4 (aqua.mal-scrape/parse-fuzzy-date "4 seconds ago")))
     (is (= minutes-ago-1 (aqua.mal-scrape/parse-fuzzy-date "1 minute ago")))
     (is (= hours-ago-2 (aqua.mal-scrape/parse-fuzzy-date "2 hours ago")))
+    (is (= today-2-46 (aqua.mal-scrape/parse-fuzzy-date "Today, 2:46 AM")))
     (is (= yesterday-3-10 (aqua.mal-scrape/parse-fuzzy-date "Yesterday, 3:10 AM")))
     (is (= yesterday-3-10 (aqua.mal-scrape/parse-fuzzy-date "Yesterday, 3:10 AM")))
     (is (= aug-18 (aqua.mal-scrape/parse-fuzzy-date "Aug 18, 3:10 PM")))
