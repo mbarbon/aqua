@@ -125,4 +125,19 @@ public class MalAppInfo {
     @JacksonXmlElementWrapper(useWrapping = false)
     @JsonProperty("manga")
     public List<RatedManga> manga;
+
+    // cheat to reduce changes, scraped from profile page
+    public long lastUpdatedProfile;
+
+    public long lastUpdated() {
+        if (lastUpdatedProfile != 0) {
+            return lastUpdatedProfile;
+        } else if (anime != null) {
+            return anime.stream().mapToLong(i -> i.lastUpdated).max().orElse(0);
+        } else if (manga != null) {
+            return manga.stream().mapToLong(i -> i.lastUpdated).max().orElse(0);
+        } else {
+            return 0;
+        }
+    }
 }

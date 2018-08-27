@@ -813,8 +813,7 @@
         (do
           (insert-or-update-anime connection anime-list)
           (insert-or-update-user-anime-list connection user anime-list)
-          (let [change-time (reduce max 0 (for [anime anime-list]
-                                            (.lastUpdated anime)))]
+          (let [change-time (.lastUpdated mal-app-info)]
             (insert-or-update-anime-user connection request-username user change-time)))))))
 
 (defn store-user-manga-list [data-source request-username mal-app-info]
@@ -826,8 +825,7 @@
         (do
           (insert-or-update-manga connection manga-list)
           (insert-or-update-user-manga-list connection user manga-list)
-          (let [change-time (reduce max 0 (for [manga manga-list]
-                                            (.lastUpdated manga)))]
+          (let [change-time (.lastUpdated mal-app-info)]
             (insert-or-update-manga-user connection request-username user change-time)))))))
 
 (def ^:private sync-update-user

@@ -165,4 +165,72 @@ public class ListPageItem {
     public static List<MalAppInfo.RatedManga> convertMangaList(List<MangaPageItem> items) {
         return items.stream().map(MangaPageItem::toMalAppInfo).collect(Collectors.toList());
     }
+
+    public static MalAppInfo makeAnimeList(int userId, String username, long lastUpdated, List<AnimePageItem> items) {
+        MalAppInfo appInfo = new MalAppInfo();
+        MalAppInfo.UserInfo user = new MalAppInfo.UserInfo();
+
+        appInfo.user = user;
+        appInfo.anime = convertAnimeList(items);
+        appInfo.lastUpdatedProfile = lastUpdated;
+
+        user.userId = userId;
+        user.username = username;
+
+        for (MalAppInfo.RatedAnime anime : appInfo.anime) {
+            switch (anime.userStatus) {
+                case RatedBase.PLANTOWATCH:
+                    user.plantowatch++;
+                    break;
+                case RatedBase.WATCHING:
+                    user.watching++;
+                    break;
+                case RatedBase.COMPLETED:
+                    user.completed++;
+                    break;
+                case RatedBase.DROPPED:
+                    user.dropped++;
+                    break;
+                case RatedBase.ONOHOLD:
+                    user.onhold++;
+                    break;
+            }
+        }
+
+        return appInfo;
+    }
+
+    public static MalAppInfo makeMangaList(int userId, String username, long lastUpdated, List<MangaPageItem> items) {
+        MalAppInfo appInfo = new MalAppInfo();
+        MalAppInfo.UserInfo user = new MalAppInfo.UserInfo();
+
+        appInfo.user = user;
+        appInfo.manga = convertMangaList(items);
+        appInfo.lastUpdatedProfile = lastUpdated;
+
+        user.userId = userId;
+        user.username = username;
+
+        for (MalAppInfo.RatedManga anime : appInfo.manga) {
+            switch (anime.userStatus) {
+                case RatedBase.PLANTOWATCH:
+                    user.plantoread++;
+                    break;
+                case RatedBase.WATCHING:
+                    user.reading++;
+                    break;
+                case RatedBase.COMPLETED:
+                    user.completed++;
+                    break;
+                case RatedBase.DROPPED:
+                    user.dropped++;
+                    break;
+                case RatedBase.ONOHOLD:
+                    user.onhold++;
+                    break;
+            }
+        }
+
+        return appInfo;
+    }
 }

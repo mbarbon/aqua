@@ -2,6 +2,8 @@
   (:require [clojure.tools.logging :as log]
             aqua.mal-scrape))
 
+(def ^:private missing-user (aqua.mal.data.MalAppInfo.))
+
 (defn mal-fetch [path query-params callback]
   (aqua.mal.Http/get (str "https://myanimelist.net" path)
                      query-params
@@ -14,7 +16,7 @@
     (log/warn (str "HTTP error " status " while " activity)))
   nil)
 
-(defn- fetch-item-list-cb [kind username callback]
+(defn- fetch-malappinfo-list-cb [kind username callback]
   (mal-fetch "/malappinfo.php" {"u" username
                                 "type" kind
                                 "status" "all"}
@@ -26,11 +28,101 @@
           :else (callback nil nil status))
         (catch Exception e (callback nil e))))))
 
+(defn- fetch-profile-page [username]
+  (mal-fetch (str "/profile/" username) {}
+    (fn [error status body _]
+      (case status
+        200 {:profile (aqua.mal-scrape/parse-profile-page body)}
+        404 {:missing true}
+        503 {:snooze true}
+        (log-error error status "fetching profile page")))))
+
+(defn- fetch-item-list-cb [kind username partial callback]
+  (letfn [(handle-response [body]
+            (let [item-list (if (= kind "anime")
+                              (aqua.mal.Serialize/readAnimeList body)
+                              (aqua.mal.Serialize/readMangaList body))]
+              (when (seq item-list)
+                (.addAll partial item-list)
+                (Thread/sleep 750)
+                (fetch-step))
+              (when-not (seq item-list)
+                (callback partial nil nil))))
+          (fetch-step []
+            (mal-fetch (format "/%slist/%s/load.json" kind username)
+                       {"status" "7"
+                        "offset" (str (count partial))}
+              (fn [error status body _]
+                (try
+                  (cond
+                    error (callback nil error nil)
+                    (= status 200) (handle-response body)
+                    :else (callback nil nil status))
+                  (catch Exception e (callback nil e nil))))))]
+    (fetch-step)))
+
+(defn- fetch-item-list [kind username partial]
+  (let [answer (promise)]
+    (fetch-item-list-cb kind username partial
+      (fn [items error status]
+        (cond
+          (= status 404) (deliver answer {:snooze true})
+          (= status 400) (deliver answer {:items []}) ; Private list
+          (or status error) (do
+                              (log-error error status (str "fetching " kind " list for " username))
+                              (deliver answer nil))
+          :else (deliver answer {:items items}))))
+    answer))
+
+(defn fetch-anime-list-sync [username]
+  (let [items-res @(fetch-item-list "anime" username (java.util.ArrayList.))
+        profile-res @(fetch-profile-page username)
+        profile (:profile profile-res)]
+    (cond
+      (or (nil? items-res) (nil? profile-res)) nil
+      (:missing profile-res) {:mal-app-info missing-user}
+      (or (:snooze items-res) (:snooze profile-res)) {:snooze true}
+      :else {:mal-app-info
+              (aqua.mal.data.ListPageItem/makeAnimeList
+                (:user-id profile)
+                (:username profile)
+                (if (zero? (:anime-count profile))
+                  0
+                  (:anime-update profile))
+                (:items items-res))})))
+
+(defn fetch-manga-list-sync [username]
+  (let [items-res @(fetch-item-list "manga" username (java.util.ArrayList.))
+        profile-res @(fetch-profile-page username)
+        profile (:profile profile-res)]
+    (cond
+      (or (nil? items-res) (nil? profile-res)) nil
+      (:missing profile-res) {:mal-app-info missing-user}
+      (or (:snooze items-res) (:snooze profile-res)) {:snooze true}
+      :else {:mal-app-info
+              (aqua.mal.data.ListPageItem/makeMangaList
+                (:user-id profile)
+                (:username profile)
+                (if (zero? (:manga-count profile))
+                  0
+                  (:manga-update profile))
+                (:items items-res))})))
+
 (defn fetch-anime-list-cb [username callback]
-  (fetch-item-list-cb "anime" username callback))
+  (future
+    (let [res (fetch-anime-list-sync username)]
+      (cond
+        (nil? res) (callback nil "Unknown" nil)
+        (:snooze res) (callback nil "Snooze" nil)
+        (:mal-app-info res) (callback (:mal-app-info res) nil nil)))))
 
 (defn fetch-manga-list-cb [username callback]
-  (fetch-item-list-cb "manga" username callback))
+  (future
+    (let [res (fetch-manga-list-sync username)]
+      (cond
+        (nil? res) (callback nil "Unknown" nil)
+        (:snooze res) (callback nil "Snooze" nil)
+        (:mal-app-info res) (callback (:mal-app-info res) nil nil)))))
 
 (defn fetch-anime-details [animedb-id title]
   (mal-fetch (str "/anime/" animedb-id) {}
@@ -64,7 +156,7 @@
         503 {:snooze true}
         (log-error error status "fetching user sample")))))
 
-(defn- fetch-item-list [kind username]
+(defn- fetch-malappinfo-list [kind username]
   (mal-fetch "/malappinfo.php" {"u" username
                                 "type" kind
                                 "status" "all"}
@@ -75,7 +167,7 @@
         (log-error error status (str "fetching anime list for " username))))))
 
 (defn fetch-anime-list [username]
-  (fetch-item-list "anime" username))
+  (future (fetch-anime-list-sync username)))
 
 (defn fetch-manga-list [username]
-  (fetch-item-list "manga" username))
+  (future (fetch-manga-list-sync username)))
