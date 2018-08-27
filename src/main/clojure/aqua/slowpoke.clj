@@ -267,12 +267,12 @@
   (str "SELECT a.image AS url, ic.etag AS etag, ic.expires AS expires FROM anime AS a"
        "    LEFT JOIN image_cache AS ic"
        "      ON ic.url = a.image"
-       "    WHERE ic.expires < strftime('%s', 'now') OR ic.expires IS NULL"
+       "    WHERE (ic.expires < strftime('%s', 'now') OR ic.expires IS NULL) AND ic.url != ''"
        " UNION ALL "
        "SELECT m.image AS url, ic.etag AS etag, ic.expires AS expires FROM manga AS m"
        "    LEFT JOIN image_cache AS ic"
        "      ON ic.url = m.image"
-       "    WHERE ic.expires < strftime('%s', 'now') OR ic.expires IS NULL"
+       "    WHERE (ic.expires < strftime('%s', 'now') OR ic.expires IS NULL) AND ic.url != ''"
        " ORDER BY expires"
        " LIMIT 30"))
 

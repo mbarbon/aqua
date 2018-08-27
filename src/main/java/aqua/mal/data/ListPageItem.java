@@ -12,10 +12,12 @@ public class ListPageItem {
 
     private static String convertImage(String url) {
         Matcher matcher = IMAGE.matcher(url);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Unrecognized CDN URL '" + url + "'");
+        if (matcher.matches()) {
+            return matcher.group(1) + matcher.group(2);
+        } else if (url.contains("qm_50.gif")) {
+            return "";
         }
-        return matcher.group(1) + matcher.group(2);
+        throw new IllegalArgumentException("Unrecognized CDN URL '" + url + "'");
     }
 
     private static String convertDate(String date) {
