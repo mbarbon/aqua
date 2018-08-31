@@ -66,14 +66,16 @@
   (let [answer (promise)]
     (fetch-item-list-cb kind username partial
       (fn [items error status]
-        (cond
-          (= status 404) (deliver answer {:snooze true})
-          (= status 429) (deliver answer {:throttle true})
-          (= status 400) (deliver answer {:items []}) ; Private list
-          (or status error) (do
-                              (log-error error status (str "fetching " kind " list for " username))
-                              (deliver answer nil))
-          :else (deliver answer {:items items}))))
+        (try
+          (cond
+            (= status 404) (deliver answer {:snooze true})
+            (= status 429) (deliver answer {:throttle true})
+            (= status 400) (deliver answer {:items []}) ; Private list
+            (or status error) (do
+                                (log-error error status (str "fetching " kind " list for " username))
+                                (deliver answer nil))
+            :else (deliver answer {:items items}))
+          (catch Exception e (deliver answer nil)))))
     answer))
 
 (defn fetch-anime-list-sync [username]
@@ -114,21 +116,25 @@
 
 (defn fetch-anime-list-cb [username callback]
   (future
-    (let [res (fetch-anime-list-sync username)]
-      (cond
-        (nil? res) (callback nil "Unknown" nil)
-        (:snooze res) (callback nil "Snooze" nil)
-        (:throttle res) (callback nil nil 429)
-        (:mal-app-info res) (callback (:mal-app-info res) nil nil)))))
+    (try
+      (let [res (fetch-anime-list-sync username)]
+        (cond
+          (nil? res) (callback nil "Unknown" nil)
+          (:snooze res) (callback nil "Snooze" nil)
+          (:throttle res) (callback nil nil 429)
+          (:mal-app-info res) (callback (:mal-app-info res) nil nil)))
+      (catch Exception e (callback nil e nil)))))
 
 (defn fetch-manga-list-cb [username callback]
   (future
-    (let [res (fetch-manga-list-sync username)]
-      (cond
-        (nil? res) (callback nil "Unknown" nil)
-        (:snooze res) (callback nil "Snooze" nil)
-        (:throttle res) (callback nil nil 429)
-        (:mal-app-info res) (callback (:mal-app-info res) nil nil)))))
+    (try
+      (let [res (fetch-manga-list-sync username)]
+        (cond
+          (nil? res) (callback nil "Unknown" nil)
+          (:snooze res) (callback nil "Snooze" nil)
+          (:throttle res) (callback nil nil 429)
+          (:mal-app-info res) (callback (:mal-app-info res) nil nil)))
+      (catch Exception e (callback nil e nil)))))
 
 (defn fetch-anime-details [animedb-id title]
   (mal-fetch (str "/anime/" animedb-id) {}

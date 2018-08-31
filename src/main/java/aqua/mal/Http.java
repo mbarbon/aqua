@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import java.util.concurrent.FutureTask;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
@@ -83,7 +84,7 @@ public class Http {
         }
         Request request = builder.build();
 
-        return CLIENT.executeRequest(request, new HttpHandler(callback));
+        return executeRequest(request, callback);
     }
 
     public static Future<Object> getCDN(String url, String etag, int timeout, IFn callback) {
@@ -97,7 +98,7 @@ public class Http {
         }
         Request request = builder.build();
 
-        return CLIENT.executeRequest(request, new HttpHandler(callback));
+        return executeRequest(request, callback);
     }
 
     public static long parseDate(String httpDate) {
@@ -129,5 +130,13 @@ public class Http {
             return 0;
         }
         return date.toEpochSecond();
+    }
+
+    private static Future<Object> executeRequest(Request request, IFn callback) {
+        try {
+            return CLIENT.executeRequest(request, new HttpHandler(callback));
+        } catch (Throwable t) {
+            return new FutureTask<>(() -> callback.invoke(t, null, null));
+        }
     }
 }
