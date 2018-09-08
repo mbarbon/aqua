@@ -60,6 +60,9 @@ public class Http {
     private static final DefaultAsyncHttpClientConfig CONFIG =
         new DefaultAsyncHttpClientConfig.Builder()
             .setCompressionEnforced(true)
+            .setConnectTimeout(2500)
+            .setReadTimeout(5000)
+            .setRequestTimeout(10000)
             .build();
     private static AsyncHttpClient CLIENT;
 
