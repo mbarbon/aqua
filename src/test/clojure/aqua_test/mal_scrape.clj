@@ -19,6 +19,7 @@
 (deftest parse-fuzzy-date
   (let [now (java.time.ZonedDateTime/now (java.time.ZoneId/of "America/Los_Angeles"))
         yesterday (.minusDays now 1)
+        seconds-ago-0 (.toEpochSecond now)
         seconds-ago-4 (.toEpochSecond (.minusSeconds now 4))
         minutes-ago-1 (floor-with (.toEpochSecond (.minusMinutes now 1)) 60)
         hours-ago-2 (floor-with (.toEpochSecond (.minusHours now 2)) 3600)
@@ -27,6 +28,7 @@
         aug-18 (.toEpochSecond (java.time.OffsetDateTime/parse (format "%04d-08-18T22:10:00+00:00" (.getYear now))))
         jun-14 (.toEpochSecond (java.time.OffsetDateTime/parse "2017-06-14T08:17:00+00:00"))]
     ; time zone is America/Los_Angeles (PST)
+    (is (= seconds-ago-0 (aqua.mal-scrape/parse-fuzzy-date "now")))
     (is (= seconds-ago-4 (aqua.mal-scrape/parse-fuzzy-date "4 seconds ago")))
     (is (= minutes-ago-1 (aqua.mal-scrape/parse-fuzzy-date "1 minute ago")))
     (is (= hours-ago-2 (aqua.mal-scrape/parse-fuzzy-date "2 hours ago")))

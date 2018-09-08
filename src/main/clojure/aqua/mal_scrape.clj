@@ -176,6 +176,11 @@
       (if delta
         (.minusSeconds now (Long/valueOf delta))))))
 
+(defn- parse-now [now]
+  (fn [lower]
+    (if (= "now" lower)
+      now)))
+
 (defn- formatter-builder []
   (-> (java.time.format.DateTimeFormatterBuilder.)
       (.parseCaseInsensitive)))
@@ -204,7 +209,8 @@
    (parse-yesterday time-yesterday)
    (parse-hour-ago now)
    (parse-minute-ago now)
-   (parse-second-ago now)]))
+   (parse-second-ago now)
+   (parse-now now)]))
 
 (defn parse-fuzzy-date [str]
   (let [lower (clojure.string/lower-case str)
@@ -254,6 +260,8 @@
     (if (and user-id username)
       {:anime-update (parse-update-time anime-updates)
        :manga-update (parse-update-time manga-updates)
+       :anime-update-string (.first anime-updates)
+       :manga-update-string (.first manga-updates)
        :anime-count (parse-count anime-stats)
        :manga-count (parse-count manga-stats)
        :user-id user-id
