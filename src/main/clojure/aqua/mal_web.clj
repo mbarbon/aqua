@@ -26,7 +26,7 @@
           error (callback nil error nil)
           (= status 200) (callback (aqua.mal.Serialize/readMalAppInfo body) nil nil)
           :else (callback nil nil status))
-        (catch Exception e (callback nil e))))))
+        (catch Exception e (callback nil e nil))))))
 
 (defn- fetch-profile-page [username]
   (mal-fetch (str "/profile/" username) {}
