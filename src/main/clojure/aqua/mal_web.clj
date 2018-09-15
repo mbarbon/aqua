@@ -38,48 +38,38 @@
         503 {:snooze true}
         (log-error error status "fetching profile page")))))
 
-(defn- fetch-item-list-cb [kind username partial callback]
-  (letfn [(handle-response [body]
-            (let [item-list (if (= kind "anime")
-                              (aqua.mal.Serialize/readAnimeList body)
-                              (aqua.mal.Serialize/readMangaList body))]
-              (when (seq item-list)
-                (.addAll partial item-list)
-                (Thread/sleep 750)
-                (fetch-step))
-              (when-not (seq item-list)
-                (callback partial nil nil))))
-          (fetch-step []
-            (mal-fetch (format "/%slist/%s/load.json" kind username)
-                       {"status" "7"
-                        "offset" (str (count partial))}
-              (fn [error status body _]
-                (try
-                  (cond
-                    error (callback nil error nil)
-                    (= status 200) (handle-response body)
-                    :else (callback nil nil status))
-                  (catch Exception e (callback nil e nil))))))]
-    (fetch-step)))
+(defn- fetch-item-list-chunk [kind username offset]
+  (mal-fetch (format "/%slist/%s/load.json" kind username)
+              {"status" "7"
+               "offset" (str offset)}
+    (fn [error status body _]
+      (cond
+        error [nil error nil]
+        (= status 200)
+          (let [items (if (= kind "anime")
+                        (aqua.mal.Serialize/readAnimeList body)
+                        (aqua.mal.Serialize/readMangaList body))]
+            [items nil nil])
+        :else [nil nil status]))))
 
-(defn- fetch-item-list [kind username partial]
-  (let [answer (promise)]
-    (fetch-item-list-cb kind username partial
-      (fn [items error status]
-        (try
+(defn- fetch-item-list [kind username]
+  (future
+    (let [partial (java.util.ArrayList.)]
+      (loop [] ; loop until error, or chunk size becomes zero
+        (let [[chunk error status] @(fetch-item-list-chunk kind username (.size partial))]
           (cond
-            (= status 404) (deliver answer {:snooze true})
-            (= status 429) (deliver answer {:throttle true})
-            (= status 400) (deliver answer {:items []}) ; Private list
-            (or status error) (do
-                                (log-error error status (str "fetching " kind " list for " username))
-                                (deliver answer nil))
-            :else (deliver answer {:items items}))
-          (catch Exception e (deliver answer nil)))))
-    answer))
+            (= status 404) {:snooze true}
+            (= status 429) {:throttle true}
+            (= status 400) {:items []} ; Private list
+            (or status error) (log-error error status (str "fetching " kind " list for " username))
+            :else (if (zero? (.size chunk))
+                    {:items partial}
+                    (do
+                      (.addAll partial chunk)
+                      (recur)))))))))
 
 (defn fetch-anime-list-sync [username]
-  (let [items-res @(fetch-item-list "anime" username (java.util.ArrayList.))
+  (let [items-res @(fetch-item-list "anime" username)
         profile-res @(fetch-profile-page username)
         profile (:profile profile-res)]
     (cond
@@ -97,7 +87,7 @@
                 (:items items-res))})))
 
 (defn fetch-manga-list-sync [username]
-  (let [items-res @(fetch-item-list "manga" username (java.util.ArrayList.))
+  (let [items-res @(fetch-item-list "manga" username)
         profile-res @(fetch-profile-page username)
         profile (:profile profile-res)]
     (cond
