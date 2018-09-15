@@ -237,6 +237,12 @@
     (let [[_ user-id] (re-find #"/rss\.php\?type=\w+&id=(\d+)" (.attr link "href"))]
       (Long/valueOf user-id))))
 
+(defn- parse-report-link [link-list]
+  ; https://myanimelist.net/modules.php?go=report&type=profile&id=7324648
+  (if-let [link (first link-list)]
+    (let [[_ user-id] (re-find #"/modules\.php\?go=report&type=profile&id=(\d+)" (.attr link "href"))]
+      (Long/valueOf user-id))))
+
 (defn- parse-list-link [link-list]
   ; https://myanimelist.net/animelist/mattia_y
   (if-let [link (first link-list)]
@@ -255,7 +261,8 @@
         manga-updates (.select doc "div.manga.updates div.data div span")
         user-id-comments (parse-comments-link (.select doc "div.user-comments h2 a[href*=comments.php]"))
         user-id-sns (parse-sns-link (.select doc "div.user-profile-sns a[href~=rss\\.php.*\\bid=]"))
-        user-id (or user-id-comments user-id-sns)
+        user-id-report (parse-report-link (.select doc "h1 a[href~=go=report.*\\bid=]"))
+        user-id (or user-id-comments user-id-sns user-id-report)
         username (parse-list-link (.select doc "div.user-profile div.user-button a[href*=/animelist/]"))]
     (if (and user-id username)
       {:anime-update (parse-update-time anime-updates)
