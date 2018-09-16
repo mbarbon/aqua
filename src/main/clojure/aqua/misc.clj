@@ -18,9 +18,9 @@
 (defn- scored-animedb-id [^aqua.recommend.RecommendationItem scored] (.animedbId scored))
 (defn- rated-animedb-id [^aqua.recommend.CFRated rated] (.animedbId rated))
 (defn- rated-status [^aqua.recommend.CFRated rated] (.status rated))
-(defn- franchise-anime [^aqua.mal.data.Franchise franchise] (.anime franchise))
-(defn- anime-animedb-id [^aqua.mal.data.Anime anime] (.animedbId anime))
-(defn- anime-franchise [^aqua.mal.data.Anime anime] (.franchise anime))
+(defn- franchise-items [^aqua.mal.data.Franchise franchise] (.items franchise))
+(defn- item-itemdb-id [^aqua.mal.data.Item item] (.itemId item))
+(defn- item-franchise [^aqua.mal.data.Item item] (.franchise item))
 
 (defn- all-but-planned [user]
   (->> (.allButPlanToWatch user)
@@ -30,23 +30,23 @@
   (->> (.planToWatch user)
        (map rated-animedb-id)))
 
-(defn- franchise-anime-ids [anime-ids anime-map]
-  (set (->> anime-ids
+(defn- franchise-item-ids [item-ids item-map]
+  (set (->> item-ids
             (map #(some-> %
-                          (anime-map)
-                          anime-franchise))
+                          (item-map)
+                          item-franchise))
             (remove nil?)
-            (mapcat franchise-anime)
-            (map anime-animedb-id))))
+            (mapcat franchise-items)
+            (map item-itemdb-id))))
 
-(defn user-anime-ids [user anime-map]
+(defn user-item-ids [user item-map]
   (let [known (all-but-planned user)
         planned (only-planned user)]
     (map set
       [known
        planned
-       (franchise-anime-ids known anime-map)
-       (franchise-anime-ids planned anime-map)])))
+       (franchise-item-ids known item-map)
+       (franchise-item-ids planned item-map)])))
 
 (defn- add-tags [ranked-anime-seq
                  planned-anime
@@ -56,7 +56,7 @@
   (let [seen-franchises (java.util.HashSet.)]
     (doseq [^aqua.recommend.ScoredAnime scored-anime ranked-anime-seq]
       (let [anime-id (.animedbId scored-anime)
-            franchise-id (if-let [^aqua.mal.data.Anime anime (.get anime-map anime-id)]
+            franchise-id (if-let [^aqua.mal.data.Item anime (.get anime-map anime-id)]
                            (if-let [franchise (.franchise anime)]
                              (.franchiseId franchise)))
             is-planned (planned-anime anime-id)
@@ -93,6 +93,6 @@
 
 (defn make-tagger [user anime-map]
   (let [[known-anime planned-anime known-franchises planned-franchises]
-            (user-anime-ids user anime-map)]
+            (user-item-ids user anime-map)]
     (fn [ranked-anime-seq]
       (add-tags ranked-anime-seq planned-anime known-franchises planned-franchises anime-map))))

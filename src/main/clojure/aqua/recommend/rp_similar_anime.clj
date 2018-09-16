@@ -4,7 +4,7 @@
 (defn create-rp-similarity [user-list anime-map rank similar-count]
   (let [anime-index-map (java.util.HashMap.)]
     (doseq [user user-list]
-      (doseq [rated (.animeList user)]
+      (doseq [rated (.itemList user)]
         (.putIfAbsent anime-index-map
                       (.animedbId rated)
                       (.size anime-index-map))))
@@ -27,7 +27,7 @@
 (defn get-recommendations [user
                            ^aqua.recommend.ItemItemModel rp
                            remove-known-anime]
-  (aqua.recommend.item-item-model/get-recommendations user rp remove-known-anime))
+  (aqua.recommend.item-item-model/get-raw-anime-recommendations user rp remove-known-anime))
 
-(defn get-all-recommendations [user rp remove-known-anime keep-airing-anime tagger]
-  (aqua.recommend.item-item-model/get-all-recommendations user rp remove-known-anime keep-airing-anime tagger))
+(defn get-anime-recommendations [user rp remove-known-anime keep-airing-anime tagger]
+  (aqua.recommend.item-item-model/get-anime-recommendations user rp remove-known-anime keep-airing-anime tagger))

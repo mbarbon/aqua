@@ -1,6 +1,7 @@
 package aqua.recommend;
 
 import aqua.mal.data.Anime;
+import aqua.mal.data.Item;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -68,8 +69,9 @@ public class ComputeCoOccurrencyItemItem {
         private CFRated current;
         private List<CFRated> watching;
 
-        public AiringAnime(Map<Integer, Anime> animeMap) {
-            this.animeMap = animeMap;
+        @SuppressWarnings("unchecked")
+        public AiringAnime(Map<Integer, ? extends Item> animeMap) {
+            this.animeMap = (Map<Integer, Anime>) animeMap;
         }
 
         @Override
@@ -118,15 +120,71 @@ public class ComputeCoOccurrencyItemItem {
         }
     }
 
-    private final Map<Integer, Anime> animeMap;
+    private class InProgressAndDroppedManga implements AnimeIterator {
+        private final float goodScoreThreshold;
+        private CFUser user;
+        private int index;
+        private CFRated current;
+        private List<CFRated> inProgressAndDropped;
+
+        public InProgressAndDroppedManga(float goodScoreThreshold) {
+            this.goodScoreThreshold = goodScoreThreshold;
+        }
+
+        @Override
+        public void reset(CFUser user) {
+            this.user = user;
+            this.index = -1;
+            this.inProgressAndDropped = new ArrayList<>();
+
+            for (CFRated rated : user.inProgressAndDropped()) {
+                this.inProgressAndDropped.add(rated);
+            }
+        }
+
+        @Override
+        public int maxSize() {
+            return inProgressAndDropped.size();
+        }
+
+        @Override
+        public boolean next() {
+            if (index >= inProgressAndDropped.size()) {
+                return false;
+            }
+            do {
+                ++index;
+                if (index >= inProgressAndDropped.size()) {
+                    return false;
+                }
+                current = inProgressAndDropped.get(index);
+            } while (index < inProgressAndDropped.size() && normalizedRating() < goodScoreThreshold);
+            if (index >= inProgressAndDropped.size()) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int animedbId() {
+            return current.animedbId;
+        }
+
+        @Override
+        public float normalizedRating() {
+            return user.normalizedRating(current);
+        }
+    }
+
+    private final Map<Integer, Item> itemMap;
     private final Map<Integer, Integer> animeIndexMap;
     private final int similarAnimeCount;
     private final float[] animeCounts;
     private final int[] similarAnimeId;
     private final float[] similarAnimeScore;
 
-    public ComputeCoOccurrencyItemItem(Map<Integer, Anime> animeMap, Map<Integer, Integer> animeIndexMap, int similarAnimeCount) {
-        this.animeMap = animeMap;
+    public ComputeCoOccurrencyItemItem(Map<Integer, Item> itemMap, Map<Integer, Integer> animeIndexMap, int similarAnimeCount) {
+        this.itemMap = itemMap;
         this.animeIndexMap = animeIndexMap;
         this.similarAnimeCount = similarAnimeCount;
         this.animeCounts = new float[animeIndexMap.size() * animeIndexMap.size()];
@@ -140,7 +198,12 @@ public class ComputeCoOccurrencyItemItem {
     }
 
     public void findSimilarAiringAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
-        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(animeMap), alpha);
+        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(itemMap), alpha);
+        fillSimilarAnime();
+    }
+
+    public void findSimilarManga(List<CFUser> users, float goodScoreThreshold, float alpha) {
+        countCoOccurencies(users, new InProgressAndDroppedManga(goodScoreThreshold), new InProgressAndDroppedManga(goodScoreThreshold), alpha);
         fillSimilarAnime();
     }
 
@@ -244,7 +307,7 @@ public class ComputeCoOccurrencyItemItem {
     }
 
     private boolean addFranchise(int animedbId, Set<Integer> seenFranchises) {
-        Anime anime = animeMap.get(animedbId);
+        Item anime = itemMap.get(animedbId);
         if (anime != null && anime.franchise != null) {
             if (seenFranchises.contains(anime.franchise.franchiseId))
                 return true;

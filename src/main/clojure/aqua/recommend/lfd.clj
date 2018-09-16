@@ -1,7 +1,7 @@
 (ns aqua.recommend.lfd
   (:require aqua.recommend.model-files))
 
-(defn prepare-lfd-decompositor [user-list anime-map rank lambda]
+(defn prepare-anime-lfd-decompositor [user-list anime-map rank lambda]
   (let [anime-index-map (java.util.HashMap.)
         airing-anime-index-map (java.util.HashMap.)]
     (doseq [^aqua.mal.data.Anime anime (vals anime-map)]
@@ -27,6 +27,21 @@
       (.initializeIteration lfdr-airing)
       [lfdr lfdr-airing])))
 
+(defn prepare-manga-lfd-decompositor [user-list manga-map rank lambda]
+  (let [manga-index-map (java.util.HashMap.)]
+    (doseq [^aqua.mal.data.Manga manga (vals manga-map)]
+      (.put manga-index-map
+            (.mangadbId manga)
+            (.size manga-index-map)))
+    (let [lfdr (aqua.recommend.ComputeLatentFactorDecomposition. manga-index-map
+                                                                 (.size user-list)
+                                                                 rank
+                                                                 lambda)]
+      (dotimes [i (.size user-list)]
+        (.addInProgressAndDropped lfdr i (.get user-list i)))
+      (.initializeIteration lfdr)
+      [lfdr])))
+
 (defn run-user-steps
   ([^aqua.recommend.ComputeLatentFactorDecomposition lfdr]
     (run-user-steps lfdr 0 (.userCount lfdr)))
@@ -34,12 +49,12 @@
     (dotimes [i steps]
       (.userStep lfdr (+ current-index i)))))
 
-(defn run-anime-steps
+(defn run-item-steps
   ([^aqua.recommend.ComputeLatentFactorDecomposition lfdr]
-    (run-anime-steps lfdr 0 (.animeCount lfdr)))
+    (run-item-steps lfdr 0 (.animeCount lfdr)))
   ([^aqua.recommend.ComputeLatentFactorDecomposition  lfdr current-index steps]
     (dotimes [i steps]
-      (.animeStep lfdr (+ current-index i)))))
+      (.itemStep lfdr (+ current-index i)))))
 
 (defn store-lfd [out ^aqua.recommend.LatentFactorDecomposition lfd]
   (let [anime-indices (.animeRatedMap lfd)
@@ -66,7 +81,7 @@
         (.readArray reader anime-indices)
         (if anime-map
           (dotimes [n (alength anime-indices)]
-            (if-let [^aqua.mal.data.Anime anime (anime-map (aget anime-indices n))]
+            (if-let [^aqua.mal.data.Item anime (anime-map (aget anime-indices n))]
               ; mark as Hentai if present
               (if (.isHentai anime)
                 (aset-int anime-indices n (- (aget anime-indices n))))
@@ -129,10 +144,10 @@
     (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
     [[] (take 100 (remove-known-anime ranked-anime))]))
 
-(defn get-all-recommendations [user
-                               ^aqua.recommend.LatentFactorDecomposition lfd
-                               ^aqua.recommend.LatentFactorDecomposition lfd-airing
-                               remove-known-anime keep-airing-anime tagger]
+(defn get-anime-recommendations [user
+                                 ^aqua.recommend.LatentFactorDecomposition lfd
+                                 ^aqua.recommend.LatentFactorDecomposition lfd-airing
+                                 remove-known-anime keep-airing-anime tagger]
   (let [user-vector (.computeUserVector lfd user)
         ranked-anime (.computeUserAnimeScores lfd user-vector)
         ranked-airing-anime (.computeUserAnimeScores lfd-airing user-vector)]
@@ -146,3 +161,11 @@
         ranked-anime (.computeUserAnimeScores lfd user-vector)]
     (into {} (for [anime ranked-anime]
                [(.animedbId anime) (- (.score anime))]))))
+
+(defn get-manga-recommendations [user
+                                 ^aqua.recommend.LatentFactorDecomposition lfd
+                                 remove-known-manga tagger]
+  (let [user-vector (.computeUserVector lfd user)
+        ranked-manga (.computeUserAnimeScores lfd user-vector)]
+    (.sort ranked-manga aqua.recommend.ScoredAnimeId/SORT_SCORE)
+    [(tagger (take 100 (remove-known-manga ranked-manga)))]))

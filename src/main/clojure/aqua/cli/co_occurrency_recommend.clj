@@ -9,7 +9,7 @@
         airing-anime-filter (aqua.misc/make-airing-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
         [recommended recommended-airing]
-          (aqua.recommend.co-occurrency/get-all-recommendations user model known-anime-filter airing-anime-filter known-anime-tagger)]
+          (aqua.recommend.co-occurrency/get-anime-recommendations user model known-anime-filter airing-anime-filter known-anime-tagger)]
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
     (println)
     (println "Airing anime")

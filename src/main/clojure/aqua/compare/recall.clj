@@ -81,4 +81,4 @@
   (partial score-recommender #(aqua.recommend.rp-similar-anime/get-recommendations %1 rp-model %2)))
 
 (defn make-score-co-occurrency [co-occurrency-model]
-  (partial score-recommender #(aqua.recommend.co-occurrency/get-recommendations %1 co-occurrency-model %2)))
+  (partial score-recommender #(aqua.recommend.co-occurrency/get-raw-anime-recommendations %1 co-occurrency-model %2)))

@@ -1,12 +1,12 @@
 (ns aqua.recommend.co-occurrency
   (:require aqua.recommend.item-item-model))
 
-(defn create-co-occurrency [user-list anime-map score-threshold alpha similar-count similar-count-airing]
+(defn create-anime-co-occurrency [user-list anime-map score-threshold alpha similar-count similar-count-airing]
   (let [anime-index-map (java.util.HashMap.)]
     (doseq [user user-list]
-      (doseq [rated (.animeList user)]
+      (doseq [rated (.itemList user)]
         (.putIfAbsent anime-index-map
-                      (.animedbId rated)
+                      (.itemId rated)
                       (.size anime-index-map))))
     (let [compute-complete (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count)
           compute-airing (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count-airing)]
@@ -14,6 +14,18 @@
       (.findSimilarAiringAnime compute-airing user-list score-threshold alpha)
       (aqua.recommend.CoOccurrency. (.simpleItemItem compute-complete)
                                     (.simpleItemItem compute-airing)))))
+
+(defn create-manga-co-occurrency [user-list manga-map score-threshold alpha similar-count]
+  (let [manga-index-map (java.util.HashMap.)]
+    (doseq [user user-list]
+      (doseq [rated (.itemList user)]
+        (.putIfAbsent manga-index-map
+                      (.animedbId rated)
+                      (.size manga-index-map))))
+    (let [compute-complete (aqua.recommend.ComputeCoOccurrencyItemItem. manga-map manga-index-map similar-count)]
+      (.findSimilarManga compute-complete user-list score-threshold alpha)
+      (aqua.recommend.CoOccurrency. (.simpleItemItem compute-complete)
+                                    nil))))
 
 (defn similar-anime-debug [co-occurrency anime-id anime-map]
   (let [similar-scored (.similarAnime co-occurrency anime-id)]
@@ -32,15 +44,26 @@
         airing (aqua.recommend.item-item-model/load-item-item path-airing)]
     (aqua.recommend.CoOccurrency. complete airing)))
 
-(defn get-recommendations [user
-                           ^aqua.recommend.CoOccurrency model
-                           remove-known-anime]
-  (aqua.recommend.item-item-model/get-recommendations user (.complete model) remove-known-anime))
+(defn load-manga-co-occurrency [path-complete]
+  (let [complete (aqua.recommend.item-item-model/load-item-item path-complete)]
+    (aqua.recommend.CoOccurrency. complete nil)))
 
-(defn get-all-recommendations [user
-                               ^aqua.recommend.CoOccurrency model
-                               remove-known-anime keep-airing-anime
-                               tagger]
-  (let [[_ recommendations] (aqua.recommend.item-item-model/get-recommendations user (.complete model) remove-known-anime)
-        [_ airing] (aqua.recommend.item-item-model/get-recommendations user (.airing model) remove-known-anime)]
+(defn get-raw-anime-recommendations [user
+                                     ^aqua.recommend.CoOccurrency model
+                                     remove-known-anime]
+  (aqua.recommend.item-item-model/get-raw-anime-recommendations user (.complete model) remove-known-anime))
+
+(defn get-anime-recommendations [user
+                                 ^aqua.recommend.CoOccurrency model
+                                 remove-known-anime keep-airing-anime
+                                 tagger]
+  (let [[_ recommendations] (aqua.recommend.item-item-model/get-raw-anime-recommendations user (.complete model) remove-known-anime)
+        [_ airing] (aqua.recommend.item-item-model/get-raw-anime-recommendations user (.airing model) remove-known-anime)]
     [(tagger recommendations) (tagger airing)]))
+
+(defn get-manga-recommendations [user
+                                 ^aqua.recommend.CoOccurrency model
+                                 remove-known-manga
+                                 tagger]
+  (let [[_ recommendations] (aqua.recommend.item-item-model/get-raw-manga-recommendations user (.complete model) remove-known-manga)]
+    [(tagger recommendations)]))

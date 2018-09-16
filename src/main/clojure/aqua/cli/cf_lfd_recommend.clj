@@ -12,7 +12,7 @@
         airing-anime-filter (aqua.misc/make-airing-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
         [recommended recommended-airing]
-          (aqua.recommend.lfd-cf/get-all-recommendations user lfd-users known-anime-filter airing-anime-filter known-anime-tagger)]
+          (aqua.recommend.lfd-cf/get-anime-recommendations user lfd-users known-anime-filter airing-anime-filter known-anime-tagger)]
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
     (println "Airing anime")
     (doseq [scored-anime (take 15 recommended-airing)]
@@ -32,7 +32,7 @@
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
-        users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count)
+        users (aqua.recommend.user-sample/load-filtered-cf-users "anime" (aqua.paths/anime-user-sample) data-source cf-parameters user-count)
         lfd (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model))
         lfd-users (aqua.recommend.lfd/load-user-lfd (aqua.paths/anime-lfd-user-model) lfd users)]
     (println "Running recommender")

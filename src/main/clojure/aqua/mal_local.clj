@@ -30,13 +30,22 @@
       (.add result (func rs)))
     result))
 
-(def ^:private select-users
+(def ^:private select-anime-users
   (str "SELECT u.user_id AS user_id, u.username AS username,"
        "       al.anime_list AS anime_list,"
        "       al.anime_list_format AS anime_list_format"
        "    FROM users AS u"
        "      INNER JOIN anime_list AS al"
        "        ON u.user_id = al.user_id"
+       "    WHERE u.user_id IN "))
+
+(def ^:private select-manga-users
+  (str "SELECT u.user_id AS user_id, u.username AS username,"
+       "       ml.manga_list AS manga_list,"
+       "       1"
+       "    FROM users AS u"
+       "      INNER JOIN manga_list AS ml"
+       "        ON u.user_id = ml.user_id"
        "    WHERE u.user_id IN "))
 
 (defn- select-test-user-ids [skip-ids]
@@ -59,10 +68,10 @@
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setAnimeList user cf-parameters (if (= 1 (.getInt rs 4))
+    (.setItemList user cf-parameters (if (= 1 (.getInt rs 4))
                                         (Serialize/readCFRatedProtobuf al-data)
                                         (Serialize/readCFRatedList al-data))
-                                      anime-ids)
+                                     anime-ids)
     user))
 
 (defn- load-filtered-cf-users-from-rs [cf-parameters
@@ -80,7 +89,7 @@
       (doseq [^aqua.recommend.CFRated item anime-list]
         (let [item-id (.animedbId item)
               is-hentai ; when we have an user referring to non-existing/non-interesting anime
-                        (if-let [^aqua.mal.data.Anime in-map
+                        (if-let [^aqua.mal.data.Item in-map
                                   (anime-map-to-filter-hentai item-id)]
                           (.isHentai in-map)
                           false)]
@@ -88,34 +97,47 @@
             (.setHentai item)))))
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setFilteredAnimeList user cf-parameters anime-list anime-ids)
+    (.setFilteredItemList user cf-parameters anime-list anime-ids)
     (.set target (- (.getRow rs) 1) user)
     ; return nil to avoid retaining the previous value in the
     ; result list
     nil))
 
-(defn- select-users-by-id [data-source ids loader]
-  (let [query (str select-users "(" (clojure.string/join "," ids) ")")]
+(defn- select-users-by-id [data-source base-query ids loader]
+  (let [query (str select-anime-users "(" (clojure.string/join "," ids) ")")]
     (with-query data-source rs query []
       (doall-rs rs loader))))
 
-(defn load-cf-users-by-id [data-source anime cf-parameters ids]
-  (select-users-by-id data-source ids
+(defn load-cf-anime-users-by-id [data-source anime cf-parameters ids]
+  (select-users-by-id data-source select-anime-users ids
+                      (partial load-cf-users-from-rs cf-parameters anime)))
+
+(defn load-cf-manga-users-by-id [data-source anime cf-parameters ids]
+  (select-users-by-id data-source select-manga-users ids
                       (partial load-cf-users-from-rs cf-parameters anime)))
 
 (defn load-test-cf-user-ids [data-source user-ids max-count]
   (let [query (select-test-user-ids user-ids)]
     (with-query data-source rs query [max-count]
-      (doall-rs (fn [^java.sql.ResultSet rs] (.getInt rs 1))))))
+      (doall-rs rs (fn [^java.sql.ResultSet rs] (.getInt rs 1))))))
 
-(defn load-filtered-cf-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
+(defn load-filtered-cf-anime-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
   ; this allocates and throws away an ArrayList, it's fine
   (select-users-by-id data-source
+                      select-anime-users
                       user-ids
                       (partial load-filtered-cf-users-from-rs cf-parameters target anime-map-to-filter-hentai))
   target)
 
-(def ^:private select-user
+(defn load-filtered-cf-manga-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
+  ; this allocates and throws away an ArrayList, it's fine
+  (select-users-by-id data-source
+                      select-manga-users
+                      user-ids
+                      (partial load-filtered-cf-users-from-rs cf-parameters target anime-map-to-filter-hentai))
+  target)
+
+(def ^:private select-anime-user
   (str "SELECT u.user_id AS user_id, u.username AS username,"
        "       al.anime_list AS anime_list,"
        "       al.anime_list_format AS anime_list_format"
@@ -124,9 +146,22 @@
        "        ON u.user_id = al.user_id"
        "    WHERE u.username = ?"))
 
+(def ^:private select-manga-user
+  (str "SELECT u.user_id AS user_id, u.username AS username,"
+       "       ml.manga_list AS manga_list,"
+       "       1 AS manga_list_format"
+       "    FROM users AS u"
+       "      INNER JOIN manga_list AS ml"
+       "        ON u.user_id = ml.user_id"
+       "    WHERE u.username = ?"))
+
 (defn load-cf-user [data-source anime cf-parameters username]
-  (with-query data-source rs select-user [username]
+  (with-query data-source rs select-anime-user [username]
     (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters anime)))))
+
+(defn load-cf-manga-user [data-source manga cf-parameters username]
+  (with-query data-source rs select-manga-user [username]
+    (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters manga)))))
 
 (def ^:private select-user-blob
   (str "SELECT LENGTH(al.anime_list) AS blob_length,"
@@ -146,10 +181,13 @@
         (.read is bytes)
         [bytes (.getInt rs 3)]))))
 
-(def ^:private select-genre-names
+(def ^:private select-anime-genre-names
   "SELECT genre, description FROM anime_genre_names")
 
-(defn- load-genre-names [data-source]
+(def ^:private select-manga-genre-names
+  "SELECT genre, description FROM manga_genre_names")
+
+(defn- load-genre-names [data-source select-genre-names]
   (with-query data-source rs select-genre-names []
     (into {}
       (for [{:keys [genre description]} (resultset-seq rs)]
@@ -158,13 +196,16 @@
 (def ^:private select-anime-genres-map
   "SELECT animedb_id, genre_id, sort_order FROM anime_genres ORDER BY animedb_id, sort_order")
 
-(defn- load-genres-map [data-source]
-  (let [genre-names (load-genre-names data-source)]
+(def ^:private select-manga-genres-map
+  "SELECT mangadb_id, genre_id, sort_order FROM manga_genres ORDER BY mangadb_id, sort_order")
+
+(defn- load-genres-map [data-source select-genres-query select-genre-names-query]
+  (let [genre-names (load-genre-names data-source select-genre-names-query)]
     (letfn [(concat-to-map-value [coll key value]
               (assoc coll key (conj (or (coll key) []) value)))
             (merge-genres [coll {:keys [animedb_id genre_id]}]
               (concat-to-map-value coll animedb_id (genre-names genre_id)))]
-      (with-query data-source rs select-anime-genres-map []
+      (with-query data-source rs select-genres-query []
         (reduce merge-genres {} (resultset-seq rs))))))
 
 (def ^:private select-all-anime-titles
@@ -197,17 +238,24 @@
           [animedb_id rank])))))
 
 (def ^:private select-hentai-anime-ids
-  (str "SELECT a.animedb_id AS animedb_id"
+  (str "SELECT a.animedb_id AS itemdb_id"
        "    FROM anime AS a"
        "      INNER JOIN anime_genres AS ag"
        "        ON a.animedb_id = ag.animedb_id AND"
        "           genre_id = 12"))
 
-(defn- load-hentai-anime-ids [data-source]
-  (with-query data-source rs select-hentai-anime-ids []
+(def ^:private select-hentai-manga-ids
+  (str "SELECT m.mangadb_id AS itemdb_id"
+       "    FROM manga AS m"
+       "      INNER JOIN manga_genres AS mg"
+       "        ON m.mangadb_id = mg.mangadb_id AND"
+       "           genre_id = 12"))
+
+(defn- load-hentai-ids [data-source select-hentai-items]
+  (with-query data-source rs select-hentai-items []
     (doall
       (for [item (resultset-seq rs)]
-        (:animedb_id item)))))
+        (:itemdb_id item)))))
 
 (def ^:private select-anime
   (str "SELECT animedb_id, title, status, episodes, start, end, image, type,"
@@ -217,8 +265,8 @@
        "        ON image = url"))
 
 (defn- load-anime-only [data-source]
-  (let [hentai-id-set (set (load-hentai-anime-ids data-source))
-        genres-map (load-genres-map data-source)]
+  (let [hentai-id-set (set (load-hentai-ids data-source select-hentai-anime-ids))
+        genres-map (load-genres-map data-source select-anime-genres-map select-anime-genre-names)]
     (with-query data-source rs select-anime []
       (doall
         (for [item (resultset-seq rs)]
@@ -244,7 +292,43 @@
                 (set! (.localCover anime) local-cover)))
             anime))))))
 
-(def ^:private select-relations
+(def ^:private select-manga
+  (str "SELECT mangadb_id, title, status, chapters, volumes, start, end, image, type,"
+       "       expires, etag, cached_path, resized_path, sizes"
+       "    FROM manga"
+       "      LEFT JOIN image_cache"
+       "        ON image = url"))
+
+(defn- load-manga-only [data-source]
+  (let [hentai-id-set (set (load-hentai-ids data-source select-hentai-manga-ids))
+        genres-map (load-genres-map data-source select-manga-genres-map select-manga-genre-names)]
+    (with-query data-source rs select-manga []
+      (doall
+        (for [item (resultset-seq rs)]
+          (let [mangadb-id (:mangadb_id item)
+                manga (aqua.mal.data.Manga.)]
+            (set! (.mangadbId manga) mangadb-id)
+            (set! (.status manga) (:status item))
+            (set! (.title manga) (:title item))
+            (set! (.image manga) (:image item))
+            (set! (.seriesType manga) (:type item))
+            (set! (.chapters manga) (:chapters item))
+            (set! (.volumes manga) (:volumes item))
+            (set! (.startedPublishing manga) (if-let [start (:start item)] start 0))
+            (set! (.endedPublishing manga) (if-let [end (:end item)] end 0))
+            (set! (.genres manga) (genres-map mangadb-id))
+            (set! (.isHentai manga) (boolean (hentai-id-set mangadb-id)))
+            (if-not (empty? (:cached_path item)) ; empty string is for placeholder entries for URLs returning 404
+              (let [local-cover (aqua.mal.data.LocalCover.)]
+                (set! (.coverPath local-cover) (:cached_path item))
+                (set! (.smallCoverPath local-cover) (aqua.mal-images/cover-size item "84x114"))
+                (set! (.mediumCoverPath local-cover) (aqua.mal-images/cover-size item "168x228"))
+                (set! (.etag local-cover) (:etag item))
+                (set! (.expires local-cover) (:expires item))
+                (set! (.localCover manga) local-cover)))
+            manga))))))
+
+(def ^:private select-anime-related-ids
   (str "SELECT animedb_id AS left, related_id AS right"
        "    FROM anime_relations"
        "    WHERE animedb_id < related_id"
@@ -254,35 +338,59 @@
        "    WHERE animedb_id > related_id"
        "  ORDER BY left ASC"))
 
-(defn- load-relation-pairs [data-source]
+(def ^:private select-manga-related-ids
+  (str "SELECT mangadb_id AS left, related_id AS right"
+       "    FROM manga_relations"
+       "    WHERE mangadb_id < related_id"
+       " UNION "
+       "SELECT related_id AS left, mangadb_id AS right"
+       "    FROM manga_relations"
+       "    WHERE mangadb_id > related_id"
+       "  ORDER BY left ASC"))
+
+(defn- load-relation-pairs [data-source select-relations]
   (with-query data-source rs select-relations []
     (doall
       (for [{:keys [left right]} (resultset-seq rs)]
         [left right]))))
 
-(defn load-all-anime [data-source]
-  (let [all-relations (load-relation-pairs data-source)
-        anime-map (into {} (for [^aqua.mal.data.Anime anime (load-anime-only data-source)]
-                             [(.animedbId anime) anime]))]
+(defn- load-item-franchise [data-source items select-relations]
+  (let [all-relations (load-relation-pairs data-source select-relations)
+        item-map (into {} (for [^aqua.mal.data.Item item items]
+                             [(.itemId item) item]))]
     (doseq [[left right] all-relations]
-      (let [^aqua.mal.data.Anime left-anime (anime-map left)
-            ^aqua.mal.data.Anime right-anime (anime-map right)]
-        (when (and left-anime right-anime)
-          (let [left-franchise (or (.franchise left-anime) (aqua.mal.data.Franchise. left [left-anime]))
-                right-franchise (or (.franchise right-anime) (aqua.mal.data.Franchise. right [right-anime]))
-                all-anime (concat [] (.anime left-franchise) (.anime right-franchise))
-                merged-franchise (aqua.mal.data.Franchise. (.franchiseId left-franchise) all-anime)]
+      (let [^aqua.mal.data.Item left-item (item-map left)
+            ^aqua.mal.data.Item right-item (item-map right)]
+        (when (and left-item right-item)
+          (let [left-franchise (or (.franchise left-item) (aqua.mal.data.Franchise. left [left-item]))
+                right-franchise (or (.franchise right-item) (aqua.mal.data.Franchise. right [right-item]))
+                all-items (concat [] (.anime left-franchise) (.anime right-franchise))
+                merged-franchise (aqua.mal.data.Franchise. (.franchiseId left-franchise) all-items)]
 
-        (doseq [^aqua.mal.data.Anime anime (.anime merged-franchise)]
-          (set! (.franchise anime) merged-franchise))))))
+        (doseq [^aqua.mal.data.Item item (.items merged-franchise)]
+          (set! (.franchise item) merged-franchise))))))
 
-    anime-map))
+    item-map))
+
+(defn load-all-anime [data-source]
+  (let [anime (load-anime-only data-source)]
+    (load-item-franchise data-source anime select-anime-related-ids)))
 
 (defn load-anime [data-source]
   (letfn [(hentai-or-special [^aqua.mal.data.Anime anime]
             (or (.isHentai anime) (= (.seriesType anime) aqua.mal.data.Anime/SPECIAL)))]
     (into {}
       (remove #(hentai-or-special (val %)) (load-all-anime data-source)))))
+
+(defn load-all-manga [data-source]
+  (let [manga (load-manga-only data-source)]
+    (load-item-franchise data-source manga select-manga-related-ids)))
+
+(defn load-manga [data-source]
+  (letfn [(hentai [^aqua.mal.data.Manga manga]
+            (.isHentai manga))]
+    (into {}
+      (remove #(hentai (val %)) (load-all-manga data-source)))))
 
 (def ^:private select-case-correct-username
   (str "SELECT username FROM users where username = ? COLLATE nocase"))
