@@ -52,17 +52,6 @@
        "          )"
        "    LIMIT ?"))
 
-(defn- load-users-from-rs [^java.sql.ResultSet rs]
-  (let [user (aqua.mal.data.User.)
-        al-data (java.util.zip.GZIPInputStream.
-                  (io/input-stream (.getBinaryStream rs 3)))]
-    (set! (.userId user) (.getInt rs 1))
-    (set! (.username user) (.getString rs 2))
-    (.setAnimeList user (if (= 1 (.getInt rs 4))
-                          (Serialize/readRatedProtobuf al-data)
-                          (Serialize/readRatedList al-data)))
-    user))
-
 (defn- load-cf-users-from-rs [cf-parameters ^java.util.Map anime-map-to-filter-hentai ^java.sql.ResultSet rs]
   (let [user (aqua.recommend.CFUser.)
         anime-ids (if anime-map-to-filter-hentai (.keySet anime-map-to-filter-hentai))

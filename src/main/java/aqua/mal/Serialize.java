@@ -3,7 +3,6 @@ package aqua.mal;
 import aqua.mal.data.ListPageItem;
 import aqua.mal.data.MalAppInfo;
 import aqua.mal.data.Rated;
-import aqua.mal.data.User;
 import aqua.recommend.CFParameters;
 import aqua.recommend.CFRated;
 import aqua.recommend.CFUser;
@@ -175,12 +174,6 @@ public class Serialize {
         }
         rated.sort(CFRated::compareTo);
         return rated;
-    }
-
-    public static User readUser(InputStream is) throws IOException {
-        User user = JSON_MAPPER.readValue(is, User.class);
-        Arrays.sort(user.animeList, Rated::compareTo);
-        return user;
     }
 
     public static CFUser readPartialCFUser(CFParameters cfParameters, InputStream is) throws IOException {
