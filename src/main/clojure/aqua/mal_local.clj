@@ -1,21 +1,21 @@
 (ns aqua.mal-local
   (:require [clojure.java.io :as io]
-             clojure.string
-             aqua.db-schema
-             aqua.mal-images)
+            clojure.string
+            aqua.db-schema
+            aqua.mal-images)
   (:use aqua.db-utils)
   (:import (aqua.mal Serialize)))
 
-(defn open-sqlite-rw [directory file]
+(defn open-sqlite-rw [path]
   (let [data-source (org.sqlite.SQLiteDataSource.)]
-    (.setUrl data-source (str "jdbc:sqlite:" (io/file directory file)))
+    (.setUrl data-source (str "jdbc:sqlite:" path))
     (.setReadOnly data-source false)
     (.setJournalMode data-source "WAL")
     data-source))
 
-(defn open-sqlite-ro [directory file]
+(defn open-sqlite-ro [path]
   (let [data-source (org.sqlite.SQLiteDataSource.)]
-    (.setUrl data-source (str "jdbc:sqlite:" (io/file directory file)))
+    (.setUrl data-source (str "jdbc:sqlite:" path))
     (.setReadOnly data-source true)
     data-source))
 

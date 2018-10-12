@@ -269,9 +269,9 @@ def cmd_sync_db(args):
 
 def push_aqua_models(directory, to_aqua, dry_run):
     LOGGER.info('Sending models')
-    for model in ['lfd-model', 'lfd-model-airing', 'lfd-user-model',
-                      'co-occurrency-model', 'co-occurrency-model-airing',
-                      'user-sample']:
+    for model in ['anime-lfd-model', 'anime-lfd-model-airing', 'anime-lfd-user-model',
+                      'anime-co-occurrency-model', 'anime-co-occurrency-model-airing',
+                      'anime-user-sample']:
         source = os.path.join(directory, model)
         LOGGER.info('  Sending model %s', model)
         to_aqua.upload_model(source, model)

@@ -1,5 +1,6 @@
 (ns aqua.cli.cf-lfd-recommend
   (:require aqua.mal-local
+            aqua.paths
             aqua.recommend.lfd-cf
             aqua.recommend.user-sample
             aqua.misc))
@@ -25,15 +26,14 @@
 
 (defn -main [username]
   (println "Starting")
-  (let [directory "maldump"
-        data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
+  (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
-        users (aqua.recommend.user-sample/load-filtered-cf-users "maldump/user-sample" data-source cf-parameters user-count)
-        lfd (aqua.recommend.lfd/load-lfd "maldump/lfd-model")
-        lfd-users (aqua.recommend.lfd/load-user-lfd "maldump/lfd-user-model" lfd users)]
+        users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count)
+        lfd (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model))
+        lfd-users (aqua.recommend.lfd/load-user-lfd (aqua.paths/anime-lfd-user-model) lfd users)]
     (println "Running recommender")
     (run-recommender user lfd-users anime)))

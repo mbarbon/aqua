@@ -33,8 +33,7 @@
 
 (defn- make-suggester [suggester-name]
   (let [runtime (Runtime/getRuntime)
-        directory "maldump"
-        data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
+        data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading anime titles")

@@ -1,14 +1,14 @@
 (ns aqua.web.dump
   (:require aqua.mal-local
             [clojure.java.io :as io]
-            [aqua.web.globals :refer [*maldump-directory
-                                      *data-source-ro
+            [aqua.paths :refer [*maldump-directory]]
+            [aqua.web.globals :refer [*data-source-ro
                                       *data-source-rw]]))
 
 (def ^:private model-names
-  ["lfd-model" "lfd-model-airing" "lfd-user-model"
-   "co-occurrency-model" "co-occurrency-model-airing"
-   "user-sample"])
+  ["anime-lfd-model" "anime-lfd-model-airing" "anime-lfd-user-model"
+   "anime-co-occurrency-model" "anime-co-occurrency-model-airing"
+   "anime-user-sample"])
 
 (defn- to-page [key id-map]
   {key id-map

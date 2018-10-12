@@ -1,5 +1,6 @@
 (ns aqua.cli.user-sample-stats
   (:require aqua.mal-local
+            aqua.paths
             aqua.recommend.user-sample)
   (:use aqua.db-utils))
 
@@ -50,10 +51,10 @@
 (defn -main [user-count-string overall-count-string]
   (let [user-count (Integer/valueOf user-count-string)
         overall-count (Integer/valueOf overall-count-string)
-        data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
+        data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         anime (aqua.mal-local/load-anime data-source)
         anime-count (count anime)
-        sampled-ids (aqua.recommend.user-sample/load-user-sample "maldump/user-sample" user-count)
+        sampled-ids (aqua.recommend.user-sample/load-user-sample (aqua.paths/anime-user-sample) user-count)
         all-user-ids (with-query data-source rs query-all-users [overall-count]
                        (doall (map :user_id (resultset-seq rs))))
         stats (reduce (partial update-bucket-stats data-source anime) {} sampled-ids)

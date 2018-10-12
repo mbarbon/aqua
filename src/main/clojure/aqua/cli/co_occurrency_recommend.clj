@@ -1,5 +1,6 @@
 (ns aqua.cli.co-occurrency-recommend
   (:require aqua.mal-local
+            aqua.paths
             aqua.recommend.co-occurrency
             aqua.misc))
 
@@ -23,13 +24,12 @@
 
 (defn -main [username]
   (println "Starting")
-  (let [directory "maldump"
-        data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
+  (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
-        model (aqua.recommend.co-occurrency/load-co-occurrency "maldump/co-occurrency-model" "maldump/co-occurrency-model-airing")]
+        model (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))]
     (println "Running recommender")
     (run-recommender user model anime)))

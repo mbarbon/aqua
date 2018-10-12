@@ -4,8 +4,8 @@
 /.lein-failures
 /.nrepl-port
 /target/
-/sample-users.txt
-/test-users.txt
+/anime-test-users.txt
+/manga-test-users.txt
 *.pyc
 /node_modules/
 /coverage/

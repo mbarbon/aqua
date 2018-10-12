@@ -1,5 +1,6 @@
 (ns aqua.cli.recompute-models
   (:require aqua.mal-local
+            aqua.paths
             aqua.misc
             aqua.recommend.user-sample
             aqua.recommend.co-occurrency
@@ -10,12 +11,12 @@
 
 (def user-count 60000)
 (def cf-user-count 15000)
-(def all-items ["user-sample"
-                "co-occurrency"
-                "lfd-model"
-                "lfd-items"
-                "rp-similarity"
-                "rp-similarity-unfiltered"])
+(def all-items ["anime-user-sample"
+                "anime-co-occurrency"
+                "anime-lfd-model"
+                "anime-lfd-items"
+                "anime-rp-similarity"
+                "anime-rp-similarity-unfiltered"])
 
 (def user-sample-count 100000)
 
@@ -75,43 +76,43 @@
        (aqua.recommend.lfd/store-lfd out (.decomposition lfdr-airing)))))
 
 (defn -main [& items]
-  (when (some #{"user-sample"} (if (seq items) items all-items))
-    (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
+  (when (some #{"anime-user-sample"} (if (seq items) items all-items))
+    (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
           anime (aqua.mal-local/load-anime data-source)]
       (println "Recomputing user sample")
-      (time (aqua.recommend.user-sample/recompute-user-sample data-source user-sample-count (.keySet anime) "maldump/user-sample"))))
+      (time (aqua.recommend.user-sample/recompute-user-sample data-source user-sample-count (.keySet anime) (aqua.paths/anime-user-sample)))))
 
-  (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
+  (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
         anime (aqua.mal-local/load-anime data-source)
-        users (aqua.recommend.user-sample/load-filtered-cf-users "maldump/user-sample" data-source cf-parameters user-count anime)]
+        users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count anime)]
     (doseq [item (if (seq items) items all-items)]
       (case item
-        "user-sample"
+        "anime-user-sample"
           nil ; handled above
-        "co-occurrency"
+        "anime-co-occurrency"
           (do
             (println "Recomputing co-occurrency item-item model")
-            (time (recompute-co-occurrency-model users anime "maldump/co-occurrency-model" "maldump/co-occurrency-model-airing")))
-        "lfd-model"
+            (time (recompute-co-occurrency-model users anime (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))))
+        "anime-lfd-model"
           (do
             (println "Recomputing latent factor decomposition")
-            (time (recompute-lfd-model users anime lfd-rank lfd-lambda lfd-iterations "maldump/lfd-model" "maldump/lfd-model-airing" "maldump/lfd-user-model")))
-        "lfd-items"
+            (time (recompute-lfd-model users anime lfd-rank lfd-lambda lfd-iterations (aqua.paths/anime-lfd-model) (aqua.paths/anime-lfd-model-airing) (aqua.paths/anime-lfd-user-model))))
+        "anime-lfd-items"
           (do
             (println "Recomputing latent factor decomposition item similarity")
-            (time (recompute-lfd-items-model anime "maldump/lfd-model"
-                                                   "maldump/lfd-model-airing"
-                                                   "maldump/lfd-items-model"
-                                                   "maldump/lfd-items-model-airing")))
-        "rp-similarity"
+            (time (recompute-lfd-items-model anime (aqua.paths/anime-lfd-model)
+                                                   (aqua.paths/anime-lfd-model-airing)
+                                                   (aqua.paths/anime-lfd-items-model)
+                                                   (aqua.paths/anime-lfd-items-model-airing))))
+        "anime-rp-similarity"
           (do
             (println "Recomputing random projection similarity model")
-            (time (recompute-rp-model users anime "maldump/rp-model")))
-        "rp-similarity-unfiltered"
+            (time (recompute-rp-model users anime (aqua.paths/anime-rp-model))))
+        "anime-rp-similarity-unfiltered"
           (do
             (println "Recomputing unfiltered random projection similarity model")
-            (time (recompute-rp-model users {} "maldump/rp-model-unfiltered")))
+            (time (recompute-rp-model users {} (aqua.paths/anime-rp-model-unfiltered))))
         (do
           (println (str "Invalid item " item " (possible values "
                      (clojure.string/join " " all-items) ")")))))))

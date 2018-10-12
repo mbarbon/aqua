@@ -1,5 +1,6 @@
 (ns aqua.cli.find-rp-size
   (:require aqua.mal-local
+            aqua.paths
             aqua.misc
             aqua.recommend.rp-similar-anime
             aqua.recommend.user-sample
@@ -36,9 +37,9 @@
     [(apply score-intersections iterations) (total-size iterations)]))
 
 (defn -main [projection-sizes]
-  (let [data-source (aqua.mal-local/open-sqlite-ro "maldump" "maldump.sqlite")
+  (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        users (aqua.recommend.user-sample/load-filtered-cf-users "maldump/user-sample" data-source cf-parameters user-count)
+        users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count)
         anime (aqua.mal-local/load-anime data-source)
         similar-count 30
         anime-sample (take 1000 (shuffle (keys anime)))]

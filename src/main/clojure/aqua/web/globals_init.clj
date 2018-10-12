@@ -2,8 +2,8 @@
   ; no dependencies on aqua.* here
   (:require aqua.mal-local
             aqua.misc
+            [aqua.paths :refer [*maldump-directory]]
             [aqua.web.globals :refer [*background
-                                      *maldump-directory
                                       *state-directory
                                       *data-source-rw
                                       *data-source-ro
@@ -23,9 +23,9 @@
   (reset! *maldump-directory directory)
   (reset! *state-directory state-directory)
   (reset! *cf-parameters (aqua.misc/make-cf-parameters 0.5 -1))
-  (let [data-source (aqua.mal-local/open-sqlite-rw directory "maldump.sqlite")]
+  (let [data-source (aqua.mal-local/open-sqlite-rw (aqua.paths/mal-db))]
     (reset! *data-source-rw data-source))
-  (let [data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")]
+  (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))]
     (reset! *data-source-ro data-source))
   (aqua.mal-local/setup-tables @*data-source-rw)
   (reload-anime))

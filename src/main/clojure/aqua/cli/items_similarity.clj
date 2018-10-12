@@ -1,5 +1,6 @@
 (ns aqua.cli.items-similarity
   (:require aqua.mal-local
+            aqua.paths
             aqua.recommend.lfd-items
             aqua.recommend.co-occurrency
             aqua.recommend.rp-similar-anime))
@@ -13,13 +14,12 @@
 
 (defn -main [animedb-string]
   (println "Starting")
-  (let [directory "maldump"
-        data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
+  (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         animedb-id (Integer/valueOf animedb-string)
         _ (println "Loading models")
-        lfd-items (aqua.recommend.lfd-items/load-lfd-items "maldump/lfd-items-model" "maldump/lfd-items-model-airing")
-        co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency "maldump/co-occurrency-model" "maldump/co-occurrency-model-airing")
-        rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model")
+        lfd-items (aqua.recommend.lfd-items/load-lfd-items (aqua.paths/anime-lfd-items-model) (aqua.paths/anime-lfd-items-model-airing))
+        co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))
+        rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity (aqua.paths/anime-rp-model))
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         scored-anime-lfd (.similarAnime (.complete lfd-items) animedb-id)

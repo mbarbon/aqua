@@ -1,7 +1,5 @@
 (ns aqua.web.templates
-  (:require [aqua.web.globals :refer [*maldump-directory]]
-            clojure.java.io
-            ring.util.response))
+  (:require [ring.util.response]))
 
 (def ^:private fm-configuration
   (doto (freemarker.template.Configuration. freemarker.template.Configuration/VERSION_2_3_27)
@@ -42,4 +40,4 @@
 (def jsBundle (find-react-bundle))
 
 (defn image-root []
-  (str (clojure.java.io/file @*maldump-directory "images")))
+  (aqua.paths/images))

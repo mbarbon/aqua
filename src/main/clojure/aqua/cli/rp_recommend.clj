@@ -1,5 +1,6 @@
 (ns aqua.cli.rp-recommend
   (:require aqua.mal-local
+            aqua.paths
             aqua.recommend.rp-similar-anime
             aqua.misc))
 
@@ -23,13 +24,12 @@
 
 (defn -main [username]
   (println "Starting")
-  (let [directory "maldump"
-        data-source (aqua.mal-local/open-sqlite-ro directory "maldump.sqlite")
+  (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         cf-parameters (aqua.misc/make-cf-parameters 0.5 -1)
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
-        rp (aqua.recommend.rp-similar-anime/load-rp-similarity "maldump/rp-model")]
+        rp (aqua.recommend.rp-similar-anime/load-rp-similarity (aqua.paths/anime-rp-model))]
     (println "Running recommender")
     (run-recommender user rp anime)))

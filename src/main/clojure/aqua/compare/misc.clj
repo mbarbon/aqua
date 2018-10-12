@@ -9,7 +9,7 @@
     lst))
 
 (defn- load-stable-user-sample-from-db [directory data-source max-count]
-  (let [path (str directory "/" "user-sample")
+  (let [path (str directory "/" "anime-user-sample")
         user-ids (aqua.recommend.user-sample/load-user-sample path (* 2 max-count))]
     (aqua.mal-local/load-test-cf-user-ids data-source user-ids max-count)))
 
