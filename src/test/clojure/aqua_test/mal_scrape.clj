@@ -71,11 +71,11 @@
             32122 1}
            relations))
     (is (= [[1 "Action"]
-            [24 "Sci-Fi"]
             [4 "Comedy"]
             [13 "Historical"]
             [20 "Parody"]
             [21 "Samurai"]
+            [24 "Sci-Fi"]
             [27 "Shounen"]]
            genres))
     (is (= {"Gintama" 1
@@ -83,7 +83,7 @@
             "Silver Soul" 2
             "Yorinuki Gintama-san" 2}
            titles))
-    (is (= {:score 902, :rank 14, :popularity 88}
+    (is (= {:score 900, :rank 13, :popularity 94}
            scores))))
 
 (deftest parse-manga
@@ -100,7 +100,7 @@
     (is (= {"Keion" 2
             "K-On!" 1}
            titles))
-    (is (= {:score 789, :rank 1224, :popularity 269}
+    (is (= {:score 785, :rank 1466, :popularity 299}
            scores))))
 
 (deftest parse-malappinfo-anime
@@ -125,7 +125,7 @@
     (is (= 2 (.seriesStatus anime)))
     (is (= "1998-04-03" (.start anime)))
     (is (= "1999-04-24" (.end anime)))
-    (is (= "https://myanimelist.cdn-dena.com/images/anime/4/19644.jpg" (.image anime)))
+    (is (= "https://cdn.myanimelist.net/images/anime/4/19644.webp" (.image anime)))
     (is (= 8 (.score anime)))
     (is (= 2 (.userStatus anime)))
     (is (= 1471101172 (.lastUpdated anime)))))
@@ -170,14 +170,14 @@
     (is (= 2 (.seriesStatus anime)))
     (is (= "1998-04-03" (.start anime)))
     (is (= "1999-04-24" (.end anime)))
-    (is (= "https://myanimelist.cdn-dena.com/images/anime/4/19644.jpg" (.image anime)))
+    (is (= "https://cdn.myanimelist.net/images/anime/4/19644.webp" (.image anime)))
     (is (= 8 (.score anime)))
     (is (= 2 (.userStatus anime)))))
 
 (deftest parse-manga-list
   (let [manga-list (aqua.mal.data.ListPageItem/convertMangaList (aqua.mal.Serialize/readMangaList (test-resource "manga_load.json")))
         manga (first (filter #(= 3468 (.mangadbId %)) manga-list))]
-    (is (= 34 (count manga-list)))
+    (is (= 35 (count manga-list)))
 
     (is (= 3468 (.mangadbId manga)))
     (is (= "Usagi Drop" (.title manga)))
@@ -187,6 +187,6 @@
     (is (= 2 (.seriesStatus manga)))
     (is (= "2005-10-08" (.start manga)))
     (is (= "2011-12-08" (.end manga)))
-    (is (= "https://myanimelist.cdn-dena.com/images/manga/2/203854.jpg" (.image manga)))
+    (is (= "https://cdn.myanimelist.net/images/manga/2/203854.webp" (.image manga)))
     (is (= 8 (.score manga)))
     (is (= 2 (.userStatus manga)))))

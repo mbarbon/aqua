@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ListPageItem {
-    private static final Pattern IMAGE = Pattern.compile("^(https://myanimelist\\.cdn-dena\\.com)/.*(/images/(?:anime|manga)/\\d+/.*\\.jpg).*$");
+    private static final Pattern IMAGE = Pattern.compile("^(https://cdn\\.myanimelist\\.net)/.*(/images/(?:anime|manga)/\\d+/.*\\.(?:jpg|webp)).*$");
 
     private static String convertImage(String url) {
         Matcher matcher = IMAGE.matcher(url);

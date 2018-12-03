@@ -208,6 +208,8 @@
       ; wrap-defaults comes first so it can add the default content-type for wrap-browser-caching
       (wrap-defaults modified-site-defaults)
       (ring.middleware.browser-caching/wrap-browser-caching {"text/javascript" 604800 ; 7 days
+                                                             "image/png"       604800
+                                                             "image/webp"      604800
                                                              "image/jpeg"      604800
                                                              "text/html"       604800
                                                              "text/css"        604800}))))

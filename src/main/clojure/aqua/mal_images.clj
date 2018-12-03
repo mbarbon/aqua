@@ -18,6 +18,7 @@
   (case content-type
     "image/jpeg" ".jpg"
     "image/png"  ".png"
+    "image/webp" ".webp"
     nil))
 
 (defn- out-path [url content-type kind]
@@ -68,4 +69,4 @@
   (if (string/includes? (:sizes image-record) size)
     (let [local-path (:cached_path image-record)
           dot-index (string/last-index-of local-path \.)]
-      (str (subs local-path 0 dot-index) "-" size ".jpg"))))
+      (str (subs local-path 0 dot-index) "-" size (subs local-path dot-index)))))
