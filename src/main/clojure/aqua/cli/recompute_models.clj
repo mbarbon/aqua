@@ -6,7 +6,7 @@
             aqua.recommend.co-occurrency
             aqua.recommend.lfd
             aqua.recommend.lfd-items
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             clojure.java.io))
 
 (def anime-user-count 60000)
@@ -66,9 +66,9 @@
       (aqua.recommend.co-occurrency/store-co-occurrency-complete out co-occurrency))))
 
 (defn- recompute-rp-model [users anime-map model-path]
-  (let [rp-similar (aqua.recommend.rp-similar-anime/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
+  (let [rp-similar (aqua.recommend.rp-similarity/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
     (with-open [out (clojure.java.io/writer model-path)]
-      (aqua.recommend.rp-similar-anime/store-rp-similarity out rp-similar))))
+      (aqua.recommend.rp-similarity/store-rp-similarity out rp-similar))))
 
 (defn- recompute-lfd-items-model [anime lfd-path lfd-airing-path model-path airing-model-path]
   (let [lfd (aqua.recommend.lfd/load-lfd lfd-path)

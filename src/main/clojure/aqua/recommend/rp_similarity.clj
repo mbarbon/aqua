@@ -1,4 +1,4 @@
-(ns aqua.recommend.rp-similar-anime
+(ns aqua.recommend.rp-similarity
   (:require aqua.recommend.item-item-model))
 
 (defn create-rp-similarity [user-list anime-map rank similar-count]

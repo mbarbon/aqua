@@ -4,7 +4,7 @@
             aqua.compare.recall
             aqua.compare.diversification
             aqua.compare.popularity
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.recommend.co-occurrency
             aqua.recommend.lfd
             aqua.recommend.lfd-items
@@ -26,7 +26,7 @@
         lfd (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model) anime-map)
         lfd-users (aqua.recommend.lfd/load-user-lfd (aqua.paths/anime-lfd-user-model) lfd users)
         lfd-items (aqua.recommend.lfd-items/load-lfd-items (aqua.paths/anime-lfd-items-model) (aqua.paths/anime-lfd-items-model-airing))
-        rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered))
+        rp-model (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered))
         co-occurrency-model (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))
         test-users-sample (aqua.compare.misc/load-stable-anime-user-sample @aqua.paths/*maldump-directory
                                                                            data-source

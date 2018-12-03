@@ -4,7 +4,7 @@
             aqua.compare.recall-planned
             aqua.compare.recall
             aqua.compare.estimated-scores
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.mal-local
             aqua.paths
             aqua.misc
@@ -65,7 +65,7 @@
   (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         sampled-ids (if (= kind "anime")
                       (aqua.recommend.user-sample/load-user-sample (aqua.paths/anime-user-sample) user-count)
-                      (aqua.recommend.user-sample/load-user-sample aqua.paths/manga-user-sample) user-count))
+                      (aqua.recommend.user-sample/load-user-sample (aqua.paths/manga-user-sample) user-count))
         cf-parameters-std (aqua.misc/make-cf-parameters 0 0)
         item-map (if (= kind "anime")
                    (aqua.mal-local/load-anime data-source)
@@ -85,7 +85,7 @@
                                                                              (* 10 compare-count)
                                                                              "manga-test-users.txt"))
         rp-model (if (= kind "anime")
-                   (aqua.recommend.rp-similar-anime/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered)))]
+                   (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered)))]
     (aqua.misc/normalize-all-ratings users 0.1 -0.1)
     (aqua.misc/normalize-all-ratings test-users-sample 0.1 -0.1)
     (doseq [rank (split-ints ranks)]

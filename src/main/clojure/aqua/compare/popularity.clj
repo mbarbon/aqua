@@ -3,7 +3,7 @@
             aqua.recommend.lfd
             aqua.recommend.lfd-cf
             aqua.recommend.lfd-items
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.recommend.co-occurrency
             aqua.recommend.cosine
             aqua.recommend.pearson
@@ -45,7 +45,7 @@
   (partial score-recommender anime-rank #(aqua.recommend.lfd-items/get-recommendations %1 lfd %2)))
 
 (defn make-score-rp [anime-rank rp-model]
-  (partial score-recommender anime-rank #(aqua.recommend.rp-similar-anime/get-recommendations %1 rp-model %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.rp-similarity/get-recommendations %1 rp-model %2)))
 
 (defn make-score-co-occurrency [anime-rank co-occurrency-model]
   (partial score-recommender anime-rank #(aqua.recommend.co-occurrency/get-raw-anime-recommendations %1 co-occurrency-model %2)))

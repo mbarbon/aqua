@@ -2,7 +2,7 @@
   (:require aqua.mal-local
             aqua.recommend.lfd-items
             aqua.recommend.co-occurrency
-            aqua.recommend.rp-similar-anime))
+            aqua.recommend.rp-similarity))
 
 (defn- print-similar [model-name anime scored-anime]
   (.sort scored-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
