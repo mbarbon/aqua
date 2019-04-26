@@ -78,9 +78,12 @@
 (defn -main [& items]
   (when (some #{"anime-user-sample"} (if (seq items) items all-items))
     (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
-          anime (aqua.mal-local/load-anime data-source)]
+          anime (aqua.mal-local/load-anime data-source)
+          completed-anime (set (->> (vals anime)
+                                    (filter #(.isCompleted %))
+                                    (map #(.animedbId %))))]
       (println "Recomputing user sample")
-      (time (aqua.recommend.user-sample/recompute-user-sample data-source user-sample-count (.keySet anime) (aqua.paths/anime-user-sample)))))
+      (time (aqua.recommend.user-sample/recompute-user-sample data-source user-sample-count completed-anime (aqua.paths/anime-user-sample)))))
 
   (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
