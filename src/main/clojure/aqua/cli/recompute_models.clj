@@ -20,7 +20,9 @@
                 "manga-lfd-model"
                 "anime-lfd-items"
                 "anime-rp-similarity"
-                "anime-rp-similarity-unfiltered"])
+                "anime-rp-similarity-unfiltered"
+                "manga-rp-similarity"
+                "manga-rp-similarity-unfiltered"])
 
 (def user-sample-count 100000)
 
@@ -33,9 +35,11 @@
 
 ; around the point where the score from find-rp-size starts stabilizing
 ; (i.e. multiple random projections start returning more stable results)
-(def rp-projection-size 7000)
+(def rp-projection-anime-size 6000)
+(def rp-projection-manga-size 4500)
 ; arbitrary
-(def rp-similar-item-count 30)
+(def rp-anime-similar-item-count 30)
+(def rp-manga-similar-item-count 20)
 
 (def anime-lfd-rank 40)
 (def anime-lfd-lambda 0.1)
@@ -66,7 +70,7 @@
       (aqua.recommend.co-occurrency/store-co-occurrency-complete out co-occurrency))))
 
 (defn- recompute-rp-model [users anime-map model-path]
-  (let [rp-similar (aqua.recommend.rp-similarity/create-rp-similarity users anime-map rp-projection-size rp-similar-item-count)]
+  (let [rp-similar (aqua.recommend.rp-similarity/create-rp-similarity users anime-map rp-projection-anime-size rp-anime-similar-item-count)]
     (with-open [out (clojure.java.io/writer model-path)]
       (aqua.recommend.rp-similarity/store-rp-similarity out rp-similar))))
 
@@ -129,7 +133,7 @@
           nil ; handled above
         "manga-user-sample"
           nil ; handled above
-        "ahime-co-occurrency"
+        "anime-co-occurrency"
           (do
             (println "Recomputing anime co-occurrency item-item model")
             (time (recompute-anime-co-occurrency-model anime-users anime (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))))
@@ -160,19 +164,27 @@
                                              (aqua.paths/manga-lfd-user-model))))
         "anime-lfd-items"
           (do
-            (println "Recomputing latent factor decomposition item similarity")
+            (println "Recomputing anime latent factor decomposition item similarity")
             (time (recompute-lfd-items-model anime (aqua.paths/anime-lfd-model)
                                                    (aqua.paths/anime-lfd-model-airing)
                                                    (aqua.paths/anime-lfd-items-model)
                                                    (aqua.paths/anime-lfd-items-model-airing))))
         "anime-rp-similarity"
           (do
-            (println "Recomputing random projection similarity model")
+            (println "Recomputing anime random projection similarity model")
             (time (recompute-rp-model anime-users anime (aqua.paths/anime-rp-model))))
         "anime-rp-similarity-unfiltered"
           (do
-            (println "Recomputing unfiltered random projection similarity model")
+            (println "Recomputing anime unfiltered random projection similarity model")
             (time (recompute-rp-model anime-users {} (aqua.paths/anime-rp-model-unfiltered))))
+        "manga-rp-similarity"
+          (do
+            (println "Recomputing manga random projection similarity model")
+            (time (recompute-rp-model manga-users manga (aqua.paths/manga-rp-model))))
+        "manga-rp-similarity-unfiltered"
+          (do
+            (println "Recomputing manga unfiltered random projection similarity model")
+            (time (recompute-rp-model manga-users {} (aqua.paths/manga-rp-model-unfiltered))))
         (do
           (println (str "Invalid item " item " (possible values "
                      (clojure.string/join " " all-items) ")")))))))

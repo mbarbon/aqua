@@ -26,6 +26,8 @@
 
 (short-model-path anime-rp-model)
 (short-model-path anime-rp-model-unfiltered)
+(short-model-path manga-rp-model)
+(short-model-path manga-rp-model-unfiltered)
 
 (model-path mal-db "maldump.sqlite")
 (model-path images "images")
