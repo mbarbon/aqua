@@ -70,7 +70,9 @@ export default class LocalState {
       })
       .then(
         aquaRecommendations.loadMalRecommendations.bind(aquaRecommendations)
-      )
+      ).catch(error => {
+        aquaRecommendations.clearMalUsername()
+      })
   }
 
   loadLocalRecommendations () {

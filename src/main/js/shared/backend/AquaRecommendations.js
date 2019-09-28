@@ -148,6 +148,7 @@ export default class AquaRecommendations {
       this.notifyProgress.bind(this)
     ).catch(error => {
       console.error(error)
+      throw(error)
     })
   }
 
