@@ -180,9 +180,11 @@ def sync_aqua_items(kind, from_aqua, to_aqua, dry_run):
         item_ids = to_aqua.fetch_item_ids(kind, item_ids['last_page'], ITEM_BATCH)
 
     missing = list(from_item_ids)
+    if missing:
+        LOGGER.info('  Starting missing sync')
     while missing:
         batch = missing[0:SMALL_ITEM_BATCH]
-        id_map = {k: 0 for k in batch}
+        id_map = {k: -1 for k in batch}
         changed_items = from_aqua.fetch_changed_items(kind, id_map)
         if not dry_run:
             to_aqua.store_changed_items(kind, changed_items)
@@ -219,9 +221,11 @@ def sync_aqua_users(from_aqua, to_aqua, dry_run):
         user_ids = to_aqua.fetch_user_ids(user_ids['last_page'], USER_BATCH)
 
     missing = list(from_user_ids)
+    if missing:
+        LOGGER.info('  Starting missing sync')
     while missing:
         batch = missing[0:SMALL_USER_BATCH]
-        id_map = {k: 0 for k in batch}
+        id_map = {k: -1 for k in batch}
         changed_users = from_aqua.fetch_changed_users(id_map)
         if not dry_run:
             to_aqua.store_changed_users(changed_users)
