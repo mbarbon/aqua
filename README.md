@@ -22,6 +22,15 @@ a pet project to learn more about fields I was not familiar with before (recomme
 check out some technologies (Clojure, React, React Native). In other words: I think the end result is useful, but
 creating a finished product was never the goal.
 
+## Netlib native
+
+There ahe instructions to enable [Machine Optimised System Libraries](https://github.com/fommil/netlib-java#machine-optimised-system-libraries).
+
+On Ubuntu it might be necessary to:
+
+- manually install libgfortran 3
+- manually symlink the libraries under /usr/lib
+
 ## LICENSE
 
 Copyright 2017 Mattia Barbon
