@@ -44,5 +44,6 @@
                    :dependencies   [[jline/jline "2.14.5"]]}
              :repl {:global-vars {*warn-on-reflection* true}}
              :uberjar {:aot  [#"^(?!aqua\.cli|aqua\.compare).*$"] ; exclude dev helper namespaces
+                       :javac-options ["-target" "1.8" "-source" "1.8"]
                        :resource-paths ["build"]
                        :main aqua.web.serve}})
