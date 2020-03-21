@@ -9,10 +9,10 @@
 
 (def ^:private refresh-anime-interval 8700)
 (def ^:private refresh-manga-interval 8600)
-(def ^:private refresh-user-interval 2300)
-(def ^:private fetch-new-user-interval 1900)
+(def ^:private refresh-user-interval 23300)
+(def ^:private fetch-new-user-interval 5900)
 (def ^:private check-image-interval 5800)
-(def ^:private throttled-interval 1950)
+(def ^:private throttled-interval 45250)
 (def ^:private forbidden-interval 1230300)
 
 (defmacro doseq-slowly [interval bindings & body]
