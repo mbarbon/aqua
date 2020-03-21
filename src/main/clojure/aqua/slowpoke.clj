@@ -13,6 +13,7 @@
 (def ^:private fetch-new-user-interval 1900)
 (def ^:private check-image-interval 5800)
 (def ^:private throttled-interval 1950)
+(def ^:private forbidden-interval 1230300)
 
 (defmacro doseq-slowly [interval bindings & body]
   `(let [interval# ~interval]
@@ -126,6 +127,10 @@
   (log/warn "Throttled")
   (Thread/sleep throttled-interval))
 
+(defn- forbidden []
+  (log/warn "Forbidden")
+  (Thread/sleep forbidden-interval))
+
 (def ^:private anime-needing-update
   (str "SELECT a.animedb_id, a.title"
        "    FROM anime AS a"
@@ -148,6 +153,7 @@
           (cond
             (:snooze details) (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting anime scrape after MAL error")
             (:throttle details) (throttled)
+            (:forbid details) (forbidden)
             :del (aqua.mal-local/store-anime-details data-source-rw animedb_id title details)))))))
 
 (def ^:private manga-needing-update
@@ -172,6 +178,7 @@
           (cond
             (:snooze details) (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting manga scrape after MAL error")
             (:throttle details) (throttled)
+            (:forbidden details) (forbidden)
             :else (aqua.mal-local/store-manga-details data-source-rw mangadb_id title details)))))))
 
 (defn ^:private already-existing-users [users]
@@ -182,23 +189,26 @@
        "    )"))
 
 (defn- refresh-user [data-source-rw username]
-  (with-web-result [{:keys [mal-app-info snooze throttle]} @(aqua.mal-web/fetch-anime-list username)]
+  (with-web-result [{:keys [mal-app-info snooze throttle forbid]} @(aqua.mal-web/fetch-anime-list username)]
     (cond
       snooze (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
       throttle (throttled)
+      forbid (forbidden)
       :else (aqua.mal-local/store-user-anime-list data-source-rw username mal-app-info)))
-  (with-web-result [{:keys [mal-app-info snooze throttle]} @(aqua.mal-web/fetch-manga-list username)]
+  (with-web-result [{:keys [mal-app-info snooze throttle forbid]} @(aqua.mal-web/fetch-manga-list username)]
     (cond
       snooze (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
       throttle (throttled)
+      forbid (forbidden)
       :else (aqua.mal-local/store-user-manga-list data-source-rw username mal-app-info))))
 
 (defn- fetch-new-users [data-source-rw data-source-ro]
   (log/info "Fetching new user sample")
-  (with-web-result [{:keys [user-sample snooze throttle]} @(aqua.mal-web/fetch-active-users)]
+  (with-web-result [{:keys [user-sample snooze throttle forbid]} @(aqua.mal-web/fetch-active-users)]
     (cond
       snooze (aqua.scrape.pause-scrape-exception/pause-scrape "Throtting user scrape after MAL error")
       throttle (throttled)
+      forbid (forbidden)
       :else (let [existing-users (with-query data-source-ro rs
                                             (already-existing-users user-sample)
                                             user-sample

@@ -33,6 +33,7 @@
     (fn [error status body _]
       (case status
         200 {:profile (aqua.mal-scrape/parse-profile-page body)}
+        403 {:forbid true}
         404 {:missing true}
         429 {:throttle true}
         503 {:snooze true}
@@ -58,6 +59,7 @@
       (loop [] ; loop until error, or chunk size becomes zero
         (let [[chunk error status] @(fetch-item-list-chunk kind username (.size partial))]
           (cond
+            (= status 403) {:forbid true}
             (= status 404) {:snooze true}
             (= status 429) {:throttle true}
             (= status 400) {:items []} ; Private list
@@ -75,6 +77,7 @@
     (cond
       (or (nil? items-res) (nil? profile-res)) nil
       (:missing profile-res) {:mal-app-info missing-user}
+      (or (:forbid items-res) (:forbid profile-res)) {:forbid true}
       (or (:snooze items-res) (:snooze profile-res)) {:snooze true}
       (or (:throttle items-res) (:throttle profile-res)) {:throttle true}
       :else {:mal-app-info
@@ -93,6 +96,7 @@
     (cond
       (or (nil? items-res) (nil? profile-res)) nil
       (:missing profile-res) {:mal-app-info missing-user}
+      (or (:forbid items-res) (:forbid profile-res)) {:forbid true}
       (or (:snooze items-res) (:snooze profile-res)) {:snooze true}
       (or (:throttle items-res) (:throttle profile-res)) {:throttle true}
       :else {:mal-app-info
@@ -111,6 +115,7 @@
         (cond
           (nil? res) (callback nil "Unknown" nil)
           (:snooze res) (callback nil "Snooze" nil)
+          (:forbid res) (callback nil nil 403)
           (:throttle res) (callback nil nil 429)
           (:mal-app-info res) (callback (:mal-app-info res) nil nil)))
       (catch Exception e (callback nil e nil)))))
@@ -122,6 +127,7 @@
         (cond
           (nil? res) (callback nil "Unknown" nil)
           (:snooze res) (callback nil "Snooze" nil)
+          (:forbid res) (callback nil nil 403)
           (:throttle res) (callback nil nil 429)
           (:mal-app-info res) (callback (:mal-app-info res) nil nil)))
       (catch Exception e (callback nil e nil)))))
@@ -134,6 +140,7 @@
                   titles (:titles details)
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
+        403 {:forbid true}
         404 {:missing true}
         429 {:throttle true}
         503 {:snooze true}
@@ -147,6 +154,7 @@
                   titles (:titles details)
                   alternative-titles (dissoc titles title)]
               (assoc details :titles alternative-titles))
+        403 {:forbid true}
         404 {:missing true}
         429 {:throttle true}
         503 {:snooze true}
@@ -157,6 +165,7 @@
     (fn [error status body _]
       (case status
         200 {:user-sample (aqua.mal-scrape/parse-users-page body)}
+        403 {:forbid true}
         429 {:throttle true}
         503 {:snooze true}
         (log-error error status "fetching user sample")))))
@@ -168,6 +177,7 @@
     (fn [error status body _]
       (case status
         200 {:mal-app-info (aqua.mal.Serialize/readMalAppInfo body)}
+        403 {:forbid true}
         404 {:snooze true}
         429 {:throttle true}
         (log-error error status (str "fetching anime list for " username))))))
