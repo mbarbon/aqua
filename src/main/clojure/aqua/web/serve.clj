@@ -57,10 +57,11 @@
       (if response-data
         {:status 200
          :headers {"Content-Type" content-type
-                   "Content-Encoding" content-encoding}
+                   "Content-Encoding" content-encoding
+                   "Cache-Control" "public, max-age=3600"}
          :body response-data}
         {:status 200
-         :headers {"Content-Type" "application/json"}
+         :headers {"Content-Type" "application/json" "Cache-Control" "no-cache"}
          :body (str "{\"queue-position\":" queue-position "}")}))))
 
 (defroutes maybe-json-routes
