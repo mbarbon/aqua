@@ -334,10 +334,10 @@
 (def ^:private select-user-ids
   (str "SELECT u.user_id AS user_id, u.last_change AS last_change"
        "    FROM users AS u"
-       "      INNER JOIN anime_list AS al"
+       "      LEFT JOIN anime_list AS al"
        "        ON u.user_id = al.user_id"
        "    WHERE u.user_id > ? AND"
-       "          al.anime_list_format = 1"
+       "          (al.anime_list_format IS NULL OR al.anime_list_format = 1)"
        "    LIMIT ?"))
 
 (defn all-user-ids [data-source after-id limit]
