@@ -164,7 +164,7 @@ def sync_aqua_items(kind, from_aqua, to_aqua, dry_run):
         from_item_ids = from_item_ids | item_ids[kind].keys()
         item_ids = from_aqua.fetch_item_ids(kind, item_ids['last_page'], ITEM_BATCH)
 
-    LOGGER.info('  Starting sync')
+    LOGGER.info('  Starting sync of %d remote ids', len(from_item_ids))
     total, synced, partial = 0, 0, time.time()
     item_ids = to_aqua.fetch_item_ids(kind, 0, ITEM_BATCH)
     while item_ids[kind]:
@@ -181,7 +181,7 @@ def sync_aqua_items(kind, from_aqua, to_aqua, dry_run):
 
     missing = list(from_item_ids)
     if missing:
-        LOGGER.info('  Starting missing sync')
+        LOGGER.info('  Starting missing sync of %d remote ids', len(from_item_ids))
     while missing:
         batch = missing[0:SMALL_ITEM_BATCH]
         id_map = {k: -1 for k in batch}
@@ -205,7 +205,7 @@ def sync_aqua_users(from_aqua, to_aqua, dry_run):
         from_user_ids = from_user_ids | user_ids['users'].keys()
         user_ids = from_aqua.fetch_user_ids(user_ids['last_page'], USER_BATCH)
 
-    LOGGER.info('  Starting sync')
+    LOGGER.info('  Starting sync of %d remote ids', len(from_user_ids))
     total, synced, partial = 0, 0, time.time()
     user_ids = to_aqua.fetch_user_ids(0, USER_BATCH)
     while user_ids['users']:
@@ -222,7 +222,7 @@ def sync_aqua_users(from_aqua, to_aqua, dry_run):
 
     missing = list(from_user_ids)
     if missing:
-        LOGGER.info('  Starting missing sync')
+        LOGGER.info('  Starting missing sync of %d remote ids', len(from_user_ids))
     while missing:
         batch = missing[0:SMALL_USER_BATCH]
         id_map = {k: -1 for k in batch}
