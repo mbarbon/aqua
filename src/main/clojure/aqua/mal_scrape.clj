@@ -16,8 +16,9 @@
   {"Side story:" 1
    "Alternative version:" 2
    "Sequel:" 3
-   ; way too random (e.g. might include commercials)
-   ; "Other:" 4
+   ; Other is very random (e.g. might include commercials), but it can still be
+   ; used to group items in franchises
+   "Other:" 4
    "Prequel:" 5
    "Parent story:" 6
    "Full story:" 7})
