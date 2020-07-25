@@ -18,6 +18,7 @@
                  [org.eclipse.jetty/jetty-server "9.4.10.v20180503"]
                  [javax.servlet/javax.servlet-api "4.0.1"]
                  [ch.qos.logback/logback-classic "1.2.3"]
+                 [org.slf4j/jul-to-slf4j "1.7.22"]
                  [org.asynchttpclient/async-http-client "2.4.7"]
                  [org.freemarker/freemarker "2.3.28"]
                  [com.mortennobel/java-image-scaling "0.8.6"]

@@ -96,3 +96,11 @@
             (user-anime-ids user anime-map)]
     (fn [ranked-anime-seq]
       (add-tags ranked-anime-seq planned-anime known-franchises planned-franchises anime-map))))
+
+; this needs to be called "early" in order to route java.util.logging through SLF4J
+(defn capture-java-util-logging []
+  (let [path (-> aqua.recommend.TmpFile
+                (.getClassLoader)
+                (.getResource "logging.properties")
+                (.getFile))];
+    (System/setProperty "java.util.logging.config.file" path)))
