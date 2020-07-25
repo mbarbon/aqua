@@ -31,7 +31,7 @@
        (io/file prefix1 prefix2 (str rest kind ".tmp"))])
     [nil nil]))
 
-(defn- write-file [path tmp-path content]
+(defn- write-file [^java.io.File path ^java.io.File tmp-path ^bytes content]
   (.mkdirs (.getParentFile path))
   (with-open [out (io/output-stream tmp-path)]
     (.write out content))

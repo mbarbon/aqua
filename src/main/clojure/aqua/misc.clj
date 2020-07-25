@@ -48,6 +48,15 @@
        (franchise-anime-ids known anime-map)
        (franchise-anime-ids planned anime-map)])))
 
+(defn users-item-map [users]
+  (let [item-index-map (java.util.HashMap.)]
+    (doseq [^aqua.recommend.CFUser user users]
+      (doseq [^aqua.recommend.CFRated rated (.animeList user)]
+        (.putIfAbsent item-index-map
+                      (.itemId rated)
+                      (.size item-index-map))))
+    item-index-map))
+
 (defn- add-tags [ranked-anime-seq
                  planned-anime
                  known-franchises

@@ -1,16 +1,12 @@
 (ns aqua.recommend.rp-similar-anime
-  (:require aqua.recommend.item-item-model))
+  (:require aqua.recommend.item-item-model
+            aqua.misc))
 
 (defn create-rp-similarity [user-list anime-map rank similar-count]
-  (let [anime-index-map (java.util.HashMap.)]
-    (doseq [user user-list]
-      (doseq [rated (.animeList user)]
-        (.putIfAbsent anime-index-map
-                      (.animedbId rated)
-                      (.size anime-index-map))))
-    (let [compute (aqua.recommend.ComputeRPSimilarAnime. anime-map anime-index-map similar-count)]
-      (.findSimilarAnime compute user-list rank)
-      (.rpSimilarAnime compute))))
+  (let [anime-index-map (aqua.misc/users-item-map user-list)
+        compute (aqua.recommend.ComputeRPSimilarAnime. anime-map anime-index-map similar-count)]
+    (.findSimilarAnime compute user-list rank)
+    (.rpSimilarAnime compute)))
 
 (defn similar-anime-debug [rp-similarity anime-id anime-map]
   (let [similar-scored (.similarAnime rp-similarity anime-id)]

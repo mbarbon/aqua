@@ -1,19 +1,15 @@
 (ns aqua.recommend.co-occurrency
-  (:require aqua.recommend.item-item-model))
+  (:require aqua.recommend.item-item-model
+            aqua.misc))
 
 (defn create-co-occurrency [user-list anime-map score-threshold alpha similar-count similar-count-airing]
-  (let [anime-index-map (java.util.HashMap.)]
-    (doseq [user user-list]
-      (doseq [rated (.animeList user)]
-        (.putIfAbsent anime-index-map
-                      (.animedbId rated)
-                      (.size anime-index-map))))
-    (let [compute-complete (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count)
-          compute-airing (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count-airing)]
-      (.findSimilarAnime compute-complete user-list score-threshold alpha)
-      (.findSimilarAiringAnime compute-airing user-list score-threshold alpha)
-      (aqua.recommend.CoOccurrency. (.simpleItemItem compute-complete)
-                                    (.simpleItemItem compute-airing)))))
+  (let [anime-index-map (aqua.misc/users-item-map user-list)
+        compute-complete (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count)
+        compute-airing (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count-airing)]
+    (.findSimilarAnime compute-complete user-list score-threshold alpha)
+    (.findSimilarAiringAnime compute-airing user-list score-threshold alpha)
+    (aqua.recommend.CoOccurrency. (.simpleItemItem compute-complete)
+                                  (.simpleItemItem compute-airing))))
 
 (defn similar-anime-debug [co-occurrency anime-id anime-map]
   (let [similar-scored (.similarAnime co-occurrency anime-id)]

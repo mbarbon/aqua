@@ -30,7 +30,7 @@
   (-> (ring.util.response/response body)
       (ring.util.response/status 400)))
 
-(defn- parse-header [value]
+(defn- parse-header ^String [value]
   (let [parts (clojure.string/split value #",\s*")]
     (for [part parts]
       (let [[name parameter] (clojure.string/split part #";" 2)]

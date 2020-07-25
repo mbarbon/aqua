@@ -7,10 +7,10 @@
     (.write tmp-handle (str "aqua-" version "\n"))
     (aqua.recommend.TmpFile. path tmp-path tmp-handle)))
 
-(defn commit-model-write [tmp-file]
+(defn commit-model-write [^aqua.recommend.TmpFile tmp-file]
   (.commit tmp-file))
 
-(defn- read-version [in]
+(defn- read-version [^java.io.BufferedReader in]
   (.mark in 256)
   (let [line (.readLine in)]
     (if (.startsWith line "aqua-")
