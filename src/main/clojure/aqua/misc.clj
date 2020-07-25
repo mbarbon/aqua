@@ -18,9 +18,9 @@
 (defn- scored-animedb-id [^aqua.recommend.RecommendationItem scored] (.animedbId scored))
 (defn- rated-animedb-id [^aqua.recommend.CFRated rated] (.animedbId rated))
 (defn- rated-status [^aqua.recommend.CFRated rated] (.status rated))
-(defn- franchise-anime [^aqua.mal.data.Franchise franchise] (.anime franchise))
-(defn- anime-animedb-id [^aqua.mal.data.Anime anime] (.animedbId anime))
-(defn- anime-franchise [^aqua.mal.data.Anime anime] (.franchise anime))
+(defn- franchise-items [^aqua.mal.data.Franchise franchise] (.items franchise))
+(defn- item-itemdb-id [^aqua.mal.data.Anime item] (.itemId item))
+(defn- item-franchise [^aqua.mal.data.Anime item] (.franchise item))
 
 (defn- all-but-planned [user]
   (->> (.allButPlanToWatch user)

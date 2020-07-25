@@ -19,6 +19,10 @@ public class Franchise {
             .sum();
     }
 
+    public Set<Anime> items() {
+        return anime;
+    }
+
     @Override
     public String toString() {
         return String.format("Franchise %d", franchiseId);

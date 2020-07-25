@@ -4,7 +4,7 @@
             aqua.compare.recall-planned
             aqua.compare.recall
             aqua.compare.estimated-scores
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.mal-local
             aqua.paths
             aqua.misc
@@ -32,7 +32,7 @@
 
 (defn- run-parameters [users rank lambda iterations rp-model test-users-sample anime-map]
   (println (str "Rank " rank " lambda " lambda " iterations " iterations))
-  (let [[lfdr _] (aqua.recommend.lfd/prepare-lfd-decompositor users anime-map rank lambda)]
+  (let [[lfdr _] (aqua.recommend.lfd/prepare-anime-lfd-decompositor users anime-map rank lambda)]
     (dotimes [i iterations]
       (when (= 0 (mod i 4))
         (println)
@@ -60,13 +60,13 @@
         sampled-ids (aqua.recommend.user-sample/load-user-sample (aqua.paths/anime-user-sample) user-count)
         cf-parameters-std (aqua.misc/make-cf-parameters 0 0)
         anime-map (aqua.mal-local/load-anime data-source)
-        users (filter has-some-anime (aqua.mal-local/load-cf-users-by-id data-source anime-map cf-parameters-std sampled-ids))
-        test-users-sample (aqua.compare.misc/load-stable-user-sample @aqua.paths/*maldump-directory
-                                                                     data-source
-                                                                     anime-map
-                                                                     (* 10 compare-count)
-                                                                     "anime-test-users.txt")
-        rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered))]
+        users (filter has-some-anime (aqua.mal-local/load-cf-anime-users-by-id data-source anime-map cf-parameters-std sampled-ids))
+        test-users-sample (aqua.compare.misc/load-stable-anime-user-sample @aqua.paths/*maldump-directory
+                                                                           data-source
+                                                                           anime-map
+                                                                           (* 10 compare-count)
+                                                                           "anime-test-users.txt")
+        rp-model (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered))]
     (aqua.misc/normalize-all-ratings users 0.1 -0.1)
     (aqua.misc/normalize-all-ratings test-users-sample 0.1 -0.1)
     (doseq [rank (split-ints ranks)]

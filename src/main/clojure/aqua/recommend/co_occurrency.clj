@@ -2,7 +2,7 @@
   (:require aqua.recommend.item-item-model
             aqua.misc))
 
-(defn create-co-occurrency [user-list anime-map score-threshold alpha similar-count similar-count-airing]
+(defn create-anime-co-occurrency [user-list anime-map score-threshold alpha similar-count similar-count-airing]
   (let [anime-index-map (aqua.misc/users-item-map user-list)
         compute-complete (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count)
         compute-airing (aqua.recommend.ComputeCoOccurrencyItemItem. anime-map anime-index-map similar-count-airing)]
@@ -28,15 +28,15 @@
         airing (aqua.recommend.item-item-model/load-item-item path-airing)]
     (aqua.recommend.CoOccurrency. complete airing)))
 
-(defn get-recommendations [user
-                           ^aqua.recommend.CoOccurrency model
-                           remove-known-anime]
-  (aqua.recommend.item-item-model/get-recommendations user (.complete model) remove-known-anime))
+(defn get-raw-anime-recommendations [user
+                                     ^aqua.recommend.CoOccurrency model
+                                     remove-known-anime]
+  (aqua.recommend.item-item-model/get-raw-anime-recommendations user (.complete model) remove-known-anime))
 
-(defn get-all-recommendations [user
-                               ^aqua.recommend.CoOccurrency model
-                               remove-known-anime keep-airing-anime
-                               tagger]
-  (let [[_ recommendations] (aqua.recommend.item-item-model/get-recommendations user (.complete model) remove-known-anime)
-        [_ airing] (aqua.recommend.item-item-model/get-recommendations user (.airing model) remove-known-anime)]
+(defn get-anime-recommendations [user
+                                 ^aqua.recommend.CoOccurrency model
+                                 remove-known-anime keep-airing-anime
+                                 tagger]
+  (let [[_ recommendations] (aqua.recommend.item-item-model/get-raw-anime-recommendations user (.complete model) remove-known-anime)
+        [_ airing] (aqua.recommend.item-item-model/get-raw-anime-recommendations user (.airing model) remove-known-anime)]
     [(tagger recommendations) (tagger airing)]))

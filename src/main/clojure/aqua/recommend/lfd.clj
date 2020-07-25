@@ -1,7 +1,7 @@
 (ns aqua.recommend.lfd
   (:require aqua.recommend.model-files))
 
-(defn prepare-lfd-decompositor [user-list anime-map rank lambda]
+(defn prepare-anime-lfd-decompositor [user-list anime-map rank lambda]
   (let [anime-index-map (java.util.HashMap.)
         airing-anime-index-map (java.util.HashMap.)]
     (doseq [^aqua.mal.data.Anime anime (vals anime-map)]
@@ -34,9 +34,9 @@
     (dotimes [i steps]
       (.userStep lfdr (+ current-index i)))))
 
-(defn run-anime-steps
+(defn run-item-steps
   ([^aqua.recommend.ComputeLatentFactorDecomposition lfdr]
-    (run-anime-steps lfdr 0 (.animeCount lfdr)))
+    (run-item-steps lfdr 0 (.animeCount lfdr)))
   ([^aqua.recommend.ComputeLatentFactorDecomposition  lfdr current-index steps]
     (dotimes [i steps]
       (.animeStep lfdr (+ current-index i)))))
@@ -121,18 +121,18 @@
   (aqua.recommend.model-files/with-open-model path 1 in version
     (load-user-lfd-v1 in lfd users)))
 
-(defn get-recommendations [user
-                           ^aqua.recommend.LatentFactorDecomposition lfd
-                           remove-known-anime]
+(defn get-raw-anime-recommendations [user
+                                     ^aqua.recommend.LatentFactorDecomposition lfd
+                                     remove-known-anime]
   (let [user-vector (.computeUserVector lfd user)
         ranked-anime (.computeUserAnimeScores lfd user-vector)]
     (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
     [[] (take 100 (remove-known-anime ranked-anime))]))
 
-(defn get-all-recommendations [user
-                               ^aqua.recommend.LatentFactorDecomposition lfd
-                               ^aqua.recommend.LatentFactorDecomposition lfd-airing
-                               remove-known-anime keep-airing-anime tagger]
+(defn get-anime-recommendations [user
+                                 ^aqua.recommend.LatentFactorDecomposition lfd
+                                 ^aqua.recommend.LatentFactorDecomposition lfd-airing
+                                 remove-known-anime keep-airing-anime tagger]
   (let [user-vector (.computeUserVector lfd user)
         ranked-anime (.computeUserAnimeScores lfd user-vector)
         ranked-airing-anime (.computeUserAnimeScores lfd-airing user-vector)]

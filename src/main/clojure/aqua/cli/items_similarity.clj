@@ -3,7 +3,7 @@
             aqua.paths
             aqua.recommend.lfd-items
             aqua.recommend.co-occurrency
-            aqua.recommend.rp-similar-anime))
+            aqua.recommend.rp-similarity))
 
 (defn- print-similar [model-name anime scored-anime]
   (.sort scored-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
@@ -19,7 +19,7 @@
         _ (println "Loading models")
         lfd-items (aqua.recommend.lfd-items/load-lfd-items (aqua.paths/anime-lfd-items-model) (aqua.paths/anime-lfd-items-model-airing))
         co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))
-        rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity (aqua.paths/anime-rp-model))
+        rp-model (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model))
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         scored-anime-lfd (.similarAnime (.complete lfd-items) animedb-id)

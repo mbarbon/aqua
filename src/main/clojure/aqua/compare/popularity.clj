@@ -3,7 +3,7 @@
             aqua.recommend.lfd
             aqua.recommend.lfd-cf
             aqua.recommend.lfd-items
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.recommend.co-occurrency
             aqua.recommend.cosine
             aqua.recommend.pearson
@@ -30,22 +30,22 @@
     (/ (apply + (map first scores)) (apply + (map second scores)))))
 
 (defn make-score-pearson [anime-rank users min-common-items]
-  (partial score-recommender anime-rank #(aqua.recommend.pearson/get-recommendations min-common-items %1 users %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.pearson/get-raw-anime-recommendations min-common-items %1 users %2)))
 
 (defn make-score-cosine [anime-rank users]
-  (partial score-recommender anime-rank #(aqua.recommend.cosine/get-recommendations %1 users %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.cosine/get-raw-anime-recommendations %1 users %2)))
 
 (defn make-score-lfd [anime-rank lfd]
-  (partial score-recommender anime-rank #(aqua.recommend.lfd/get-recommendations %1 lfd %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.lfd/get-raw-anime-recommendations %1 lfd %2)))
 
 (defn make-score-lfd-cf [anime-rank lfd-users]
-  (partial score-recommender anime-rank #(aqua.recommend.lfd-cf/get-recommendations %1 lfd-users %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.lfd-cf/get-raw-anime-recommendations %1 lfd-users %2)))
 
 (defn make-score-lfd-items [anime-rank lfd]
-  (partial score-recommender anime-rank #(aqua.recommend.lfd-items/get-recommendations %1 lfd %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.lfd-items/get-raw-anime-recommendations %1 lfd %2)))
 
 (defn make-score-rp [anime-rank rp-model]
-  (partial score-recommender anime-rank #(aqua.recommend.rp-similar-anime/get-recommendations %1 rp-model %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.rp-similarity/get-raw-anime-recommendations %1 rp-model %2)))
 
 (defn make-score-co-occurrency [anime-rank co-occurrency-model]
-  (partial score-recommender anime-rank #(aqua.recommend.co-occurrency/get-recommendations %1 co-occurrency-model %2)))
+  (partial score-recommender anime-rank #(aqua.recommend.co-occurrency/get-raw-anime-recommendations %1 co-occurrency-model %2)))

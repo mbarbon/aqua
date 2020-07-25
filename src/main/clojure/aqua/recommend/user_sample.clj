@@ -45,7 +45,7 @@
         ; work around the (rare) case where anime stats and anime list are completely out of sync
         ; or the (slightly more frequent) case where the majority of anime are non-interesting (hentai, specials, ...)
         (remove #(< (% 2) 5)
-          (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-users-by-id data-source nil cf-parameters batch)]
+          (for [^aqua.recommend.CFUser cf-user (aqua.mal-local/load-cf-anime-users-by-id data-source nil cf-parameters batch)]
             (let [ids (.completedAndDroppedIds cf-user)
                   bitset (make-filtered-bitset anime-ids ids)]
               [(.userId cf-user) bitset (.cardinality bitset)])))))))
@@ -174,11 +174,11 @@
 ; the only purpose of this function is to avoid doubling memory usage
 ; while users are reloaded: old users become garbage while new users are loaded
 (defn load-filtered-cf-users-into [path data-source cf-parameters target anime-map-to-filter-hentai]
-  (aqua.mal-local/load-filtered-cf-users-into data-source
-                                              (load-user-sample path (count target))
-                                              cf-parameters
-                                              target
-                                              anime-map-to-filter-hentai))
+  (aqua.mal-local/load-filtered-cf-anime-users-into data-source
+                                                    (load-user-sample path (count target))
+                                                    cf-parameters
+                                                    target
+                                                    anime-map-to-filter-hentai))
 
 (defn- load-filtered-cf-users-helper [path data-source cf-parameters max-count anime-map-to-filter-hentai]
   (let [target (java.util.ArrayList. (repeat max-count nil))]
@@ -193,8 +193,8 @@
 
 (defn load-filtered-cf-user-ids [data-source cf-parameters user-ids anime-map-to-filter-hentai]
   (let [target (java.util.ArrayList. (repeat (count user-ids) nil))]
-    (aqua.mal-local/load-filtered-cf-users-into data-source
-                                                user-ids
-                                                cf-parameters
-                                                target
-                                                anime-map-to-filter-hentai)))
+    (aqua.mal-local/load-filtered-cf-anime-users-into data-source
+                                                      user-ids
+                                                      cf-parameters
+                                                      target
+                                                      anime-map-to-filter-hentai)))

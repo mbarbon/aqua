@@ -73,37 +73,37 @@
 (defn- call-recommender [recommender user known-anime-filter airing-anime-filter known-anime-tagger]
   (case recommender
     :cf-cosine
-      (aqua.recommend.cosine/get-all-recommendations user
-                                                     @*users
-                                                     known-anime-filter
-                                                     airing-anime-filter
-                                                     known-anime-tagger)
-    :cf-co-occurrency
-      (aqua.recommend.co-occurrency/get-all-recommendations user
-                                                            @*co-occurrency
-                                                            known-anime-filter
-                                                            airing-anime-filter
-                                                            known-anime-tagger)
-    :cf-lfd
-      ; *lfd-users is unset during loading
-      (if-let [lfd-users @*lfd-users]
-        (aqua.recommend.lfd-cf/get-all-recommendations user
-                                                       lfd-users
-                                                       known-anime-filter
-                                                       airing-anime-filter
-                                                       known-anime-tagger)
-        (aqua.recommend.cosine/get-all-recommendations user
+      (aqua.recommend.cosine/get-anime-recommendations user
                                                        @*users
                                                        known-anime-filter
                                                        airing-anime-filter
-                                                       known-anime-tagger))
+                                                       known-anime-tagger)
+    :cf-co-occurrency
+      (aqua.recommend.co-occurrency/get-anime-recommendations user
+                                                              @*co-occurrency
+                                                              known-anime-filter
+                                                              airing-anime-filter
+                                                              known-anime-tagger)
+    :cf-lfd
+      ; *lfd-users is unset during loading
+      (if-let [lfd-users @*lfd-users]
+        (aqua.recommend.lfd-cf/get-anime-recommendations user
+                                                         lfd-users
+                                                         known-anime-filter
+                                                         airing-anime-filter
+                                                         known-anime-tagger)
+        (aqua.recommend.cosine/get-anime-recommendations user
+                                                         @*users
+                                                         known-anime-filter
+                                                         airing-anime-filter
+                                                         known-anime-tagger))
     :lfd
-      (aqua.recommend.lfd/get-all-recommendations user
-                                                  @*lfd-anime
-                                                  @*lfd-anime-airing
-                                                  known-anime-filter
-                                                  airing-anime-filter
-                                                  known-anime-tagger)))
+      (aqua.recommend.lfd/get-anime-recommendations user
+                                                    @*lfd-anime
+                                                    @*lfd-anime-airing
+                                                    known-anime-filter
+                                                    airing-anime-filter
+                                                    known-anime-tagger)))
 
 (defn recommend [user]
   (let [lookup-anime @*anime

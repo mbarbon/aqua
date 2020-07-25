@@ -12,7 +12,7 @@
     (.sort scored aqua.recommend.ScoredUser/SORT_SCORE)
     scored))
 
-(defn get-recommendations [min-common-items user users remove-known-anime]
+(defn get-raw-anime-recommendations [min-common-items user users remove-known-anime]
   (let [ranked-users (take 100 (rank-users min-common-items user users))
         recommended-complete (aqua.recommend.collaborative-filter/recommended-completed ranked-users remove-known-anime)]
     [ranked-users (take 100 recommended-complete)]))

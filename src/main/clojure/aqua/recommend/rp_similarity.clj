@@ -1,4 +1,4 @@
-(ns aqua.recommend.rp-similar-anime
+(ns aqua.recommend.rp-similarity
   (:require aqua.recommend.item-item-model
             aqua.misc))
 
@@ -20,10 +20,10 @@
 (defn load-rp-similarity [path]
   (aqua.recommend.item-item-model/load-item-item path))
 
-(defn get-recommendations [user
-                           ^aqua.recommend.ItemItemModel rp
-                           remove-known-anime]
-  (aqua.recommend.item-item-model/get-recommendations user rp remove-known-anime))
+(defn get-raw-anime-recommendations [user
+                                     ^aqua.recommend.ItemItemModel rp
+                                     remove-known-anime]
+  (aqua.recommend.item-item-model/get-raw-anime-recommendations user rp remove-known-anime))
 
-(defn get-all-recommendations [user rp remove-known-anime keep-airing-anime tagger]
-  (aqua.recommend.item-item-model/get-all-recommendations user rp remove-known-anime keep-airing-anime tagger))
+(defn get-anime-recommendations [user rp remove-known-anime keep-airing-anime tagger]
+  (aqua.recommend.item-item-model/get-anime-recommendations user rp remove-known-anime keep-airing-anime tagger))

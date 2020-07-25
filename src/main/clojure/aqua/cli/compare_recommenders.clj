@@ -4,7 +4,7 @@
             aqua.compare.recall
             aqua.compare.diversification
             aqua.compare.popularity
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.recommend.co-occurrency
             aqua.recommend.lfd
             aqua.recommend.lfd-items
@@ -22,17 +22,17 @@
         anime-map (aqua.mal-local/load-anime data-source)
         anime-rank (aqua.mal-local/load-anime-rank data-source)
         cf-parameters-std (aqua.recommend.CFParameters.)
-        users (aqua.mal-local/load-cf-users-by-id data-source anime-map cf-parameters-std sampled-ids)
+        users (aqua.mal-local/load-cf-anime-users-by-id data-source anime-map cf-parameters-std sampled-ids)
         lfd (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model) anime-map)
         lfd-users (aqua.recommend.lfd/load-user-lfd (aqua.paths/anime-lfd-user-model) lfd users)
         lfd-items (aqua.recommend.lfd-items/load-lfd-items (aqua.paths/anime-lfd-items-model) (aqua.paths/anime-lfd-items-model-airing))
-        rp-model (aqua.recommend.rp-similar-anime/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered))
+        rp-model (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered))
         co-occurrency-model (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))
-        test-users-sample (aqua.compare.misc/load-stable-user-sample @aqua.paths/*maldump-directory
-                                                                     data-source
-                                                                     anime-map
-                                                                     (* 10 compare-count)
-                                                                     "anime-test-users.txt")]
+        test-users-sample (aqua.compare.misc/load-stable-anime-user-sample @aqua.paths/*maldump-directory
+                                                                           data-source
+                                                                           anime-map
+                                                                           (* 10 compare-count)
+                                                                           "anime-test-users.txt")]
 
     (let [score-pearson (aqua.compare.popularity/make-score-pearson anime-rank users 20)
           score-cosine (aqua.compare.popularity/make-score-cosine anime-rank users)

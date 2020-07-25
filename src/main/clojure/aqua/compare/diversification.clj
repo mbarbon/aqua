@@ -3,7 +3,7 @@
             aqua.recommend.lfd
             aqua.recommend.lfd-cf
             aqua.recommend.lfd-items
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.recommend.co-occurrency
             aqua.recommend.cosine
             aqua.recommend.pearson
@@ -44,22 +44,22 @@
     (/ (apply + (map first scores)) (apply + (map second scores)))))
 
 (defn make-score-pearson [rp-model users min-common-items]
-  (partial score-recommender rp-model #(aqua.recommend.pearson/get-recommendations min-common-items %1 users %2)))
+  (partial score-recommender rp-model #(aqua.recommend.pearson/get-raw-anime-recommendations min-common-items %1 users %2)))
 
 (defn make-score-cosine [rp-model users]
-  (partial score-recommender rp-model #(aqua.recommend.cosine/get-recommendations %1 users %2)))
+  (partial score-recommender rp-model #(aqua.recommend.cosine/get-raw-anime-recommendations %1 users %2)))
 
 (defn make-score-lfd [rp-model lfd]
-  (partial score-recommender rp-model #(aqua.recommend.lfd/get-recommendations %1 lfd %2)))
+  (partial score-recommender rp-model #(aqua.recommend.lfd/get-raw-anime-recommendations %1 lfd %2)))
 
 (defn make-score-lfd-cf [rp-model lfd-users]
-  (partial score-recommender rp-model #(aqua.recommend.lfd-cf/get-recommendations %1 lfd-users %2)))
+  (partial score-recommender rp-model #(aqua.recommend.lfd-cf/get-raw-anime-recommendations %1 lfd-users %2)))
 
 (defn make-score-lfd-items [rp-model lfd]
-  (partial score-recommender rp-model #(aqua.recommend.lfd-items/get-recommendations %1 lfd %2)))
+  (partial score-recommender rp-model #(aqua.recommend.lfd-items/get-raw-anime-recommendations %1 lfd %2)))
 
 (defn make-score-rp [rp-model rp-model]
-  (partial score-recommender rp-model #(aqua.recommend.rp-similar-anime/get-recommendations %1 rp-model %2)))
+  (partial score-recommender rp-model #(aqua.recommend.rp-similarity/get-raw-anime-recommendations %1 rp-model %2)))
 
 (defn make-score-co-occurrency [rp-model co-occurrency-model]
-  (partial score-recommender rp-model #(aqua.recommend.co-occurrency/get-recommendations %1 co-occurrency-model %2)))
+  (partial score-recommender rp-model #(aqua.recommend.co-occurrency/get-raw-anime-recommendations %1 co-occurrency-model %2)))

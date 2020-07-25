@@ -1,6 +1,5 @@
 (ns aqua.cli.search
   (:require aqua.mal-local
-            aqua.recommend.rp-similar-anime
             aqua.misc))
 
 (defn- readable-size [{:keys [used-memory]}]

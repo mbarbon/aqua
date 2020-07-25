@@ -30,7 +30,7 @@
       (.add result (func rs)))
     result))
 
-(def ^:private select-users
+(def ^:private select-anime-users
   (str "SELECT u.user_id AS user_id, u.username AS username,"
        "       al.anime_list AS anime_list,"
        "       al.anime_list_format AS anime_list_format"
@@ -94,13 +94,13 @@
     ; result list
     nil))
 
-(defn- select-users-by-id [data-source ids loader]
-  (let [query (str select-users "(" (clojure.string/join "," ids) ")")]
+(defn- select-users-by-id [data-source base-query ids loader]
+  (let [query (str base-query "(" (clojure.string/join "," ids) ")")]
     (with-query data-source rs query []
       (doall-rs rs loader))))
 
-(defn load-cf-users-by-id [data-source anime cf-parameters ids]
-  (select-users-by-id data-source ids
+(defn load-cf-anime-users-by-id [data-source anime cf-parameters ids]
+  (select-users-by-id data-source select-anime-users ids
                       (partial load-cf-users-from-rs cf-parameters anime)))
 
 (defn load-test-cf-user-ids [data-source user-ids max-count]
@@ -108,14 +108,15 @@
     (with-query data-source rs query [max-count]
       (doall-rs (fn [^java.sql.ResultSet rs] (.getInt rs 1))))))
 
-(defn load-filtered-cf-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
+(defn load-filtered-cf-anime-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
   ; this allocates and throws away an ArrayList, it's fine
   (select-users-by-id data-source
+                      select-anime-users
                       user-ids
                       (partial load-filtered-cf-users-from-rs cf-parameters target anime-map-to-filter-hentai))
   target)
 
-(def ^:private select-user
+(def ^:private select-anime-user
   (str "SELECT u.user_id AS user_id, u.username AS username,"
        "       al.anime_list AS anime_list,"
        "       al.anime_list_format AS anime_list_format"
@@ -125,7 +126,7 @@
        "    WHERE u.username = ?"))
 
 (defn load-cf-user [data-source anime cf-parameters username]
-  (with-query data-source rs select-user [username]
+  (with-query data-source rs select-anime-user [username]
     (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters anime)))))
 
 (def ^:private select-user-blob
@@ -146,10 +147,10 @@
         (.read is bytes)
         [bytes (.getInt rs 3)]))))
 
-(def ^:private select-genre-names
+(def ^:private select-anime-genre-names
   "SELECT genre, description FROM anime_genre_names")
 
-(defn- load-genre-names [data-source]
+(defn- load-genre-names [data-source select-genre-names]
   (with-query data-source rs select-genre-names []
     (into {}
       (for [{:keys [genre description]} (resultset-seq rs)]
@@ -158,13 +159,13 @@
 (def ^:private select-anime-genres-map
   "SELECT animedb_id, genre_id, sort_order FROM anime_genres ORDER BY animedb_id, sort_order")
 
-(defn- load-genres-map [data-source]
-  (let [genre-names (load-genre-names data-source)]
+(defn- load-genres-map [data-source select-genres-query select-genre-names-query]
+  (let [genre-names (load-genre-names data-source select-genre-names-query)]
     (letfn [(concat-to-map-value [coll key value]
               (assoc coll key (conj (or (coll key) []) value)))
             (merge-genres [coll {:keys [animedb_id genre_id]}]
               (concat-to-map-value coll animedb_id (genre-names genre_id)))]
-      (with-query data-source rs select-anime-genres-map []
+      (with-query data-source rs select-genres-query []
         (reduce merge-genres {} (resultset-seq rs))))))
 
 (def ^:private select-all-anime-titles
@@ -218,7 +219,7 @@
 
 (defn- load-anime-only [data-source]
   (let [hentai-id-set (set (load-hentai-anime-ids data-source))
-        genres-map (load-genres-map data-source)]
+        genres-map (load-genres-map data-source select-anime-genres-map select-anime-genre-names)]
     (with-query data-source rs select-anime []
       (doall
         (for [item (resultset-seq rs)]
@@ -244,7 +245,7 @@
                 (set! (.localCover anime) local-cover)))
             anime))))))
 
-(def ^:private select-relations
+(def ^:private select-anime-related-ids
   (str "SELECT animedb_id AS left, related_id AS right"
        "    FROM anime_relations"
        "    WHERE animedb_id < related_id"
@@ -254,29 +255,32 @@
        "    WHERE animedb_id > related_id"
        "  ORDER BY left ASC"))
 
-(defn- load-relation-pairs [data-source]
+(defn- load-relation-pairs [data-source select-relations]
   (with-query data-source rs select-relations []
     (doall
       (for [{:keys [left right]} (resultset-seq rs)]
         [left right]))))
 
-(defn load-all-anime [data-source]
-  (let [all-relations (load-relation-pairs data-source)
-        anime-map (into {} (for [^aqua.mal.data.Anime anime (load-anime-only data-source)]
-                             [(.animedbId anime) anime]))]
+(defn- load-item-franchise [data-source items select-relations]
+  (let [all-relations (load-relation-pairs data-source select-relations)
+        item-map (into {} (for [^aqua.mal.data.Anime item items]
+                             [(.itemId item) item]))]
     (doseq [[left right] all-relations]
-      (let [^aqua.mal.data.Anime left-anime (anime-map left)
-            ^aqua.mal.data.Anime right-anime (anime-map right)]
-        (when (and left-anime right-anime)
-          (let [left-franchise (or (.franchise left-anime) (aqua.mal.data.Franchise. left [left-anime]))
-                right-franchise (or (.franchise right-anime) (aqua.mal.data.Franchise. right [right-anime]))
-                all-anime (concat [] (.anime left-franchise) (.anime right-franchise))
-                merged-franchise (aqua.mal.data.Franchise. (.franchiseId left-franchise) all-anime)]
+      (let [^aqua.mal.data.Anime left-item (item-map left)
+            ^aqua.mal.data.Anime right-item (item-map right)]
+        (when (and left-item right-item)
+          (let [left-franchise (or (.franchise left-item) (aqua.mal.data.Franchise. left [left-item]))
+                right-franchise (or (.franchise right-item) (aqua.mal.data.Franchise. right [right-item]))
+                all-items (concat [] (.items left-franchise) (.items right-franchise))
+                merged-franchise (aqua.mal.data.Franchise. (.franchiseId left-franchise) all-items)]
+          (doseq [^aqua.mal.data.Anime item (.items merged-franchise)]
+            (set! (.franchise item) merged-franchise))))))
 
-        (doseq [^aqua.mal.data.Anime anime (.anime merged-franchise)]
-          (set! (.franchise anime) merged-franchise))))))
+    item-map))
 
-    anime-map))
+(defn load-all-anime [data-source]
+  (let [anime (load-anime-only data-source)]
+    (load-item-franchise data-source anime select-anime-related-ids)))
 
 (defn load-anime [data-source]
   (letfn [(hentai-or-special [^aqua.mal.data.Anime anime]

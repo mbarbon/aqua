@@ -2,7 +2,7 @@
   (:require aqua.mal-local
             aqua.paths
             aqua.misc
-            aqua.recommend.rp-similar-anime
+            aqua.recommend.rp-similarity
             aqua.recommend.user-sample
             clojure.set))
 
@@ -10,7 +10,7 @@
 (def user-count 20000)
 
 (defn- find-similar-anime [users anime-map projection-size similar-count anime-sample]
-  (let [rp-similar (time (aqua.recommend.rp-similar-anime/create-rp-similarity users anime-map projection-size similar-count))]
+  (let [rp-similar (time (aqua.recommend.rp-similarity/create-rp-similarity users anime-map projection-size similar-count))]
     (into {}
       (for [anime-id anime-sample]
         [anime-id (doall (map #(.animedbId %) (.similarAnime rp-similar anime-id)))]))))
