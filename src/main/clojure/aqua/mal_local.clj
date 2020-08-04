@@ -106,7 +106,7 @@
 (defn load-test-cf-user-ids [data-source user-ids max-count]
   (let [query (select-test-user-ids user-ids)]
     (with-query data-source rs query [max-count]
-      (doall-rs (fn [^java.sql.ResultSet rs] (.getInt rs 1))))))
+      (doall-rs rs (fn [^java.sql.ResultSet rs] (.getInt rs 1))))))
 
 (defn load-filtered-cf-anime-users-into [data-source user-ids cf-parameters target anime-map-to-filter-hentai]
   ; this allocates and throws away an ArrayList, it's fine
