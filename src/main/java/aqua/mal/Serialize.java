@@ -183,7 +183,7 @@ public class Serialize {
         CFUserInput userInput = JSON_MAPPER.readValue(is, CFUserInput.class);
         Arrays.sort(userInput.animeList, CFRated::compareTo);
         CFUser user = new CFUser();
-        user.animeListIds = CFRated.packAnimeIdArray(userInput.animeList);
+        user.itemListIds = CFRated.packAnimeIdArray(userInput.animeList);
         user.processAfterDeserialize(cfParameters);
         return user;
     }

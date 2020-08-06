@@ -39,7 +39,7 @@
     (run-item-steps lfdr 0 (.animeCount lfdr)))
   ([^aqua.recommend.ComputeLatentFactorDecomposition  lfdr current-index steps]
     (dotimes [i steps]
-      (.animeStep lfdr (+ current-index i)))))
+      (.itemStep lfdr (+ current-index i)))))
 
 (defn store-lfd [out ^aqua.recommend.LatentFactorDecomposition lfd]
   (let [anime-indices (.animeRatedMap lfd)

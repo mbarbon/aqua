@@ -30,28 +30,28 @@
   (->> (.planToWatch user)
        (map rated-animedb-id)))
 
-(defn- franchise-anime-ids [anime-ids anime-map]
-  (set (->> anime-ids
+(defn- franchise-item-ids [item-ids item-map]
+  (set (->> item-ids
             (map #(some-> %
-                          (anime-map)
-                          anime-franchise))
+                          (item-map)
+                          item-franchise))
             (remove nil?)
-            (mapcat franchise-anime)
-            (map anime-animedb-id))))
+            (mapcat franchise-items)
+            (map item-itemdb-id))))
 
-(defn user-anime-ids [user anime-map]
+(defn user-item-ids [user item-map]
   (let [known (all-but-planned user)
         planned (only-planned user)]
     (map set
       [known
        planned
-       (franchise-anime-ids known anime-map)
-       (franchise-anime-ids planned anime-map)])))
+       (franchise-item-ids known item-map)
+       (franchise-item-ids planned item-map)])))
 
 (defn users-item-map [users]
   (let [item-index-map (java.util.HashMap.)]
     (doseq [^aqua.recommend.CFUser user users]
-      (doseq [^aqua.recommend.CFRated rated (.animeList user)]
+      (doseq [^aqua.recommend.CFRated rated (.itemList user)]
         (.putIfAbsent item-index-map
                       (.itemId rated)
                       (.size item-index-map))))
@@ -102,7 +102,7 @@
 
 (defn make-tagger [user anime-map]
   (let [[known-anime planned-anime known-franchises planned-franchises]
-            (user-anime-ids user anime-map)]
+            (user-item-ids user anime-map)]
     (fn [ranked-anime-seq]
       (add-tags ranked-anime-seq planned-anime known-franchises planned-franchises anime-map))))
 

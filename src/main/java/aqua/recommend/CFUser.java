@@ -26,7 +26,7 @@ public class CFUser {
 
     public String username;
     public long userId;
-    public int[] animeListIds;
+    public int[] itemListIds;
     public int[] completedAndDroppedIds;
     public byte[] completedAndDroppedRating;
     public int completedCount, droppedCount;
@@ -80,44 +80,44 @@ public class CFUser {
         }
     }
 
-    public void setAnimeList(CFParameters cfParameters, List<CFRated> animeList) {
-        this.animeListIds = CFRated.packAnimeIdList(animeList);
+    public void setItemList(CFParameters cfParameters, List<CFRated> itemList) {
+        this.itemListIds = CFRated.packAnimeIdList(itemList);
         processAfterDeserialize(cfParameters);
     }
 
-    public void setAnimeList(CFParameters cfParameters, List<CFRated> animeList, Set<Integer> animeIds) {
+    public void setItemList(CFParameters cfParameters, List<CFRated> itemList, Set<Integer> animeIds) {
         if (animeIds == null) {
-            setAnimeList(cfParameters, animeList);
+            setItemList(cfParameters, itemList);
         } else {
-            List<CFRated> filtered = new ArrayList<>(animeList.size());
-            for (CFRated item : animeList) {
+            List<CFRated> filtered = new ArrayList<>(itemList.size());
+            for (CFRated item : itemList) {
                 if (animeIds.contains(item.animedbId)) {
                     filtered.add(item);
                 }
             }
-            this.animeListIds = CFRated.packAnimeIdList(filtered);
+            this.itemListIds = CFRated.packAnimeIdList(filtered);
             processAfterDeserialize(cfParameters);
         }
     }
 
-    public void setFilteredAnimeList(CFParameters cfParameters, List<CFRated> animeList, Set<Integer> animeIds) {
-        List<CFRated> filtered = new ArrayList<>(animeList.size());
+    public void setFilteredItemList(CFParameters cfParameters, List<CFRated> itemList, Set<Integer> itemIds) {
+        List<CFRated> filtered = new ArrayList<>(itemList.size());
         // copying the list to an array here makes filtering faster and reduces garbage
-        for (CFRated item : new FilteredListIterator<>(animeList.toArray(EMPTY_CFRATED_ARRAY),
+        for (CFRated item : new FilteredListIterator<>(itemList.toArray(EMPTY_CFRATED_ARRAY),
                 COMPLETED_AND_DROPPED | WATCHING)) {
-            if (animeIds == null || animeIds.contains(item.animedbId)) {
+            if (itemIds == null || itemIds.contains(item.animedbId)) {
                 filtered.add(item);
             }
         }
-        this.animeListIds = CFRated.packAnimeIdList(filtered);
+        this.itemListIds = CFRated.packAnimeIdList(filtered);
         processAfterDeserialize(cfParameters);
     }
 
     private Iterable<CFRated> withStatusMask(int mask) {
-        return new CFFilteredListIterator(animeListIds, mask);
+        return new CFFilteredListIterator(itemListIds, mask);
     }
 
-    public Iterable<CFRated> animeList() {
+    public Iterable<CFRated> itemList() {
         return withStatusMask(COMPLETED_AND_DROPPED);
     }
 
@@ -160,18 +160,18 @@ public class CFUser {
 
     private CFUser removeAnimeBy(CFUserFilter keep) {
         CFUser filtered = new CFUser();
-        int[] filteredIds = new int[animeListIds.length];
+        int[] filteredIds = new int[itemListIds.length];
         int filteredSize = 0;
 
-        for (int i = 0, max = animeListIds.length; i < max; ++i) {
-            if (keep.keep(animeListIds[i])) {
-                filteredIds[filteredSize++] = animeListIds[i];
+        for (int i = 0, max = itemListIds.length; i < max; ++i) {
+            if (keep.keep(itemListIds[i])) {
+                filteredIds[filteredSize++] = itemListIds[i];
             }
         }
 
         filtered.username = username;
         filtered.userId = userId;
-        filtered.animeListIds = Arrays.copyOfRange(filteredIds, 0, filteredSize);
+        filtered.itemListIds = Arrays.copyOfRange(filteredIds, 0, filteredSize);
         filtered.processAfterDeserialize(cfParameters);
 
         return filtered;

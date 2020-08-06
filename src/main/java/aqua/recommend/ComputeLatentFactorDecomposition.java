@@ -218,7 +218,7 @@ public class ComputeLatentFactorDecomposition {
         solveTime += endTime - solveStart;
     }
 
-    public void animeStep(int animeIndex) {
+    public void itemStep(int animeIndex) {
         long preprocessStart = System.currentTimeMillis();
         SparseVector currentItem = ratingMatrixByAnime.getColumn(animeIndex);
         int[] indices = currentItem.getIndex();

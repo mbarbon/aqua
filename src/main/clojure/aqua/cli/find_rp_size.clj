@@ -9,16 +9,16 @@
 (def iterations 5)
 (def user-count 20000)
 
-(defn- find-similar-anime [users anime-map projection-size similar-count anime-sample]
-  (let [rp-similar (time (aqua.recommend.rp-similarity/create-rp-similarity users anime-map projection-size similar-count))]
+(defn- find-similar-items [users item-map projection-size similar-count item-sample]
+  (let [rp-similar (time (aqua.recommend.rp-similarity/create-rp-similarity users item-map projection-size similar-count))]
     (into {}
-      (for [anime-id anime-sample]
-        [anime-id (doall (map #(.animedbId %) (.similarAnime rp-similar anime-id)))]))))
+      (for [item-id item-sample]
+        [item-id (doall (map #(.animedbId %) (.similarAnime rp-similar item-id)))]))))
 
 (defn- common-element-count [one two]
   (apply +
-    (for [[anime-id similar-one] one]
-      (let [similar-two (two anime-id)]
+    (for [[item-id similar-one] one]
+      (let [similar-two (two item-id)]
         (count (clojure.set/intersection (set similar-one) (set similar-two)))))))
 
 (defn- score-intersections [one two & rest]
@@ -31,20 +31,20 @@
   (apply + (for [result-map result-maps]
              (apply + (map count (vals result-map))))))
 
-(defn- intersection-count [users anime-map projection-size similar-count anime-sample]
+(defn- intersection-count [users item-map projection-size similar-count item-sample]
   (let [iterations (for [_ (range iterations)]
-                     (find-similar-anime users anime-map projection-size similar-count anime-sample))]
+                     (find-similar-items users item-map projection-size similar-count item-sample))]
     [(apply score-intersections iterations) (total-size iterations)]))
 
 (defn -main [projection-sizes]
   (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
         users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count)
-        anime (aqua.mal-local/load-anime data-source)
+        items (aqua.mal-local/load-anime data-source)
         similar-count 30
-        anime-sample (take 1000 (shuffle (keys anime)))]
+        item-sample (take 1000 (shuffle (keys items)))]
     (doseq [projection-size (map #(Integer/valueOf %) (clojure.string/split projection-sizes #","))]
-      (let [[score total] (intersection-count users anime projection-size similar-count anime-sample)
+      (let [[score total] (intersection-count users items projection-size similar-count item-sample)
             normalized-score (/ score total)]
         (printf "Projection %d score %.03f\n" projection-size (float normalized-score))
         (newline)))))

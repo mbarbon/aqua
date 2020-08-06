@@ -59,10 +59,10 @@
                   (io/input-stream (.getBinaryStream rs 3)))]
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setAnimeList user cf-parameters (if (= 1 (.getInt rs 4))
-                                        (Serialize/readCFRatedProtobuf al-data)
-                                        (Serialize/readCFRatedList al-data))
-                                      anime-ids)
+    (.setItemList user cf-parameters (if (= 1 (.getInt rs 4))
+                                       (Serialize/readCFRatedProtobuf al-data)
+                                       (Serialize/readCFRatedList al-data))
+                                     anime-ids)
     user))
 
 (defn- load-filtered-cf-users-from-rs [cf-parameters
@@ -88,7 +88,7 @@
             (.setHentai item)))))
     (set! (.userId user) (.getInt rs 1))
     (set! (.username user) (.getString rs 2))
-    (.setFilteredAnimeList user cf-parameters anime-list anime-ids)
+    (.setFilteredItemList user cf-parameters anime-list anime-ids)
     (.set target (- (.getRow rs) 1) user)
     ; return nil to avoid retaining the previous value in the
     ; result list

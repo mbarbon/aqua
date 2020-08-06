@@ -13,37 +13,38 @@
 (def user-count 20000)
 (def compare-count 40)
 
-(defn- compute-scores [lfd rp-model test-users-sample anime-map]
-  (let [score-lfd (aqua.compare.diversification/make-score-lfd rp-model lfd)
-        test-users (take compare-count test-users-sample)]
-    (timed-score "Diversification" (score-lfd test-users anime-map)))
+(defn- compute-scores [lfd rp-model test-users-sample item-map]
+  (if rp-model
+    (let [score-lfd (aqua.compare.diversification/make-score-lfd rp-model lfd)
+          test-users (take compare-count test-users-sample)]
+      (timed-score "Diversification" (score-lfd test-users item-map))))
   (let [score-lfd (aqua.compare.recall-planned/make-score-lfd lfd)
         test-users (aqua.compare.recall-planned/make-test-users-list compare-count
                                                                      test-users-sample)]
-    (timed-score "Planned items recall" (score-lfd test-users anime-map)))
+    (timed-score "Planned items recall" (score-lfd test-users item-map)))
   (let [score-lfd (aqua.compare.recall/make-score-lfd lfd)
         test-users (aqua.compare.recall/make-test-users-list compare-count
                                                              test-users-sample)]
-    (timed-score "Single item recall" (score-lfd test-users anime-map)))
+    (timed-score "Single item recall" (score-lfd test-users item-map)))
   (let [score-lfd (aqua.compare.estimated-scores/make-score-lfd lfd)
         test-users (aqua.compare.estimated-scores/make-test-users-list compare-count
                                                                        test-users-sample)]
-    (timed-score "Estimate score RMSE" (score-lfd test-users anime-map))))
+    (timed-score "Estimate score RMSE" (score-lfd test-users item-map))))
 
-(defn- run-parameters [users rank lambda iterations rp-model test-users-sample anime-map]
+(defn- run-parameters [users rank lambda iterations rp-model test-users-sample item-map]
   (println (str "Rank " rank " lambda " lambda " iterations " iterations))
-  (let [[lfdr _] (aqua.recommend.lfd/prepare-anime-lfd-decompositor users anime-map rank lambda)]
+  (let [[lfdr _] (aqua.recommend.lfd/prepare-anime-lfd-decompositor users item-map rank lambda)]
     (dotimes [i iterations]
       (when (= 0 (mod i 4))
         (println)
         (println "Iteration" i)
         (println "Model RMSE" (.rootMeanSquaredError lfdr))
-        (compute-scores (.decomposition lfdr) rp-model test-users-sample anime-map))
-      (aqua.recommend.lfd/run-anime-steps lfdr)
+        (compute-scores (.decomposition lfdr) rp-model test-users-sample item-map))
+      (aqua.recommend.lfd/run-item-steps lfdr)
       (aqua.recommend.lfd/run-user-steps lfdr))
     (println)
     (println "Iteration" iterations)
-    (compute-scores (.decomposition lfdr) rp-model test-users-sample anime-map)
+    (compute-scores (.decomposition lfdr) rp-model test-users-sample item-map)
     (println)))
 
 (defn- split-ints [arg]
@@ -55,15 +56,19 @@
 (defn- has-some-anime [user]
   (>= (count (.completedAndDroppedIds user)) 10))
 
+(defn- has-some-manga [user]
+  (>= (count (seq (.inProgressAndDropped user))) 10))
+
 (defn -main [ranks lambdas iteration-counts]
   (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
+        directory @aqua.paths/*maldump-directory
         sampled-ids (aqua.recommend.user-sample/load-user-sample (aqua.paths/anime-user-sample) user-count)
         cf-parameters-std (aqua.misc/make-cf-parameters 0 0)
-        anime-map (aqua.mal-local/load-anime data-source)
-        users (filter has-some-anime (aqua.mal-local/load-cf-anime-users-by-id data-source anime-map cf-parameters-std sampled-ids))
-        test-users-sample (aqua.compare.misc/load-stable-anime-user-sample @aqua.paths/*maldump-directory
+        item-map (aqua.mal-local/load-anime data-source)
+        users (filter has-some-anime (aqua.mal-local/load-cf-anime-users-by-id data-source item-map cf-parameters-std sampled-ids))
+        test-users-sample (aqua.compare.misc/load-stable-anime-user-sample directory
                                                                            data-source
-                                                                           anime-map
+                                                                           item-map
                                                                            (* 10 compare-count)
                                                                            "anime-test-users.txt")
         rp-model (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model-unfiltered))]
@@ -72,4 +77,4 @@
     (doseq [rank (split-ints ranks)]
       (doseq [lambda (split-doubles lambdas)]
         (doseq [iterations (split-ints iteration-counts)]
-          (run-parameters users rank lambda iterations rp-model test-users-sample anime-map))))))
+          (run-parameters users rank lambda iterations rp-model test-users-sample item-map))))))

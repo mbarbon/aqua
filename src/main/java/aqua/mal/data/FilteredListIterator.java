@@ -10,9 +10,9 @@ public class FilteredListIterator<T extends RatedBase> implements Iterable<T>, I
     private final Iterator<T> parent;
     private T next;
 
-    public FilteredListIterator(T[] animeList, int mask) {
+    public FilteredListIterator(T[] itemList, int mask) {
         this.mask = mask;
-        this.parent = Arrays.asList(animeList).iterator();
+        this.parent = Arrays.asList(itemList).iterator();
         this.next = findNext();
     }
 
