@@ -80,7 +80,7 @@
       (doseq [^aqua.recommend.CFRated item anime-list]
         (let [item-id (.animedbId item)
               is-hentai ; when we have an user referring to non-existing/non-interesting anime
-                        (if-let [^aqua.mal.data.Anime in-map
+                        (if-let [^aqua.mal.data.Item in-map
                                   (anime-map-to-filter-hentai item-id)]
                           (.isHentai in-map)
                           false)]
@@ -263,17 +263,17 @@
 
 (defn- load-item-franchise [data-source items select-relations]
   (let [all-relations (load-relation-pairs data-source select-relations)
-        item-map (into {} (for [^aqua.mal.data.Anime item items]
+        item-map (into {} (for [^aqua.mal.data.Item item items]
                              [(.itemId item) item]))]
     (doseq [[left right] all-relations]
-      (let [^aqua.mal.data.Anime left-item (item-map left)
-            ^aqua.mal.data.Anime right-item (item-map right)]
+      (let [^aqua.mal.data.Item left-item (item-map left)
+            ^aqua.mal.data.Item right-item (item-map right)]
         (when (and left-item right-item)
           (let [left-franchise (or (.franchise left-item) (aqua.mal.data.Franchise. left [left-item]))
                 right-franchise (or (.franchise right-item) (aqua.mal.data.Franchise. right [right-item]))
                 all-items (concat [] (.items left-franchise) (.items right-franchise))
                 merged-franchise (aqua.mal.data.Franchise. (.franchiseId left-franchise) all-items)]
-          (doseq [^aqua.mal.data.Anime item (.items merged-franchise)]
+          (doseq [^aqua.mal.data.Item item (.items merged-franchise)]
             (set! (.franchise item) merged-franchise))))))
 
     item-map))

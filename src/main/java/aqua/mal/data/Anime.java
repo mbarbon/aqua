@@ -2,7 +2,7 @@ package aqua.mal.data;
 
 import java.util.List;
 
-public class Anime {
+public class Anime extends Item {
     public static final int TV = 1;
     public static final int OVA = 2;
     public static final int MOVIE = 3;
@@ -19,13 +19,15 @@ public class Anime {
     public String image;
     public int status;
     public int seriesType;
-    public Franchise franchise;
     public int episodes;
     public List<String> genres;
     public long startedAiring;
     public long endedAiring;
-    public boolean isHentai;
-    public LocalCover localCover;
+
+    @Override
+    public int itemId() {
+        return animedbId;
+    }
 
     public boolean isCompleted() {
         return status == FINISHED || (status == AIRING && endedAiring >= System.currentTimeMillis() / 1000);

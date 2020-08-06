@@ -66,7 +66,7 @@
         (.readArray reader anime-indices)
         (if anime-map
           (dotimes [n (alength anime-indices)]
-            (if-let [^aqua.mal.data.Anime anime (anime-map (aget anime-indices n))]
+            (if-let [^aqua.mal.data.Item anime (anime-map (aget anime-indices n))]
               ; mark as Hentai if present
               (if (.isHentai anime)
                 (aset-int anime-indices n (- (aget anime-indices n))))

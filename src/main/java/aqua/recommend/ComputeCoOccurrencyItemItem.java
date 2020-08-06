@@ -1,6 +1,8 @@
 package aqua.recommend;
 
 import aqua.mal.data.Anime;
+import aqua.mal.data.Item;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -72,8 +74,9 @@ public class ComputeCoOccurrencyItemItem {
         private CFRated current;
         private List<CFRated> watching;
 
-        public AiringAnime(Map<Integer, Anime> animeMap) {
-            this.animeMap = animeMap;
+        @SuppressWarnings("unchecked")
+        public AiringAnime(Map<Integer, ? extends Item> animeMap) {
+            this.animeMap = (Map<Integer, Anime>) animeMap;
         }
 
         @Override
@@ -122,16 +125,16 @@ public class ComputeCoOccurrencyItemItem {
         }
     }
 
-    private final Map<Integer, Anime> animeMap;
+    private final Map<Integer, Item> itemMap;
     private final Map<Integer, Integer> animeIndexMap;
     private final int similarAnimeCount;
     private final float[] animeCounts;
     private final int[] similarAnimeId;
     private final float[] similarAnimeScore;
 
-    public ComputeCoOccurrencyItemItem(Map<Integer, Anime> animeMap, Map<Integer, Integer> animeIndexMap,
+    public ComputeCoOccurrencyItemItem(Map<Integer, Item> itemMap, Map<Integer, Integer> animeIndexMap,
             int similarAnimeCount) {
-        this.animeMap = animeMap;
+        this.itemMap = itemMap;
         this.animeIndexMap = animeIndexMap;
         this.similarAnimeCount = similarAnimeCount;
         this.animeCounts = new float[animeIndexMap.size() * animeIndexMap.size()];
@@ -146,7 +149,7 @@ public class ComputeCoOccurrencyItemItem {
     }
 
     public void findSimilarAiringAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
-        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(animeMap), alpha);
+        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(itemMap), alpha);
         fillSimilarAnime();
     }
 
@@ -250,7 +253,7 @@ public class ComputeCoOccurrencyItemItem {
     }
 
     private boolean addFranchise(int animedbId, Set<Integer> seenFranchises) {
-        Anime anime = animeMap.get(animedbId);
+        Item anime = itemMap.get(animedbId);
         if (anime != null && anime.franchise != null) {
             if (seenFranchises.contains(anime.franchise.franchiseId))
                 return true;

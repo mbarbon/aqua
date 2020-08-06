@@ -19,8 +19,8 @@
 (defn- rated-animedb-id [^aqua.recommend.CFRated rated] (.animedbId rated))
 (defn- rated-status [^aqua.recommend.CFRated rated] (.status rated))
 (defn- franchise-items [^aqua.mal.data.Franchise franchise] (.items franchise))
-(defn- item-itemdb-id [^aqua.mal.data.Anime item] (.itemId item))
-(defn- item-franchise [^aqua.mal.data.Anime item] (.franchise item))
+(defn- item-itemdb-id [^aqua.mal.data.Item item] (.itemId item))
+(defn- item-franchise [^aqua.mal.data.Item item] (.franchise item))
 
 (defn- all-but-planned [user]
   (->> (.allButPlanToWatch user)
@@ -65,7 +65,7 @@
   (let [seen-franchises (java.util.HashSet.)]
     (doseq [^aqua.recommend.ScoredAnime scored-anime ranked-anime-seq]
       (let [anime-id (.animedbId scored-anime)
-            franchise-id (if-let [^aqua.mal.data.Anime anime (.get anime-map anime-id)]
+            franchise-id (if-let [^aqua.mal.data.Item anime (.get anime-map anime-id)]
                            (if-let [franchise (.franchise anime)]
                              (.franchiseId franchise)))
             is-planned (planned-anime anime-id)

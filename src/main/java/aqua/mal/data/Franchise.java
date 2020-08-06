@@ -17,7 +17,7 @@ public class Franchise {
         return anime.stream().mapToInt(a -> a.episodes).sum();
     }
 
-    public Set<Anime> items() {
+    public Set<? extends Item> items() {
         return anime;
     }
 

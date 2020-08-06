@@ -1,6 +1,6 @@
 package aqua.recommend;
 
-import aqua.mal.data.Anime;
+import aqua.mal.data.Item;
 
 import com.google.common.collect.MinMaxPriorityQueue;
 
@@ -16,13 +16,13 @@ import no.uib.cipr.matrix.sparse.FlexCompRowMatrix;
 import static aqua.recommend.MatrixUtils.reduceDimensionAndNormalize;
 
 public class ComputeRPSimilarAnime {
-    private final Map<Integer, Anime> animeMap;
+    private final Map<Integer, Item> animeMap;
     private final Map<Integer, Integer> animeIndexMap;
     private final int similarAnimeCount;
     private final int[] similarAnimeId;
     private final float[] similarAnimeScore;
 
-    public ComputeRPSimilarAnime(Map<Integer, Anime> animeMap, Map<Integer, Integer> animeIndexMap,
+    public ComputeRPSimilarAnime(Map<Integer, Item> animeMap, Map<Integer, Integer> animeIndexMap,
             int similarAnimeCount) {
         this.animeMap = animeMap;
         this.animeIndexMap = animeIndexMap;
@@ -107,7 +107,7 @@ public class ComputeRPSimilarAnime {
     }
 
     private boolean addFranchise(int animedbId, Set<Integer> seenFranchises) {
-        Anime anime = animeMap.get(animedbId);
+        Item anime = animeMap.get(animedbId);
         if (anime != null && anime.franchise != null) {
             if (seenFranchises.contains(anime.franchise.franchiseId))
                 return true;
