@@ -105,7 +105,8 @@ public class SubstringMatchSuggest {
                     rank = entry.string.length() - part.length();
 
                 for (AnimeTitle animeTitle : entry.animeTitles) {
-                    PrefixMatch suggestion = thisPart.computeIfAbsent(animeTitle, i -> new PrefixMatch(i, animeRank.getOrDefault(i.animedbId, Integer.MAX_VALUE)));
+                    PrefixMatch suggestion = thisPart.computeIfAbsent(animeTitle,
+                            i -> new PrefixMatch(i, animeRank.getOrDefault(i.animedbId, Integer.MAX_VALUE)));
 
                     suggestion.matchRank = Math.min(rank, suggestion.matchRank);
                 }
@@ -146,9 +147,8 @@ public class SubstringMatchSuggest {
 
     private static void insertEntry(List<Entry> entries, String string, Set<AnimeTitle> animeTitles) {
         AnimeTitle[] animedbTitlesArray = animeTitles.toArray(SearchUtils.EMPTY_ANIME_TITLES);
-        int prefix = string.length() > 10 ? string.length() / 2 + 2 :
-                     string.length() > 5  ? string.length() - 3 :
-                                            string.length() - 2;
+        int prefix = string.length() > 10 ? string.length() / 2 + 2
+                : string.length() > 5 ? string.length() - 3 : string.length() - 2;
         for (int i = 0, max = Math.max(1, prefix); i < max; ++i)
             entries.add(new Entry(string, i, animedbTitlesArray));
     }

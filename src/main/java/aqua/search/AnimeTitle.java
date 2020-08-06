@@ -9,8 +9,7 @@ public class AnimeTitle {
 
     // convenience constructor for tests
     public AnimeTitle(List<Object> clojureList) {
-        this(((Number) clojureList.get(0)).intValue(),
-                (String) clojureList.get(1),
+        this(((Number) clojureList.get(0)).intValue(), (String) clojureList.get(1),
                 clojureList.size() == 3 ? ((Number) clojureList.get(2)).shortValue() : 0);
     }
 

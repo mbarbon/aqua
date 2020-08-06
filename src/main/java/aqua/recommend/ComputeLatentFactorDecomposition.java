@@ -2,14 +2,11 @@ package aqua.recommend;
 
 import no.uib.cipr.matrix.DenseMatrix;
 import no.uib.cipr.matrix.DenseVector;
-import no.uib.cipr.matrix.Matrix;
 import no.uib.cipr.matrix.Vector;
-import no.uib.cipr.matrix.sparse.CompDiagMatrix;
 import no.uib.cipr.matrix.sparse.FlexCompColMatrix;
 import no.uib.cipr.matrix.sparse.FlexCompRowMatrix;
 import no.uib.cipr.matrix.sparse.SparseVector;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
 
@@ -20,7 +17,8 @@ public class ComputeLatentFactorDecomposition {
     private final double lambda;
     private final Map<Integer, Integer> animeIndexMap;
     private final CFUser[] userMap;
-    // from https://datasciencemadesimpler.wordpress.com/tag/alternating-least-squares/
+    // from
+    // https://datasciencemadesimpler.wordpress.com/tag/alternating-least-squares/
     private final FlexCompRowMatrix ratingMatrixByUser; // R matrix
     private final FlexCompColMatrix ratingMatrixByAnime; // R matrix
     private final DenseMatrix userFactors; // U matrix
@@ -38,7 +36,8 @@ public class ComputeLatentFactorDecomposition {
     // timing information
     private long preprocessTime, coefficientTime, valueTime, solveTime;
 
-    public ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int userCount, int rank, double lambda) {
+    public ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int userCount, int rank,
+            double lambda) {
         this.animeIndexMap = animeIndexMap;
         this.animeCount = animeIndexMap.size();
         this.userCount = userCount;
@@ -57,7 +56,8 @@ public class ComputeLatentFactorDecomposition {
         this.linearSystemSolution = new DenseVector(rank);
     }
 
-    private ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int userCount, int rank, double lambda, DenseMatrix userFactors) {
+    private ComputeLatentFactorDecomposition(Map<Integer, Integer> animeIndexMap, int userCount, int rank,
+            double lambda, DenseMatrix userFactors) {
         this.animeIndexMap = animeIndexMap;
         this.animeCount = animeIndexMap.size();
         this.userCount = userCount;
@@ -224,7 +224,8 @@ public class ComputeLatentFactorDecomposition {
         int[] indices = currentItem.getIndex();
         double[] data = currentItem.getData();
         int indexCount = currentItem.getUsed();
-        double weightedLambda = lambda * (indexCount == 0 ? 1 : indexCount);;
+        double weightedLambda = lambda * (indexCount == 0 ? 1 : indexCount);
+        ;
 
         userRatingSlice.zero();
         for (int i = indexCount - 1; i > 0; --i)

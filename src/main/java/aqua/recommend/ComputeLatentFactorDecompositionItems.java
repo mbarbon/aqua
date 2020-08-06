@@ -17,7 +17,8 @@ public class ComputeLatentFactorDecompositionItems {
     public final int[] similarAnimeId;
     public final float[] similarAnimeScore;
 
-    public ComputeLatentFactorDecompositionItems(Map<Integer, Anime> animeMap, LatentFactorDecomposition completed, LatentFactorDecomposition factors, int similarAnimeCount) {
+    public ComputeLatentFactorDecompositionItems(Map<Integer, Anime> animeMap, LatentFactorDecomposition completed,
+            LatentFactorDecomposition factors, int similarAnimeCount) {
         this.animeMap = animeMap;
         this.completed = completed;
         this.factors = factors;
@@ -39,10 +40,7 @@ public class ComputeLatentFactorDecompositionItems {
         for (int i = 0; i < completed.animeCount(); ++i) {
             ScoredAnimeId[] similar = new ScoredAnimeId[animeCount];
             for (int j = 0; j < animeCount; ++j) {
-                similar[j] = new ScoredAnimeId(
-                    factors.animeRatedMap[j],
-                    -itemSimilarity(completed, i, factors, j)
-                );
+                similar[j] = new ScoredAnimeId(factors.animeRatedMap[j], -itemSimilarity(completed, i, factors, j));
             }
             Arrays.sort(similar, ScoredAnimeId.SORT_SCORE);
             Set<Integer> seenFranchises = new HashSet<>();
@@ -59,7 +57,8 @@ public class ComputeLatentFactorDecompositionItems {
         }
     }
 
-    private static float itemSimilarity(LatentFactorDecomposition items1, int index1, LatentFactorDecomposition items2, int index2) {
+    private static float itemSimilarity(LatentFactorDecomposition items1, int index1, LatentFactorDecomposition items2,
+            int index2) {
         int rank = items1.rank();
         double product = 0;
         for (int i = 0; i < rank; ++i) {

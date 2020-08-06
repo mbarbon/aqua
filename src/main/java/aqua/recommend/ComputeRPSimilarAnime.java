@@ -22,7 +22,8 @@ public class ComputeRPSimilarAnime {
     private final int[] similarAnimeId;
     private final float[] similarAnimeScore;
 
-    public ComputeRPSimilarAnime(Map<Integer, Anime> animeMap, Map<Integer, Integer> animeIndexMap, int similarAnimeCount) {
+    public ComputeRPSimilarAnime(Map<Integer, Anime> animeMap, Map<Integer, Integer> animeIndexMap,
+            int similarAnimeCount) {
         this.animeMap = animeMap;
         this.animeIndexMap = animeIndexMap;
         this.similarAnimeCount = similarAnimeCount;
@@ -79,10 +80,8 @@ public class ComputeRPSimilarAnime {
     }
 
     private void fillTopScores(int animedbId, int animeIndex, DenseVector similarityScores) {
-        MinMaxPriorityQueue<ScoredAnimeId> topScored =
-            MinMaxPriorityQueue.orderedBy(ScoredAnimeId.SORT_SCORE)
-                               .maximumSize(similarAnimeCount)
-                               .create();
+        MinMaxPriorityQueue<ScoredAnimeId> topScored = MinMaxPriorityQueue.orderedBy(ScoredAnimeId.SORT_SCORE)
+                .maximumSize(similarAnimeCount).create();
 
         for (Map.Entry<Integer, Integer> entry : animeIndexMap.entrySet()) {
             int entryAnimedbId = entry.getKey();

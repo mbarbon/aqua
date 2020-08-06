@@ -39,14 +39,14 @@ public class Serialize {
         public Rated deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonParseException {
             int[] array = jp.readValueAs(int[].class);
 
-            return new Rated(array[0], (byte) array[1], (byte) array[2],
-                             array.length > 3 ? (short) array[3] : 0);
+            return new Rated(array[0], (byte) array[1], (byte) array[2], array.length > 3 ? (short) array[3] : 0);
         }
     }
 
     private static class RatedSerializer extends JsonSerializer<Rated> {
         @Override
-        public void serialize(Rated rated, JsonGenerator jg, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(Rated rated, JsonGenerator jg, SerializerProvider provider)
+                throws IOException, JsonProcessingException {
             jg.writeStartArray();
 
             jg.writeNumber(rated.animedbId);
@@ -71,42 +71,50 @@ public class Serialize {
         @Tag(1)
         public List<Rated> rated;
 
-        public RatedProtostuff() {}
-        public RatedProtostuff(List<Rated> rated) { this.rated = rated; }
+        public RatedProtostuff() {
+        }
+
+        public RatedProtostuff(List<Rated> rated) {
+            this.rated = rated;
+        }
     }
 
     private static class CFRatedProtostuff {
         @Tag(1)
         public List<CFRated> rated;
 
-        public CFRatedProtostuff() {}
-        public CFRatedProtostuff(List<CFRated> rated) { this.rated = rated; }
+        public CFRatedProtostuff() {
+        }
+
+        public CFRatedProtostuff(List<CFRated> rated) {
+            this.rated = rated;
+        }
     }
 
     public static class CFUserInput {
         public CFRated[] animeList;
     }
 
-    private static final ThreadLocal<LinkedBuffer> LINKED_BUFFER =
-        new ThreadLocal<LinkedBuffer>() {
-            @Override
-            protected LinkedBuffer initialValue() {
-                return LinkedBuffer.allocate();
-            }
-        };
+    private static final ThreadLocal<LinkedBuffer> LINKED_BUFFER = new ThreadLocal<LinkedBuffer>() {
+        @Override
+        protected LinkedBuffer initialValue() {
+            return LinkedBuffer.allocate();
+        }
+    };
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final ObjectMapper XML_MAPPER = new XmlMapper();
-    private static final TypeReference RATED_LIST =
-        new TypeReference<List<Rated>>() {};
-    private static final TypeReference CFRATED_LIST =
-        new TypeReference<List<CFRated>>() {};
-    private static final TypeReference ANIME_LIST_ITEM_LIST =
-        new TypeReference<List<ListPageItem.AnimePageItem>>() {};
-    private static final TypeReference MANGA_LIST_ITEM_LIST =
-        new TypeReference<List<ListPageItem.MangaPageItem>>() {};
+    private static final TypeReference RATED_LIST = new TypeReference<List<Rated>>() {
+    };
+    private static final TypeReference CFRATED_LIST = new TypeReference<List<CFRated>>() {
+    };
+    private static final TypeReference ANIME_LIST_ITEM_LIST = new TypeReference<List<ListPageItem.AnimePageItem>>() {
+    };
+    private static final TypeReference MANGA_LIST_ITEM_LIST = new TypeReference<List<ListPageItem.MangaPageItem>>() {
+    };
     private static final Schema<RatedProtostuff> RATED_SCHEMA_LIST = RuntimeSchema.getSchema(RatedProtostuff.class);
-    private static final Schema<CFRatedProtostuff> CFRATED_SCHEMA_LIST = RuntimeSchema.getSchema(CFRatedProtostuff.class);
+    private static final Schema<CFRatedProtostuff> CFRATED_SCHEMA_LIST = RuntimeSchema
+            .getSchema(CFRatedProtostuff.class);
     private static final Schema<Rated> RATED_SCHEMA = RuntimeSchema.getSchema(Rated.class);
     private static final Schema<CFRated> CFRATED_SCHEMA = RuntimeSchema.getSchema(CFRated.class);
 
@@ -142,12 +150,7 @@ public class Serialize {
     public static void writeRatedProtobuf(OutputStream os, List<Rated> rated) throws IOException {
         LinkedBuffer linkedBuffer = LINKED_BUFFER.get();
         linkedBuffer.clear();
-        ProtobufIOUtil.writeTo(
-            os,
-            new RatedProtostuff(rated),
-            RATED_SCHEMA_LIST,
-            linkedBuffer
-        );
+        ProtobufIOUtil.writeTo(os, new RatedProtostuff(rated), RATED_SCHEMA_LIST, linkedBuffer);
     }
 
     public static List<ListPageItem.AnimePageItem> readAnimeList(InputStream is) throws IOException {

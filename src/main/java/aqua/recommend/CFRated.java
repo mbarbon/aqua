@@ -42,9 +42,7 @@ public class CFRated extends RatedBase implements Comparable<CFRated>, Recommend
     }
 
     public boolean equals(CFRated other) {
-        return animedbId == other.animedbId &&
-            status == other.status &&
-            rating == other.rating;
+        return animedbId == other.animedbId && status == other.status && rating == other.rating;
     }
 
     @Override

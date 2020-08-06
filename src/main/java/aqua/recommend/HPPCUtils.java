@@ -8,7 +8,7 @@ public class HPPCUtils {
     public static IntIntMap convertMap(Map<Integer, Integer> map) {
         IntIntMap result = new IntIntHashMap(map.size());
         for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
-          result.put(entry.getKey(), entry.getValue());
+            result.put(entry.getKey(), entry.getValue());
         }
         return result;
     }

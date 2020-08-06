@@ -25,7 +25,8 @@ public class LatentFactorDecompositionUsers {
         this.rank = this.userFactors.length / userMap.length;
     }
 
-    public LatentFactorDecompositionUsers(LatentFactorDecomposition lfd, int rank, CFUser[] userMap, float[] userFactors, int[] validIndices) {
+    public LatentFactorDecompositionUsers(LatentFactorDecomposition lfd, int rank, CFUser[] userMap,
+            float[] userFactors, int[] validIndices) {
         if (lfd.rank() != rank)
             throw new IllegalArgumentException("Inconsiten model ranks " + lfd.rank() + " != " + rank);
         this.lfd = lfd;
@@ -42,14 +43,14 @@ public class LatentFactorDecompositionUsers {
                 this.userMap[i] = userMap[source];
                 if (userMap[source] == null)
                     throw new RuntimeException("Incosistent valid anime map: " + i + " " + source);
-                System.arraycopy(userFactors, source * rank,
-                                 this.userFactors, i * rank, rank);
+                System.arraycopy(userFactors, source * rank, this.userFactors, i * rank, rank);
             }
         }
         this.rank = rank;
     }
 
-    private LatentFactorDecompositionUsers(LatentFactorDecomposition lfd, int rank, CFUser[] userMap, float[] userFactors) {
+    private LatentFactorDecompositionUsers(LatentFactorDecomposition lfd, int rank, CFUser[] userMap,
+            float[] userFactors) {
         this.lfd = lfd;
         this.rank = rank;
         this.userMap = userMap;

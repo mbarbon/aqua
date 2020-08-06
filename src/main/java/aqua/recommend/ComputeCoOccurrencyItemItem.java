@@ -10,9 +10,13 @@ import java.util.Set;
 public class ComputeCoOccurrencyItemItem {
     private interface AnimeIterator {
         void reset(CFUser user);
+
         int maxSize();
+
         boolean next();
+
         int animedbId();
+
         float normalizedRating();
     }
 
@@ -125,7 +129,8 @@ public class ComputeCoOccurrencyItemItem {
     private final int[] similarAnimeId;
     private final float[] similarAnimeScore;
 
-    public ComputeCoOccurrencyItemItem(Map<Integer, Anime> animeMap, Map<Integer, Integer> animeIndexMap, int similarAnimeCount) {
+    public ComputeCoOccurrencyItemItem(Map<Integer, Anime> animeMap, Map<Integer, Integer> animeIndexMap,
+            int similarAnimeCount) {
         this.animeMap = animeMap;
         this.animeIndexMap = animeIndexMap;
         this.similarAnimeCount = similarAnimeCount;
@@ -135,7 +140,8 @@ public class ComputeCoOccurrencyItemItem {
     }
 
     public void findSimilarAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
-        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new CompletedAndDroppedAnime(goodScoreThreshold), alpha);
+        countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold),
+                new CompletedAndDroppedAnime(goodScoreThreshold), alpha);
         fillSimilarAnime();
     }
 

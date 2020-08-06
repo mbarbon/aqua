@@ -28,8 +28,7 @@ public class Anime {
     public LocalCover localCover;
 
     public boolean isCompleted() {
-        return status == FINISHED ||
-            (status == AIRING && endedAiring >= System.currentTimeMillis() / 1000);
+        return status == FINISHED || (status == AIRING && endedAiring >= System.currentTimeMillis() / 1000);
     }
 
     public boolean isAiring() {

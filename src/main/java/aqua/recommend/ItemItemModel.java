@@ -19,11 +19,13 @@ public class ItemItemModel {
     public final int[] similarAnimeId;
     public final float[] similarAnimeScore;
 
-    public ItemItemModel(Map<Integer, Integer> animeIndexMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
+    public ItemItemModel(Map<Integer, Integer> animeIndexMap, int similarAnimeCount, int[] similarAnimeId,
+            float[] similarAnimeScore) {
         this(HPPCUtils.convertMap(animeIndexMap), similarAnimeCount, similarAnimeId, similarAnimeScore);
     }
 
-    public ItemItemModel(IntIntMap animeIndexMap, int similarAnimeCount, int[] similarAnimeId, float[] similarAnimeScore) {
+    public ItemItemModel(IntIntMap animeIndexMap, int similarAnimeCount, int[] similarAnimeId,
+            float[] similarAnimeScore) {
         this.animeIndexMap = animeIndexMap;
         this.similarAnimeCount = similarAnimeCount;
         this.similarAnimeId = similarAnimeId;
@@ -85,7 +87,8 @@ public class ItemItemModel {
                 if (animedbId == 0)
                     continue;
                 float score = similarAnimeScore[index] * likedItem.score;
-                ScoredAnimeId recommendation = recommendations.computeIfAbsent(animedbId, id -> new ScoredAnimeId(id, 0.0f));
+                ScoredAnimeId recommendation = recommendations.computeIfAbsent(animedbId,
+                        id -> new ScoredAnimeId(id, 0.0f));
                 recommendation.score += score;
             }
         }

@@ -3,7 +3,6 @@ package aqua.mal.data;
 import java.lang.Iterable;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 public class FilteredListIterator<T extends RatedBase> implements Iterable<T>, Iterator<T> {

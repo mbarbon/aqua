@@ -26,14 +26,11 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 
 public class Http {
-    private static final DateTimeFormatter RFC_850_DATE_TIME =
-        new DateTimeFormatterBuilder()
-        .appendPattern("EEEE, dd-MMM-")
-        .appendValueReduced(ChronoField.YEAR, 2, 2, 1992)
-        .appendPattern(" HH:mm:ss zzz")
-        .toFormatter(Locale.US);
-    private static final DateTimeFormatter ASCTIME_DATE_TIME =
-        DateTimeFormatter.ofPattern("EEE MMM ppd HH:mm:ss yyyy", Locale.US);
+    private static final DateTimeFormatter RFC_850_DATE_TIME = new DateTimeFormatterBuilder()
+            .appendPattern("EEEE, dd-MMM-").appendValueReduced(ChronoField.YEAR, 2, 2, 1992)
+            .appendPattern(" HH:mm:ss zzz").toFormatter(Locale.US);
+    private static final DateTimeFormatter ASCTIME_DATE_TIME = DateTimeFormatter.ofPattern("EEE MMM ppd HH:mm:ss yyyy",
+            Locale.US);
     private static final ZoneId UTC = ZoneId.of("UTC");
 
     private static class HttpHandler extends AsyncCompletionHandler<Object> {
@@ -52,18 +49,13 @@ public class Http {
         }
 
         @Override
-        public void onThrowable(Throwable t){
+        public void onThrowable(Throwable t) {
             callback.invoke(t, null, null);
         }
     }
 
-    private static final DefaultAsyncHttpClientConfig CONFIG =
-        new DefaultAsyncHttpClientConfig.Builder()
-            .setCompressionEnforced(true)
-            .setConnectTimeout(2500)
-            .setReadTimeout(5000)
-            .setRequestTimeout(10000)
-            .build();
+    private static final DefaultAsyncHttpClientConfig CONFIG = new DefaultAsyncHttpClientConfig.Builder()
+            .setCompressionEnforced(true).setConnectTimeout(2500).setReadTimeout(5000).setRequestTimeout(10000).build();
     private static AsyncHttpClient CLIENT;
 
     public static synchronized void init() {
@@ -77,10 +69,7 @@ public class Http {
     }
 
     public static Future<Object> get(String url, Map<String, String> queryParams, int timeout, IFn callback) {
-        RequestBuilder builder = new RequestBuilder()
-            .setMethod("GET")
-            .setUrl(url)
-            .setRequestTimeout(timeout);
+        RequestBuilder builder = new RequestBuilder().setMethod("GET").setUrl(url).setRequestTimeout(timeout);
 
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
             builder.addQueryParam(entry.getKey(), entry.getValue());
@@ -91,10 +80,7 @@ public class Http {
     }
 
     public static Future<Object> getCDN(String url, String etag, int timeout, IFn callback) {
-        RequestBuilder builder = new RequestBuilder()
-            .setMethod("GET")
-            .setUrl(url)
-            .setRequestTimeout(timeout);
+        RequestBuilder builder = new RequestBuilder().setMethod("GET").setUrl(url).setRequestTimeout(timeout);
 
         if (etag != null) {
             builder = builder.setHeader("If-None-Match", etag);

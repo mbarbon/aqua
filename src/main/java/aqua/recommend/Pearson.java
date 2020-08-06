@@ -51,13 +51,11 @@ public class Pearson {
             }
         }
 
-        if (100 * count / maxA < minCommonItems ||
-                100 * count / maxB < minCommonItems)
+        if (100 * count / maxA < minCommonItems || 100 * count / maxB < minCommonItems)
             return 1;
         if (sumSquaresA == 0 || sumSquaresB == 0)
             return 1;
-        return -CFUser.ratingToDouble(productSum) /
-            (Math.sqrt(CFUser.squaredRatingToDouble(sumSquaresA)) *
-                Math.sqrt(CFUser.squaredRatingToDouble(sumSquaresB)));
+        return -CFUser.ratingToDouble(productSum) / (Math.sqrt(CFUser.squaredRatingToDouble(sumSquaresA))
+                * Math.sqrt(CFUser.squaredRatingToDouble(sumSquaresB)));
     }
 }

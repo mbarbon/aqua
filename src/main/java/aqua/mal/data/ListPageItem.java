@@ -8,7 +8,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ListPageItem {
-    private static final Pattern IMAGE = Pattern.compile("^(https://cdn\\.myanimelist\\.net)/.*(/images/(?:anime|manga)/\\d+/.*\\.(?:jpg|webp)).*$");
+    private static final Pattern IMAGE = Pattern
+            .compile("^(https://cdn\\.myanimelist\\.net)/.*(/images/(?:anime|manga)/\\d+/.*\\.(?:jpg|webp)).*$");
 
     private static String convertImage(String url) {
         Matcher matcher = IMAGE.matcher(url);
@@ -36,19 +37,31 @@ public class ListPageItem {
 
     private static byte seriesType(String type) {
         switch (type) {
-            case "TV": return Anime.TV;
-            case "OVA": return Anime.OVA;
-            case "Movie": return Anime.MOVIE;
-            case "Special": return Anime.SPECIAL;
-            case "ONA": return Anime.ONA;
-            case "Music": return Anime.MUSIC;
+            case "TV":
+                return Anime.TV;
+            case "OVA":
+                return Anime.OVA;
+            case "Movie":
+                return Anime.MOVIE;
+            case "Special":
+                return Anime.SPECIAL;
+            case "ONA":
+                return Anime.ONA;
+            case "Music":
+                return Anime.MUSIC;
 
-            case "Manga": return Manga.MANGA;
-            case "Novel": return Manga.NOVEL;
-            case "One-shot": return Manga.ONESHOT;
-            case "Doujinshi": return Manga.DOUJINSHI;
-            case "Manhwa": return Manga.MANHWA;
-            case "Manhua": return Manga.MANHUA;
+            case "Manga":
+                return Manga.MANGA;
+            case "Novel":
+                return Manga.NOVEL;
+            case "One-shot":
+                return Manga.ONESHOT;
+            case "Doujinshi":
+                return Manga.DOUJINSHI;
+            case "Manhwa":
+                return Manga.MANHWA;
+            case "Manhua":
+                return Manga.MANHUA;
         }
 
         return 0;

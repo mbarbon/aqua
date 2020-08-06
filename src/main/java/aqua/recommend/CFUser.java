@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class CFUser {
     private static final double FP_DOUBLE = 32.0d;
@@ -18,16 +17,11 @@ public class CFUser {
 
     private static final CFRated[] EMPTY_CFRATED_ARRAY = new CFRated[0];
     private static final int[] EMPTY_PACKED_CFRATED_ARRAY = new int[0];
-    private static final int COMPLETED_AND_DROPPED =
-        statusMask(CFRated.COMPLETED, CFRated.DROPPED);
-    private static final int COMPLETED =
-        statusMask(CFRated.COMPLETED);
-    private static final int DROPPED =
-        statusMask(CFRated.DROPPED);
-    private static final int WATCHING =
-        statusMask(CFRated.WATCHING);
-    private static final int PLANTOWATCH =
-        statusMask(CFRated.PLANTOWATCH);
+    private static final int COMPLETED_AND_DROPPED = statusMask(CFRated.COMPLETED, CFRated.DROPPED);
+    private static final int COMPLETED = statusMask(CFRated.COMPLETED);
+    private static final int DROPPED = statusMask(CFRated.DROPPED);
+    private static final int WATCHING = statusMask(CFRated.WATCHING);
+    private static final int PLANTOWATCH = statusMask(CFRated.PLANTOWATCH);
     private static final int ALL_BUT_PLANTOWATCH = ~PLANTOWATCH;
 
     public String username;
@@ -109,7 +103,8 @@ public class CFUser {
     public void setFilteredAnimeList(CFParameters cfParameters, List<CFRated> animeList, Set<Integer> animeIds) {
         List<CFRated> filtered = new ArrayList<>(animeList.size());
         // copying the list to an array here makes filtering faster and reduces garbage
-        for (CFRated item : new FilteredListIterator<>(animeList.toArray(EMPTY_CFRATED_ARRAY), COMPLETED_AND_DROPPED|WATCHING)) {
+        for (CFRated item : new FilteredListIterator<>(animeList.toArray(EMPTY_CFRATED_ARRAY),
+                COMPLETED_AND_DROPPED | WATCHING)) {
             if (animeIds == null || animeIds.contains(item.animedbId)) {
                 filtered.add(item);
             }
@@ -197,7 +192,6 @@ public class CFUser {
         return completedAndDroppedRating[index] / FP_FLOAT;
     }
 
-
     public double completedAndDroppedRatingDouble(int index) {
         return completedAndDroppedRating[index] / FP_DOUBLE;
     }
@@ -221,16 +215,13 @@ public class CFUser {
     private static int statusMask(int... statuses) {
         int mask = 0;
         for (int status : statuses)
-            mask |= (1 <<  status);
+            mask |= (1 << status);
         return mask;
     }
 
     private static byte toCappedFixedPoint(float rating) {
         int fpRating = (int) (rating * FP_FLOAT);
-        return
-            fpRating < - 128 ? -128 :
-            fpRating > 127   ? 127 :
-                               (byte) fpRating;
+        return fpRating < -128 ? -128 : fpRating > 127 ? 127 : (byte) fpRating;
     }
 
     public static double ratingToDouble(int rating) {

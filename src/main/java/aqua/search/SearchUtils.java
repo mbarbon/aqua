@@ -23,7 +23,8 @@ class SearchUtils {
         return Arrays.asList(SPLIT_NON_WORD.split(title.toLowerCase()));
     }
 
-    static <T extends PartialSuggestion> Suggestion[] selectTopK(Collection<T> intermediate, Comparator<T> comparator, int limit) {
+    static <T extends PartialSuggestion> Suggestion[] selectTopK(Collection<T> intermediate, Comparator<T> comparator,
+            int limit) {
         Set<Integer> seenAnime = new HashSet<>();
         List<T> suggestions = new ArrayList<>(intermediate);
         suggestions.sort(comparator);
