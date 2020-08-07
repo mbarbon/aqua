@@ -85,13 +85,13 @@ public class CFUser {
         processAfterDeserialize(cfParameters);
     }
 
-    public void setItemList(CFParameters cfParameters, List<CFRated> itemList, Set<Integer> animeIds) {
-        if (animeIds == null) {
+    public void setItemList(CFParameters cfParameters, List<CFRated> itemList, Set<Integer> itemIds) {
+        if (itemIds == null) {
             setItemList(cfParameters, itemList);
         } else {
             List<CFRated> filtered = new ArrayList<>(itemList.size());
             for (CFRated item : itemList) {
-                if (animeIds.contains(item.animedbId)) {
+                if (itemIds.contains(item.animedbId)) {
                     filtered.add(item);
                 }
             }
