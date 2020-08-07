@@ -23,6 +23,7 @@ public class CFUser {
     private static final int WATCHING = statusMask(CFRated.WATCHING);
     private static final int PLANTOWATCH = statusMask(CFRated.PLANTOWATCH);
     private static final int ALL_BUT_PLANTOWATCH = ~PLANTOWATCH;
+    private static final int ALL = ~0;
 
     public String username;
     public long userId;
@@ -118,7 +119,7 @@ public class CFUser {
     }
 
     public Iterable<CFRated> itemList() {
-        return withStatusMask(COMPLETED_AND_DROPPED);
+        return withStatusMask(ALL);
     }
 
     public Iterable<CFRated> completedAndDropped() {
