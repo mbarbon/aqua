@@ -225,7 +225,6 @@ public class ComputeLatentFactorDecomposition {
         double[] data = currentItem.getData();
         int indexCount = currentItem.getUsed();
         double weightedLambda = lambda * (indexCount == 0 ? 1 : indexCount);
-        ;
 
         userRatingSlice.zero();
         for (int i = indexCount - 1; i > 0; --i)
