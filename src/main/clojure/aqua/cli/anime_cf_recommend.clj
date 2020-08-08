@@ -1,4 +1,4 @@
-(ns aqua.cli.cf-recommend
+(ns aqua.cli.anime-cf-recommend
   (:require aqua.mal-local
             aqua.paths
             aqua.recommend.cosine
@@ -32,6 +32,6 @@
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-anime-user data-source anime cf-parameters username)
-        users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count)]
+        users (aqua.recommend.user-sample/load-filtered-cf-users aqua.recommend.ModelType/ANIME (aqua.paths/anime-user-sample) data-source cf-parameters user-count)]
     (println "Running recommender")
     (run-recommender user users anime)))

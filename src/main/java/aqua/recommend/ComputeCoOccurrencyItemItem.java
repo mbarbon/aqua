@@ -125,6 +125,62 @@ public class ComputeCoOccurrencyItemItem {
         }
     }
 
+    private class InProgressAndDroppedManga implements AnimeIterator {
+        private final float goodScoreThreshold;
+        private CFUser user;
+        private int index;
+        private CFRated current;
+        private List<CFRated> inProgressAndDropped;
+
+        public InProgressAndDroppedManga(float goodScoreThreshold) {
+            this.goodScoreThreshold = goodScoreThreshold;
+        }
+
+        @Override
+        public void reset(CFUser user) {
+            this.user = user;
+            this.index = -1;
+            this.inProgressAndDropped = new ArrayList<>();
+
+            for (CFRated rated : user.inProgressAndDropped()) {
+                this.inProgressAndDropped.add(rated);
+            }
+        }
+
+        @Override
+        public int maxSize() {
+            return inProgressAndDropped.size();
+        }
+
+        @Override
+        public boolean next() {
+            if (index >= inProgressAndDropped.size()) {
+                return false;
+            }
+            do {
+                ++index;
+                if (index >= inProgressAndDropped.size()) {
+                    return false;
+                }
+                current = inProgressAndDropped.get(index);
+            } while (index < inProgressAndDropped.size() && normalizedRating() < goodScoreThreshold);
+            if (index >= inProgressAndDropped.size()) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int animedbId() {
+            return current.animedbId;
+        }
+
+        @Override
+        public float normalizedRating() {
+            return user.normalizedRating(current);
+        }
+    }
+
     private final Map<Integer, Item> itemMap;
     private final Map<Integer, Integer> animeIndexMap;
     private final int similarAnimeCount;
@@ -150,6 +206,12 @@ public class ComputeCoOccurrencyItemItem {
 
     public void findSimilarAiringAnime(List<CFUser> users, float goodScoreThreshold, float alpha) {
         countCoOccurencies(users, new CompletedAndDroppedAnime(goodScoreThreshold), new AiringAnime(itemMap), alpha);
+        fillSimilarAnime();
+    }
+
+    public void findSimilarManga(List<CFUser> users, float goodScoreThreshold, float alpha) {
+        countCoOccurencies(users, new InProgressAndDroppedManga(goodScoreThreshold),
+                new InProgressAndDroppedManga(goodScoreThreshold), alpha);
         fillSimilarAnime();
     }
 

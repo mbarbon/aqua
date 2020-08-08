@@ -27,7 +27,7 @@
 (defn- load-users []
   (log/info "Start loading users")
   (let [data-source @*data-source-ro
-        users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source @*cf-parameters user-count @*anime)
+        users (aqua.recommend.user-sample/load-filtered-cf-users aqua.recommend.ModelType/ANIME (aqua.paths/anime-user-sample) data-source @*cf-parameters user-count @*anime)
         co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model)
                                                                        (aqua.paths/anime-co-occurrency-model-airing))
         lfd (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model) @*anime)
@@ -46,7 +46,7 @@
   (reset! *lfd-users nil)
   (let [data-source @*data-source-ro
         target @*users]
-    (aqua.recommend.user-sample/load-filtered-cf-users-into (aqua.paths/anime-user-sample) data-source @*cf-parameters target @*anime))
+    (aqua.recommend.user-sample/load-filtered-cf-users-into aqua.recommend.ModelType/ANIME (aqua.paths/anime-user-sample) data-source @*cf-parameters target @*anime))
   (let [lfd (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model) @*anime)
         lfd-airing (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model-airing) @*anime)
         lfd-users (aqua.recommend.lfd/load-user-lfd (aqua.paths/anime-lfd-user-model) lfd @*users)]

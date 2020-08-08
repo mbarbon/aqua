@@ -27,6 +27,21 @@
       (.initializeIteration lfdr-airing)
       [lfdr lfdr-airing])))
 
+(defn prepare-manga-lfd-decompositor [user-list manga-map rank lambda]
+  (let [manga-index-map (java.util.HashMap.)]
+    (doseq [^aqua.mal.data.Manga manga (vals manga-map)]
+      (.put manga-index-map
+            (.mangadbId manga)
+            (.size manga-index-map)))
+    (let [lfdr (aqua.recommend.ComputeLatentFactorDecomposition. manga-index-map
+                                                                 (.size user-list)
+                                                                 rank
+                                                                 lambda)]
+      (dotimes [i (.size user-list)]
+        (.addInProgressAndDropped lfdr i (.get user-list i)))
+      (.initializeIteration lfdr)
+      [lfdr])))
+
 (defn run-user-steps
   ([^aqua.recommend.ComputeLatentFactorDecomposition lfdr]
     (run-user-steps lfdr 0 (.userCount lfdr)))
@@ -146,3 +161,11 @@
         ranked-anime (.computeUserAnimeScores lfd user-vector)]
     (into {} (for [anime ranked-anime]
                [(.animedbId anime) (- (.score anime))]))))
+
+(defn get-manga-recommendations [user
+                                 ^aqua.recommend.LatentFactorDecomposition lfd
+                                 remove-known-manga tagger]
+  (let [user-vector (.computeUserVector lfd user)
+        ranked-manga (.computeUserAnimeScores lfd user-vector)]
+    (.sort ranked-manga aqua.recommend.ScoredAnimeId/SORT_SCORE)
+    [(tagger (take 100 (remove-known-manga ranked-manga)))]))

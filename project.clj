@@ -41,6 +41,7 @@
                                      "-XX:+PrintGCDetails"]}
              :serve-jvm9 {:jvm-opts ["-Xms100M" "-Xmx100M"
                                      "-Xlog:gc:stdout:time"]}
+             :recompute-models {:jvm-opts ["-Xms50M""-Xmx7G"]}
              :dev {:resource-paths ["src/test/resources"]
                    :dependencies   [[jline/jline "2.14.5"]]}
              :repl {:global-vars {*warn-on-reflection* true}}

@@ -1,5 +1,6 @@
 (ns aqua.cli.search
   (:require aqua.mal-local
+            aqua.recommend.rp-similarity
             aqua.misc))
 
 (defn- readable-size [{:keys [used-memory]}]

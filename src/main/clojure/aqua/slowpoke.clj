@@ -116,11 +116,11 @@
     response-callback))
 
 (defn- fetch-and-update-user-anime-list [data-source username]
-  (let [response-callback (update-user-item-list-cb "anime" data-source username aqua.mal-local/store-user-anime-list)]
+  (let [response-callback (update-user-item-list-cb aqua.recommend.ModelType/ANIME data-source username aqua.mal-local/store-user-anime-list)]
     (aqua.mal-web/fetch-anime-list-cb username response-callback)))
 
 (defn- fetch-and-update-user-manga-list [data-source username]
-  (let [response-callback (update-user-item-list-cb "manga" data-source username aqua.mal-local/store-user-manga-list)]
+  (let [response-callback (update-user-item-list-cb aqua.recommend.ModelType/MANGA data-source username aqua.mal-local/store-user-manga-list)]
     (aqua.mal-web/fetch-manga-list-cb username response-callback)))
 
 (defn- throttled []

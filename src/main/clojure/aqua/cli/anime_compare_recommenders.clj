@@ -1,4 +1,4 @@
-(ns aqua.cli.compare-recommenders
+(ns aqua.cli.anime-compare-recommenders
   (:require [aqua.compare.misc :refer [timed-score]]
             aqua.compare.recall-planned
             aqua.compare.recall

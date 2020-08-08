@@ -1,15 +1,15 @@
-(ns aqua.cli.co-occurrency-recommend
+(ns aqua.cli.anime-rp-recommend
   (:require aqua.mal-local
             aqua.paths
-            aqua.recommend.co-occurrency
+            aqua.recommend.rp-similarity
             aqua.misc))
 
-(defn- run-recommender [user model anime-map]
+(defn- run-recommender [user rp anime-map]
   (let [known-anime-filter (aqua.misc/make-filter user anime-map)
         airing-anime-filter (aqua.misc/make-airing-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
         [recommended recommended-airing]
-          (aqua.recommend.co-occurrency/get-anime-recommendations user model known-anime-filter airing-anime-filter known-anime-tagger)]
+          (aqua.recommend.rp-similarity/get-anime-recommendations user rp known-anime-filter airing-anime-filter known-anime-tagger)]
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
     (println)
     (println "Airing anime")
@@ -30,6 +30,6 @@
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-anime-user data-source anime cf-parameters username)
-        model (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))]
+        rp (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model))]
     (println "Running recommender")
-    (run-recommender user model anime)))
+    (run-recommender user rp anime)))

@@ -65,8 +65,21 @@ public class ItemItemModel {
     public List<ScoredAnime> findSimilarAnime(CFUser user) {
         List<ScoredAnimeId> sortedScores = new ArrayList<>(user.completedAndDroppedIds.length);
         for (int i = 0; i < user.completedAndDroppedIds.length; ++i) {
-            sortedScores.add(new ScoredAnimeId(user.completedAndDroppedIds[i], user.completedAndDroppedRatingFloat(i)));
+            sortedScores.add(new ScoredAnimeId(user.completedAndDroppedIds[i],
+                user.completedAndDroppedRatingFloat(i)));
         }
+        return sortScoredItems(sortedScores);
+    }
+
+    public List<ScoredAnime> findSimilarManga(CFUser user) {
+        List<ScoredAnimeId> sortedScores = new ArrayList<>();
+        for (CFRated item : user.inProgressAndDropped()) {
+            sortedScores.add(new ScoredAnimeId(item.animedbId, user.normalizedRating(item)));
+        }
+        return sortScoredItems(sortedScores);
+    }
+
+    private List<ScoredAnime> sortScoredItems(List<ScoredAnimeId> sortedScores) {
         sortedScores.sort(ScoredAnimeId.SORT_SCORE);
         int maxUse = Math.min(ITEM_MAX, sortedScores.size());
         int minUse = Math.min(ITEM_MIN, sortedScores.size());

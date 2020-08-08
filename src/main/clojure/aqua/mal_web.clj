@@ -47,7 +47,7 @@
       (cond
         error [nil error nil]
         (= status 200)
-          (let [items (if (= kind "anime")
+          (let [items (if (.isAnime kind)
                         (aqua.mal.Serialize/readAnimeList body)
                         (aqua.mal.Serialize/readMangaList body))]
             [items nil nil])

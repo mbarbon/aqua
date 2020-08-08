@@ -13,6 +13,15 @@
        "    WHERE uas.completed > 5 AND"
        "          uas.completed < 500"))
 
+(def ^:private select-active-manga-users
+  (str "SELECT ums.user_id, ums.completed + ums.reading as item_count"
+       "    FROM user_manga_stats AS ums"
+       "      INNER JOIN users AS u"
+       "        ON ums.user_id = u.user_id AND"
+       "           u.username <> ''"
+       "    WHERE ums.completed + ums.reading > 5 AND"
+       "          ums.completed + ums.reading < 500"))
+
 (def max-clusters 25)
 
 (defn bitset-union [^java.util.BitSet a ^java.util.BitSet b]
@@ -30,10 +39,12 @@
     (* b 15)
     (* 45 (- b 8))))
 
-(defn- active-users [data-source]
+(defn- active-users [kind data-source]
   (with-open [connection (.getConnection data-source)
               statement (.createStatement connection)
-              rs (.executeQuery statement select-active-anime-users)]
+              rs (.executeQuery statement (if (.isAnime kind)
+                                            select-active-anime-users
+                                            select-active-manga-users))]
     (let [all-ids (shuffle (map #(vector (:user_id %) (:item_count %))
                                 (resultset-seq rs)))]
       (group-by #(->> % second count-to-bucket) all-ids))))
@@ -48,16 +59,20 @@
 (defn- items-to-ids [items]
   (into-array Integer/TYPE (map #(.itemId %) items)))
 
-(defn- batched-user-loader [data-source item-ids bucketed-users]
+(defn- batched-user-loader [kind data-source item-ids bucketed-users]
   (let [cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        load-users aqua.mal-local/load-cf-anime-users-by-id]
+        load-users (if (.isAnime kind)
+                     aqua.mal-local/load-cf-anime-users-by-id
+                     aqua.mal-local/load-cf-manga-users-by-id)]
     (apply concat
       (for [batch (partition-all 1000 (map first bucketed-users))]
         ; work around the (rare) case where anime/manga stats and anime/manga list are completely out of sync
         ; or the (slightly more frequent) case where the majority of anime/manga are non-interesting (hentai, specials, ...)
         (remove #(< (% 2) 5)
           (for [^aqua.recommend.CFUser cf-user (load-users data-source nil cf-parameters batch)]
-            (let [ids (.completedAndDroppedIds cf-user)
+            (let [ids (if (.isAnime kind)
+                        (.completedAndDroppedIds cf-user)
+                        (items-to-ids (.inProgressAndDropped cf-user)))
                   bitset (make-filtered-bitset item-ids ids)]
               [(.userId cf-user) bitset (.cardinality bitset)])))))))
 
@@ -158,9 +173,9 @@
               (lazy-seq (apply interleave-all (map rest not-empty))))
       [])))
 
-(defn- cluster-lazy-sequence [data-source all-users item-ids]
+(defn- cluster-lazy-sequence [kind data-source all-users item-ids]
   (let [clusters (for [[bucket bucketed-users] all-users]
-                   (let [users (batched-user-loader data-source item-ids bucketed-users)
+                   (let [users (batched-user-loader kind data-source item-ids bucketed-users)
                          clusters (cluster-users bucket item-ids users)]
                      clusters))]
     (apply interleave-all clusters)))
@@ -177,9 +192,9 @@
 (defn count-to-bucket-count [n]
   (bucket-to-count (count-to-bucket n)))
 
-(defn recompute-user-sample [data-source sample-count item-ids model-path]
-  (let [all-users (active-users data-source)
-        clusters (cluster-lazy-sequence data-source all-users item-ids)
+(defn recompute-user-sample [kind data-source sample-count item-ids model-path]
+  (let [all-users (active-users kind data-source)
+        clusters (cluster-lazy-sequence kind data-source all-users item-ids)
         users (java.util.ArrayList.)]
     (consume-clusters clusters users sample-count)
     (with-open [out (clojure.java.io/writer model-path)]
@@ -194,28 +209,40 @@
 
 ; the only purpose of this function is to avoid doubling memory usage
 ; while users are reloaded: old users become garbage while new users are loaded
-(defn load-filtered-cf-users-into [path data-source cf-parameters target item-map-to-filter-hentai]
-  (aqua.mal-local/load-filtered-cf-anime-users-into data-source
-                                                    (load-user-sample path (count target))
-                                                    cf-parameters
-                                                    target
-                                                    item-map-to-filter-hentai))
-
-(defn- load-filtered-cf-users-helper [path data-source cf-parameters max-count item-map-to-filter-hentai]
-  (let [target (java.util.ArrayList. (repeat max-count nil))]
-    (load-filtered-cf-users-into path data-source cf-parameters target item-map-to-filter-hentai)))
-
-; those produce a lot of garbage, should not be used in web code
-(defn load-filtered-cf-users
-  ([path data-source cf-parameters max-count]
-    (load-filtered-cf-users-helper path data-source cf-parameters max-count nil))
-  ([path data-source cf-parameters max-count item-map-to-filter-hentai]
-    (load-filtered-cf-users-helper path data-source cf-parameters max-count item-map-to-filter-hentai)))
-
-(defn load-filtered-cf-user-ids [data-source cf-parameters user-ids item-map-to-filter-hentai]
-  (let [target (java.util.ArrayList. (repeat (count user-ids) nil))]
+(defn load-filtered-cf-users-into [kind path data-source cf-parameters target item-map-to-filter-hentai]
+  (if (.isAnime kind)
     (aqua.mal-local/load-filtered-cf-anime-users-into data-source
-                                                      user-ids
+                                                      (load-user-sample path (count target))
+                                                      cf-parameters
+                                                      target
+                                                      item-map-to-filter-hentai)
+    (aqua.mal-local/load-filtered-cf-manga-users-into data-source
+                                                      (load-user-sample path (count target))
                                                       cf-parameters
                                                       target
                                                       item-map-to-filter-hentai)))
+
+(defn- load-filtered-cf-users-helper [kind path data-source cf-parameters max-count item-map-to-filter-hentai]
+  (let [target (java.util.ArrayList. (repeat max-count nil))]
+    (load-filtered-cf-users-into kind path data-source cf-parameters target item-map-to-filter-hentai)))
+
+; those produce a lot of garbage, should not be used in web code
+(defn load-filtered-cf-users
+  ([kind path data-source cf-parameters max-count]
+    (load-filtered-cf-users-helper kind path data-source cf-parameters max-count nil))
+  ([kind path data-source cf-parameters max-count item-map-to-filter-hentai]
+    (load-filtered-cf-users-helper kind path data-source cf-parameters max-count item-map-to-filter-hentai)))
+
+(defn load-filtered-cf-user-ids [kind data-source cf-parameters user-ids item-map-to-filter-hentai]
+  (let [target (java.util.ArrayList. (repeat (count user-ids) nil))]
+    (if (.isAnime kind)
+      (aqua.mal-local/load-filtered-cf-anime-users-into data-source
+                                                        user-ids
+                                                        cf-parameters
+                                                        target
+                                                        item-map-to-filter-hentai))
+      (aqua.mal-local/load-filtered-cf-anime-users-into data-source
+                                                        user-ids
+                                                        cf-parameters
+                                                        target
+                                                        item-map-to-filter-hentai)))

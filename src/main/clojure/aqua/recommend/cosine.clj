@@ -21,3 +21,7 @@
   (let [[similar-users recommended-completed] (get-raw-anime-recommendations user users remove-known-anime)
         recommended-airing (aqua.recommend.collaborative-filter/recommended-airing similar-users keep-airing-anime)]
     [(tagger recommended-completed) (tagger recommended-airing)]))
+
+(defn get-manga-recommendations [user users remove-known-manga tagger]
+  (let [[similar-users recommended-completed] (get-raw-anime-recommendations user users remove-known-manga)]
+    [(tagger recommended-completed)]))

@@ -41,6 +41,17 @@
     (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
     [[] (take 100 (remove-known-anime ranked-anime))]))
 
+(defn get-raw-manga-recommendations [user
+                                     ^aqua.recommend.ItemItemModel model
+                                     remove-known-anime]
+  (let [ranked-anime (.findSimilarManga model user)]
+    (.sort ranked-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
+    [[] (take 100 (remove-known-anime ranked-anime))]))
+
 (defn get-anime-recommendations [user model remove-known-anime keep-airing-anime tagger]
   (let [[_ recommendations] (get-raw-anime-recommendations user model remove-known-anime)]
+    [(tagger recommendations) []]))
+
+(defn get-manga-recommendations [user model remove-known-anime keep-airing-anime tagger]
+  (let [[_ recommendations] (get-raw-manga-recommendations user model remove-known-anime)]
     [(tagger recommendations) []]))

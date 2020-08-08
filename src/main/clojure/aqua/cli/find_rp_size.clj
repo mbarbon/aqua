@@ -36,11 +36,16 @@
                      (find-similar-items users item-map projection-size similar-count item-sample))]
     [(apply score-intersections iterations) (total-size iterations)]))
 
-(defn -main [projection-sizes]
+(defn -main [kind-string projection-sizes]
   (let [data-source (aqua.mal-local/open-sqlite-ro (aqua.paths/mal-db))
+        kind (aqua.recommend.ModelType/fromString kind-string)
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count)
-        items (aqua.mal-local/load-anime data-source)
+        users (if (.isAnime kind)
+                (aqua.recommend.user-sample/load-filtered-cf-users kind (aqua.paths/anime-user-sample) data-source cf-parameters user-count)
+                (aqua.recommend.user-sample/load-filtered-cf-users kind (aqua.paths/manga-user-sample) data-source cf-parameters user-count))
+        items (if (.isAnime kind)
+                (aqua.mal-local/load-anime data-source)
+                (aqua.mal-local/load-manga data-source))
         similar-count 30
         item-sample (take 1000 (shuffle (keys items)))]
     (doseq [projection-size (map #(Integer/valueOf %) (clojure.string/split projection-sizes #","))]

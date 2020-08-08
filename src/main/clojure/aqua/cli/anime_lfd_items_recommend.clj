@@ -1,15 +1,15 @@
-(ns aqua.cli.rp-recommend
+(ns aqua.cli.anime-lfd-items-recommend
   (:require aqua.mal-local
             aqua.paths
-            aqua.recommend.rp-similarity
+            aqua.recommend.lfd-items
             aqua.misc))
 
-(defn- run-recommender [user rp anime-map]
+(defn- run-recommender [user lfd-items anime-map]
   (let [known-anime-filter (aqua.misc/make-filter user anime-map)
         airing-anime-filter (aqua.misc/make-airing-filter user anime-map)
         known-anime-tagger (aqua.misc/make-tagger user anime-map)
         [recommended recommended-airing]
-          (aqua.recommend.rp-similarity/get-anime-recommendations user rp known-anime-filter airing-anime-filter known-anime-tagger)]
+          (aqua.recommend.lfd-items/get-anime-recommendations user lfd-items known-anime-filter airing-anime-filter known-anime-tagger)]
     (println "User" (.username user) (count (seq (.completedAndDropped user))))
     (println)
     (println "Airing anime")
@@ -30,6 +30,6 @@
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
         user (aqua.mal-local/load-cf-anime-user data-source anime cf-parameters username)
-        rp (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model))]
+        lfd-items (aqua.recommend.lfd-items/load-lfd-items (aqua.paths/anime-lfd-items-model) (aqua.paths/anime-lfd-items-model-airing))]
     (println "Running recommender")
-    (run-recommender user rp anime)))
+    (run-recommender user lfd-items anime)))

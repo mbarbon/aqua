@@ -25,7 +25,7 @@
   (let [user-completed (with-query data-source rs query-user-stats [user-id]
                          (:completed (first (resultset-seq rs))))
         cf-parameters (aqua.misc/make-cf-parameters 0 0)
-        user (first (aqua.recommend.user-sample/load-filtered-cf-user-ids data-source cf-parameters [user-id] anime))
+        user (first (aqua.recommend.user-sample/load-filtered-cf-user-ids aqua.recommend.ModelType/ANIME data-source cf-parameters [user-id] anime))
         bucket (aqua.recommend.user-sample/count-to-bucket-count user-completed)
         bucket-stats (stats bucket)]
     (assoc stats bucket {:count (+ 1 (:count bucket-stats 0))

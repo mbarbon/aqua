@@ -1,4 +1,4 @@
-(ns aqua.cli.items-similarity
+(ns aqua.cli.anime-items-similarity
   (:require aqua.mal-local
             aqua.paths
             aqua.recommend.lfd-items

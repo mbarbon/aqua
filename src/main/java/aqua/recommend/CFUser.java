@@ -17,11 +17,14 @@ public class CFUser {
 
     private static final CFRated[] EMPTY_CFRATED_ARRAY = new CFRated[0];
     private static final int[] EMPTY_PACKED_CFRATED_ARRAY = new int[0];
+
     private static final int COMPLETED_AND_DROPPED = statusMask(CFRated.COMPLETED, CFRated.DROPPED);
     private static final int COMPLETED = statusMask(CFRated.COMPLETED);
     private static final int DROPPED = statusMask(CFRated.DROPPED);
     private static final int WATCHING = statusMask(CFRated.WATCHING);
     private static final int PLANTOWATCH = statusMask(CFRated.PLANTOWATCH);
+    private static final int IN_PROGRESS_AND_DROPPED = statusMask(CFRated.WATCHING, CFRated.COMPLETED, CFRated.DROPPED);
+
     private static final int ALL_BUT_PLANTOWATCH = ~PLANTOWATCH;
     private static final int ALL = ~0;
 
@@ -138,6 +141,10 @@ public class CFUser {
         return withStatusMask(WATCHING);
     }
 
+    public Iterable<CFRated> inProgressAndDropped() {
+        return withStatusMask(IN_PROGRESS_AND_DROPPED);
+    }
+
     public Iterable<CFRated> planToWatch() {
         return withStatusMask(PLANTOWATCH);
     }
@@ -185,6 +192,8 @@ public class CFUser {
             return cfParameters.nonRatedCompleted / ratingStddev;
         else if (rated.status == CFRated.DROPPED)
             return (minRating + cfParameters.nonRatedDropped - ratingMean) / ratingStddev;
+        else if (rated.status == CFRated.READING)
+            return cfParameters.nonRatedCompleted / ratingStddev;
         else
             return 0;
     }

@@ -146,6 +146,21 @@ public class ComputeLatentFactorDecomposition {
         }
     }
 
+    public void addInProgressAndDropped(int userIndex, CFUser user) {
+        for (CFRated rated : user.inProgressAndDropped()) {
+            float rating = user.normalizedRating(rated);
+            Integer animeIndex = animeIndexMap.get(rated.animedbId);
+
+            // some anime are filtered out, so they will have no index
+            if (animeIndex != null) {
+                ratingMatrixByUser.set(userIndex, animeIndex, rating);
+                ratingMatrixByAnime.set(userIndex, animeIndex, rating);
+            }
+        }
+
+        userMap[userIndex] = user;
+    }
+
     public void initializeIteration() {
         Random rnd = new Random();
 
