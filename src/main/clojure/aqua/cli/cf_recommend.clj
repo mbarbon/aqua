@@ -31,7 +31,7 @@
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
-        user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
+        user (aqua.mal-local/load-cf-anime-user data-source anime cf-parameters username)
         users (aqua.recommend.user-sample/load-filtered-cf-users (aqua.paths/anime-user-sample) data-source cf-parameters user-count)]
     (println "Running recommender")
     (run-recommender user users anime)))

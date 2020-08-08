@@ -29,7 +29,7 @@
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
-        user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
+        user (aqua.mal-local/load-cf-anime-user data-source anime cf-parameters username)
         rp (aqua.recommend.rp-similarity/load-rp-similarity (aqua.paths/anime-rp-model))]
     (println "Running recommender")
     (run-recommender user rp anime)))

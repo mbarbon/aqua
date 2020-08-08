@@ -29,7 +29,7 @@
         _ (println "Loading anime")
         anime (aqua.mal-local/load-anime data-source)
         _ (println "Loading users")
-        user (aqua.mal-local/load-cf-user data-source anime cf-parameters username)
+        user (aqua.mal-local/load-cf-anime-user data-source anime cf-parameters username)
         model (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model) (aqua.paths/anime-co-occurrency-model-airing))]
     (println "Running recommender")
     (run-recommender user model anime)))

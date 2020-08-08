@@ -125,7 +125,7 @@
        "        ON u.user_id = al.user_id"
        "    WHERE u.username = ?"))
 
-(defn load-cf-user [data-source anime cf-parameters username]
+(defn load-cf-anime-user [data-source anime cf-parameters username]
   (with-query data-source rs select-anime-user [username]
     (first (doall-rs rs (partial load-cf-users-from-rs cf-parameters anime)))))
 
