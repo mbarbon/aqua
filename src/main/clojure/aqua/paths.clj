@@ -24,6 +24,11 @@
 (short-model-path manga-lfd-model)
 (short-model-path manga-lfd-user-model)
 
+(short-model-path anime-embedding)
+(short-model-path anime-embedding-items-model)
+(short-model-path manga-embedding)
+(short-model-path manga-embedding-items-model)
+
 (short-model-path anime-rp-model)
 (short-model-path anime-rp-model-unfiltered)
 (short-model-path manga-rp-model)

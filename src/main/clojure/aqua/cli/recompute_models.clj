@@ -7,6 +7,7 @@
             aqua.recommend.lfd
             aqua.recommend.lfd-items
             aqua.recommend.rp-similarity
+            aqua.recommend.embedding
             clojure.java.io))
 
 (def anime-user-count 80000)
@@ -19,6 +20,10 @@
                 "anime-lfd-model"
                 "manga-lfd-model"
                 "anime-lfd-items"
+                "anime-embedding"
+                "anime-embedding-items"
+                "manga-embedding"
+                "manga-embedding-items"
                 "anime-rp-similarity"
                 "anime-rp-similarity-unfiltered"
                 "manga-rp-similarity"
@@ -51,6 +56,30 @@
 
 (def lfd-items-item-count 30)
 (def lfd-items-item-count-airing 15)
+
+(def anime-embedding-parameters
+  (aqua.recommend.embedding/make-parameters {
+    "rank" 60
+    "window" 15
+    "negativeProportion" 5
+    "frequencySmoothing" 0.75
+    "samplingAlpha" 0.00001}))
+(def anime-embedding-learning-rate 0.005)
+(def anime-embedding-iterations 15)
+
+(def anime-embedding-items-item-count 30)
+
+(def manga-embedding-parameters
+  (aqua.recommend.embedding/make-parameters {
+    "rank" 120
+    "window" 15
+    "negativeProportion" 5
+    "frequencySmoothing" 0.75
+    "samplingAlpha" 0.00001}))
+(def manga-embedding-learning-rate 0.01)
+(def manga-embedding-iterations 15)
+
+(def manga-embedding-items-item-count 20)
 
 (defn- recompute-anime-co-occurrency-model [users anime-map model-path airing-model-path]
   (let [co-occurrency (aqua.recommend.co-occurrency/create-anime-co-occurrency users anime-map
@@ -105,6 +134,17 @@
        (aqua.recommend.lfd/store-user-lfd out (.reduceUserCount (.decompositionUsers lfdr) cf-user-count)))
      (with-open [out (clojure.java.io/writer model-path)]
        (aqua.recommend.lfd/store-lfd out (.decomposition lfdr)))))
+
+(defn- recompute-embedding [model-type users parameters learning-rate iterations model-path]
+  (let [embedding (aqua.recommend.embedding/create-embedding model-type users parameters learning-rate iterations)]
+    (with-open [out (clojure.java.io/writer model-path)]
+      (aqua.recommend.embedding/store-embedding out embedding))))
+
+(defn- recompute-embedding-items [embedding-path item-map item-count model-path]
+  (let [embedding (aqua.recommend.embedding/load-embedding embedding-path)
+        embedding-items (aqua.recommend.embedding/create-embedding-items embedding item-map item-count)]
+    (with-open [out (clojure.java.io/writer model-path)]
+      (aqua.recommend.embedding/store-embedding-items out embedding-items))))
 
 (defn -main [& item-args]
   (let [items (if (seq item-args) item-args all-items)
@@ -175,6 +215,38 @@
                                                    (aqua.paths/anime-lfd-model-airing)
                                                    (aqua.paths/anime-lfd-items-model)
                                                    (aqua.paths/anime-lfd-items-model-airing))))
+        "anime-embedding"
+          (do
+            (println "Recomputing anime embedding similarity")
+            (time (recompute-embedding aqua.recommend.ModelType/COMPLETED_ANIME
+                                       anime-users
+                                       anime-embedding-parameters
+                                       anime-embedding-learning-rate
+                                       anime-embedding-iterations
+                                       (aqua.paths/anime-embedding))))
+        "manga-embedding"
+          (do
+            (println "Recomputing manga embedding similarity")
+            (time (recompute-embedding aqua.recommend.ModelType/MANGA
+                                       manga-users
+                                       manga-embedding-parameters
+                                       manga-embedding-learning-rate
+                                       manga-embedding-iterations
+                                       (aqua.paths/manga-embedding))))
+        "anime-embedding-items"
+          (do
+            (println "Recomputing anime embedding item similarity")
+            (time (recompute-embedding-items (aqua.paths/anime-embedding)
+                                             anime
+                                             anime-embedding-items-item-count
+                                             (aqua.paths/anime-embedding-items-model))))
+        "manga-embedding-items"
+          (do
+            (println "Recomputing manga embedding item similarity")
+            (time (recompute-embedding-items (aqua.paths/manga-embedding)
+                                             manga
+                                             manga-embedding-items-item-count
+                                             (aqua.paths/manga-embedding-items-model))))
         "anime-rp-similarity"
           (do
             (println "Recomputing anime random projection similarity model")
