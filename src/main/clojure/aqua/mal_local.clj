@@ -200,17 +200,17 @@
         [genre description]))))
 
 (def ^:private select-anime-genres-map
-  "SELECT animedb_id, genre_id, sort_order FROM anime_genres ORDER BY animedb_id, sort_order")
+  "SELECT animedb_id AS itemdb_id, genre_id, sort_order FROM anime_genres ORDER BY animedb_id, sort_order")
 
 (def ^:private select-manga-genres-map
-  "SELECT mangadb_id, genre_id, sort_order FROM manga_genres ORDER BY mangadb_id, sort_order")
+  "SELECT mangadb_id AS itemdb_id, genre_id, sort_order FROM manga_genres ORDER BY mangadb_id, sort_order")
 
 (defn- load-genres-map [data-source select-genres-query select-genre-names-query]
   (let [genre-names (load-genre-names data-source select-genre-names-query)]
     (letfn [(concat-to-map-value [coll key value]
               (assoc coll key (conj (or (coll key) []) value)))
-            (merge-genres [coll {:keys [animedb_id genre_id]}]
-              (concat-to-map-value coll animedb_id (genre-names genre_id)))]
+            (merge-genres [coll {:keys [itemdb_id genre_id]}]
+              (concat-to-map-value coll itemdb_id (genre-names genre_id)))]
       (with-query data-source rs select-genres-query []
         (reduce merge-genres {} (resultset-seq rs))))))
 
