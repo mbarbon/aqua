@@ -4,19 +4,19 @@
 <section class="aqua-body">
   <h2><a href="/anime/list/${part.headLetter}">${part.headLetter}</a></h2>
   <div class="recommendation-list">
-  <#list part.exampleAnime as anime>
+  <#list part.exampleItems as item>
     <div class="recommendation-item">
-      <a title="${anime.title}" href="/anime/details/${anime.animedbId?c}">
-      <img class="recommendation-image anime-list-image" src="${anime.smallImage}" alt="${anime.title}"></a>
+      <a title="${item.title}" href="/anime/details/${item.itemdbId?c}">
+      <img class="recommendation-image item-list-image" src="${item.smallImage}" alt="${item.title}"></a>
       <div class="recommendation-details">
-        <div class="header"><a href="/anime/details/${anime.animedbId?c}" title="${anime.title}">${anime.title}</a></div>
-        <div class="details" title="${anime.genres}">${anime.genres}</div>
-        <div class="details">${anime.episodes} eps
-    <#if anime.franchiseEpisodes != 0>
-          (${anime.franchiseEpisodes} in franchise)
+        <div class="header"><a href="/anime/details/${item.itemdbId?c}" title="${item.title}">${item.title}</a></div>
+        <div class="details" title="${item.genres}">${item.genres}</div>
+        <div class="details">${item.episodes} eps
+    <#if item.franchiseEpisodes != 0>
+          (${item.franchiseEpisodes} in franchise)
     </#if>
         </div>
-        <div class="details">${anime.season}</div>
+        <div class="details">${item.season}</div>
       </div>
     </div>
   </#list>

@@ -8,15 +8,18 @@
                                       *data-source-rw
                                       *data-source-ro
                                       *anime
+                                      *manga
                                       *cf-parameters]]
             [clojure.tools.logging :as log]))
 
 (defn- reload-anime []
-  (log/info "Start loading anime")
+  (log/info "Start loading anime/manga")
   (let [data-source @*data-source-ro
-        anime (aqua.mal-local/load-anime data-source)]
-    (reset! *anime anime))
-  (log/info "Done loading anime"))
+        anime (aqua.mal-local/load-anime data-source)
+        manga (aqua.mal-local/load-manga data-source)]
+    (reset! *anime anime)
+    (reset! *manga manga))
+  (log/info "Done loading anime/manga"))
 
 (defn init [directory state-directory]
   (reset! *background (java.util.concurrent.Executors/newScheduledThreadPool 7))

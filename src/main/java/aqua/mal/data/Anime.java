@@ -16,7 +16,6 @@ public class Anime extends Item {
 
     public int animedbId;
     public String title;
-    public String image;
     public int status;
     public int seriesType;
     public int episodes;
@@ -39,30 +38,6 @@ public class Anime extends Item {
 
     public boolean isOld() {
         return (System.currentTimeMillis() / 1000 - startedAiring) > 365 * 86400;
-    }
-
-    public String localImage(String root) {
-        if (localCover == null || localCover.coverPath == null) {
-            return image;
-        } else {
-            return root + localCover.coverPath;
-        }
-    }
-
-    public String smallLocalImage(String root) {
-        if (localCover == null || localCover.smallCoverPath == null) {
-            return image;
-        } else {
-            return root + localCover.smallCoverPath;
-        }
-    }
-
-    public String mediumLocalImage(String root) {
-        if (localCover == null || localCover.mediumCoverPath == null) {
-            return image;
-        } else {
-            return root + localCover.mediumCoverPath;
-        }
     }
 
     @Override

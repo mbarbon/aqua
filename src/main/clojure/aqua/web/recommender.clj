@@ -4,14 +4,17 @@
             [aqua.web.globals :refer [*data-source-ro
                                       *users
                                       *anime
+                                      *manga
                                       *cf-parameters
-                                      *co-occurrency
+                                      *anime-co-occurrency
                                       *lfd-users
                                       *lfd-anime
-                                      *lfd-anime-airing]]
+                                      *lfd-anime-airing
+                                      *manga-embedding-item-item]]
             aqua.paths
             aqua.recommend.cosine
             aqua.recommend.co-occurrency
+            aqua.recommend.embedding
             aqua.recommend.lfd
             aqua.recommend.lfd-cf
             aqua.recommend.user-sample
@@ -28,16 +31,18 @@
   (log/info "Start loading users")
   (let [data-source @*data-source-ro
         users (aqua.recommend.user-sample/load-filtered-cf-users aqua.recommend.ModelType/ANIME (aqua.paths/anime-user-sample) data-source @*cf-parameters user-count @*anime)
-        co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model)
-                                                                       (aqua.paths/anime-co-occurrency-model-airing))
+        anime-co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model)
+                                                                             (aqua.paths/anime-co-occurrency-model-airing))
         lfd (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model) @*anime)
         lfd-airing (aqua.recommend.lfd/load-lfd (aqua.paths/anime-lfd-model-airing) @*anime)
-        lfd-users (aqua.recommend.lfd/load-user-lfd (aqua.paths/anime-lfd-user-model) lfd users)]
+        lfd-users (aqua.recommend.lfd/load-user-lfd (aqua.paths/anime-lfd-user-model) lfd users)
+        manga-embedding-item-item (aqua.recommend.embedding/load-embedding-items (aqua.paths/manga-embedding-items-model))]
     (reset! *users users)
-    (reset! *co-occurrency co-occurrency)
+    (reset! *anime-co-occurrency anime-co-occurrency)
     (reset! *lfd-users lfd-users)
     (reset! *lfd-anime lfd)
-    (reset! *lfd-anime-airing lfd-airing))
+    (reset! *lfd-anime-airing lfd-airing)
+    (reset! *manga-embedding-item-item manga-embedding-item-item))
   (log/info "Done loading users"))
 
 (defn- reload-users []
@@ -53,9 +58,11 @@
     (reset! *lfd-users lfd-users)
     (reset! *lfd-anime lfd)
     (reset! *lfd-anime-airing lfd-airing))
-  (let [co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model)
-                                                                       (aqua.paths/anime-co-occurrency-model-airing))]
-    (reset! *co-occurrency co-occurrency))
+  (let [anime-co-occurrency (aqua.recommend.co-occurrency/load-co-occurrency (aqua.paths/anime-co-occurrency-model)
+                                                                             (aqua.paths/anime-co-occurrency-model-airing))]
+    (reset! *anime-co-occurrency anime-co-occurrency))
+  (let [manga-embedding-item-item (aqua.recommend.embedding/load-embedding-items (aqua.paths/manga-embedding-items-model))]
+    (reset! *manga-embedding-item-item manga-embedding-item-item))
   (log/info "Done reloading users"))
 
 (defn init []
@@ -64,11 +71,11 @@
 (defn reload []
   (reload-users))
 
-(defn- make-list [lookup-anime recommended]
+(defn- make-list [lookup-item render-item recommended]
   (filter some?
-    (for [^aqua.recommend.ScoredAnime scored-anime recommended]
-      (if-let [anime (lookup-anime (.animedbId scored-anime))]
-        (aqua.web.render/render-anime anime (.tags scored-anime))))))
+    (for [^aqua.recommend.ScoredAnime scored-item recommended]
+      (if-let [item (lookup-item (.animedbId scored-item))]
+        (render-item item (.tags scored-item))))))
 
 (defn- call-recommender [recommender user known-anime-filter airing-anime-filter known-anime-tagger]
   (case recommender
@@ -80,7 +87,7 @@
                                                        known-anime-tagger)
     :cf-co-occurrency
       (aqua.recommend.co-occurrency/get-anime-recommendations user
-                                                              @*co-occurrency
+                                                              @*anime-co-occurrency
                                                               known-anime-filter
                                                               airing-anime-filter
                                                               known-anime-tagger)
@@ -113,18 +120,29 @@
         recommender (all-recommenders (int (* (Math/random) (count all-recommenders))))
         [recommended-completed recommended-airing]
           (call-recommender recommender user known-anime-filter airing-anime-filter known-anime-tagger)]
-    {:airing (make-list lookup-anime (take 10 recommended-airing))
-     :completed (make-list lookup-anime recommended-completed)}))
+    {:airing (make-list lookup-anime aqua.web.render/render-anime (take 10 recommended-airing))
+     :completed (make-list lookup-anime aqua.web.render/render-anime recommended-completed)}))
 
-(defn recommend-single-anime [animedb-id]
-  (if-let [anime (@*anime animedb-id)]
-    (let [lookup-anime @*anime
-          co-occurrency @*co-occurrency
-          anime (lookup-anime animedb-id)
-          completed (.similarAnime (.complete co-occurrency) animedb-id)
-          airing (.similarAnime (.airing co-occurrency) animedb-id)]
+(defn recommend-single-anime [itemdb-id]
+  (if-let [item (@*anime itemdb-id)]
+    (let [lookup-item @*anime
+          co-occurrency @*anime-co-occurrency
+          item (lookup-item itemdb-id)
+          completed (.similarAnime (.complete co-occurrency) itemdb-id)
+          airing (.similarAnime (.airing co-occurrency) itemdb-id)]
       (.sort completed aqua.recommend.ScoredAnimeId/SORT_SCORE)
       (.sort airing aqua.recommend.ScoredAnimeId/SORT_SCORE)
-      {:animeDetails (aqua.web.render/add-medium-cover anime (aqua.web.render/render-anime anime nil))
-        :recommendations {:airing (make-list lookup-anime (take 5 airing))
-                          :completed (make-list lookup-anime (take 15 completed))}})))
+      {:itemDetails (aqua.web.render/add-medium-cover item (aqua.web.render/render-anime item nil))
+        :recommendations {:airing (make-list lookup-item aqua.web.render/render-anime (take 5 airing))
+                          :completed (make-list lookup-item aqua.web.render/render-anime (take 15 completed))}})))
+
+(defn recommend-single-manga [itemdb-id]
+  (if-let [item (@*manga itemdb-id)]
+    (let [lookup-item @*manga
+          embedding-item-item @*manga-embedding-item-item
+          item (lookup-item itemdb-id)
+          completed (.similarAnime (.complete embedding-item-item) itemdb-id)]
+      (.sort completed aqua.recommend.ScoredAnimeId/SORT_SCORE)
+      {:itemDetails (aqua.web.render/add-medium-cover item (aqua.web.render/render-manga item nil))
+        :recommendations {:completed (make-list lookup-item aqua.web.render/render-manga (take 15 completed))}})))
+

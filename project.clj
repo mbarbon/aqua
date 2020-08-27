@@ -36,10 +36,10 @@
                     ["maven.compiler.source" "1.8"]
                     ["maven.compiler.target" "1.8"]]
   :aot [aqua.scrape.pause-scrape-exception]
-  :profiles {:serve-jvm8 {:jvm-opts ["-Xms100M" "-Xmx100M"
+  :profiles {:serve-jvm8 {:jvm-opts ["-Xms100M" "-Xmx110M"
                                      "-XX:+PrintGCDateStamps"
                                      "-XX:+PrintGCDetails"]}
-             :serve-jvm9 {:jvm-opts ["-Xms100M" "-Xmx100M"
+             :serve-jvm9 {:jvm-opts ["-Xms100M" "-Xmx110M"
                                      "-Xlog:gc:stdout:time"]}
              :recompute-models {:jvm-opts ["-Xms50M""-Xmx7G"]}
              :dev {:resource-paths ["src/test/resources"]

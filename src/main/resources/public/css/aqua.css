@@ -108,7 +108,7 @@ a:hover {
 
 .main-page-foot {
   padding: 8px;
-  min-height: 50px;
+  min-height: 75px;
   background-color: #a9d6f5;
 }
 
@@ -256,7 +256,7 @@ a:hover {
   height: auto;
 }
 
-.anime-list-image {
+.item-list-image {
   max-width: 84px;
   max-height: 114px;
   height: auto;

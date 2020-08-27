@@ -12,7 +12,6 @@ public class Manga extends Item {
 
     public int mangadbId;
     public String title;
-    public String image;
     public int status;
     public int seriesType;
     public int chapters;

@@ -73,27 +73,51 @@
 
   (GET "/anime/details/:animedb-id" [animedb-id]
     (if-let [recommendations (aqua.web.recommender/recommend-single-anime (Integer/parseInt animedb-id))]
-      (let [anime (:animeDetails recommendations)
+      (let [item (:itemDetails recommendations)
             model (assoc recommendations
                          :jsBundle aqua.web.templates/jsBundle
                          :appInHeader true)
-            page-title (str "Anime recommendations for " (:title anime))
-            page-description (str "If you watched " (:title anime) " you will like the other anime in this page")]
+            page-title (str "Anime recommendations for " (:title item))
+            page-description (str "If you watched " (:title item) " you will like the other anime in this page")]
         (aqua.web.templates/render-layout-template "anime-details.ftlh"
                                                   {:title page-title
                                                    :description page-description}
                                                   model))
       (ring.util.response/redirect "/anime/list")))
 
+  (GET "/manga/details/:mangadb-id" [mangadb-id]
+    (if-let [recommendations (aqua.web.recommender/recommend-single-manga (Integer/parseInt mangadb-id))]
+      (let [item (:itemDetails recommendations)
+            model (assoc recommendations
+                         :jsBundle aqua.web.templates/jsBundle
+                         :appInHeader true)
+            page-title (str "Manga recommendations for " (:title item))
+            page-description (str "If you watched " (:title item) " you will like the other manga in this page")]
+        (aqua.web.templates/render-layout-template "manga-details.ftlh"
+                                                  {:title page-title
+                                                   :description page-description}
+                                                  model))
+      (ring.util.response/redirect "/manga/list")))
+
   (GET "/anime/list/:initial" [initial]
     (aqua.web.templates/render-layout-template "anime-list-initial.ftlh"
                                                {:noindex true}
                                                (aqua.web.mal-proxy/anime-list-detail initial)))
 
+  (GET "/manga/list/:initial" [initial]
+    (aqua.web.templates/render-layout-template "manga-list-initial.ftlh"
+                                               {:noindex true}
+                                               (aqua.web.mal-proxy/manga-list-detail initial)))
+
   (GET "/anime/list" []
     (aqua.web.templates/render-layout-template "anime-list.ftlh"
                                                {:noindex true}
                                                (aqua.web.mal-proxy/anime-list-excerpt)))
+
+  (GET "/manga/list" []
+    (aqua.web.templates/render-layout-template "manga-list.ftlh"
+                                               {:noindex true}
+                                               (aqua.web.mal-proxy/manga-list-excerpt)))
 
   (POST "/recommend" {:keys [body headers]}
     (let [user (aqua.mal.Serialize/readPartialCFUser @aqua.web.globals/*cf-parameters body)]

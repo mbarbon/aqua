@@ -55,9 +55,11 @@
     "target": "http://localhost:9000",
     "paths": [
       "^/anime/.*$",
+      "^/manga/.*$",
       "^/recommend$",
       "^/autocomplete$",
       "^/list/anime/.*$",
+      "^/list/manga/.*$",
       "^/images/cover/.*$"
     ]
   },

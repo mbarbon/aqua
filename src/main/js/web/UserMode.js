@@ -82,12 +82,18 @@ export default class UserMode extends Component<Props, State> {
             <div>
               {'you can also '}
               <a href='/anime/list'>browse all anime</a>
+              {' or '}
+              <a href='/manga/list'>browse all manga</a>
             </div>
           </div>
         )}
         {loadingState != UserMode.MODE_DEFAULT && <Spinner />}
         {loadingState != UserMode.MODE_DEFAULT && (
-          <a href='/anime/list'>Browse all anime</a>
+          <div>
+            <a href='/anime/list'>Browse all anime</a>
+            {' or '}
+            <a href='/manga/list'>Browse all manga</a>
+          </div>
         )}
         {loadingState == UserMode.MODE_LOADING_LIST && (
           <div className='start-your-list'>

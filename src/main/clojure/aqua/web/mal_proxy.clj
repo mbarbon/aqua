@@ -3,7 +3,13 @@
             aqua.slowpoke
             aqua.web.render
             clojure.java.io
-            [aqua.web.globals :refer [*data-source-ro *data-source-rw *background *anime *anime-list-by-letter]]))
+            [aqua.web.globals :refer [*data-source-ro
+                                      *data-source-rw
+                                      *background
+                                      *anime
+                                      *manga
+                                      *anime-list-by-letter
+                                      *manga-list-by-letter]]))
 
 (def ^:private title-letters-numbers "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 (def ^:private title-letters "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -24,7 +30,7 @@
               45)
     (schedule aqua.slowpoke/make-fetch-new-users 30)))
 
-(defn- recompute-anime-list-by-letter []
+(defn- recompute-item-list-by-letter []
   (letfn [(is-letter-number [c]
             (not= (.indexOf title-letters-numbers (int c)) -1))
           (to-symbol [c]
@@ -33,18 +39,20 @@
               (if-not (= (.indexOf title-letters (int c)) -1)
                 c
                 \0)))
-          (first-letter [^aqua.mal.data.Anime anime]
-            (->> (.title anime)
+          (first-letter [^aqua.mal.data.Item item]
+            (->> (.title item)
                  (clojure.string/upper-case)
                  (filter is-letter-number)
                  (first)
                  (to-symbol)
-                 (str)))]
-    (reset! *anime-list-by-letter
-      (into {} (for [[head-letter anime-list] (group-by #(first-letter %) (remove #(.isHentai %) (vals @*anime)))]
-                 [head-letter {:head-letter head-letter
-                               :example-anime (take 4 (shuffle anime-list))
-                               :anime anime-list}])))))
+                 (str)))
+          (group-by-first-letter [item-map]
+            (into {} (for [[head-letter item-list] (group-by #(first-letter %) (remove #(.isHentai %) (vals item-map)))]
+                      [head-letter {:head-letter head-letter
+                                    :example-item (take 4 (shuffle item-list))
+                                    :items item-list}])))]
+    (reset! *anime-list-by-letter (group-by-first-letter @*anime))
+    (reset! *manga-list-by-letter (group-by-first-letter @*manga))))
 
 (defn init [{:keys [slowpoke mal-data-directory]}]
   (aqua.mal.Http/init)
@@ -54,10 +62,10 @@
     @*background
     (aqua.slowpoke/make-process-refresh-queue @*data-source-rw @*data-source-ro)
     1 5 java.util.concurrent.TimeUnit/SECONDS)
-  (recompute-anime-list-by-letter))
+  (recompute-item-list-by-letter))
 
 (defn reload []
-  (recompute-anime-list-by-letter))
+  (recompute-item-list-by-letter))
 
 (def ^:private ct-pb "application/x-protobuf")
 (def ^:private ct-json "application/json")
@@ -92,16 +100,29 @@
             [(pb-to-json stream) ct-json ce-id -1]))
       [nil nil nil (aqua.slowpoke/enqueue-user-refresh @*data-source-rw username)])))
 
-(defn- render-anime-list [anime-list]
-  (for [anime anime-list]
-    (aqua.web.render/render-anime anime nil)))
+(defn- render-item-list [render item-list]
+  (for [item item-list]
+    (render item nil)))
+
+(def ^:private render-anime-list (partial render-item-list aqua.web.render/render-anime))
+(def ^:private render-manga-list (partial render-item-list aqua.web.render/render-manga))
 
 (defn anime-list-detail [head-letter]
   (if-let [item (@*anime-list-by-letter (clojure.string/upper-case head-letter))]
-    {:anime (render-anime-list (:anime item)) :headLetter head-letter}
-    {:anime [] :headLetter head-letter}))
+    {:items (render-anime-list (:items item)) :headLetter head-letter}
+    {:items [] :headLetter head-letter}))
+
+(defn manga-list-detail [head-letter]
+  (if-let [item (@*manga-list-by-letter (clojure.string/upper-case head-letter))]
+    {:items (render-manga-list (:items item)) :headLetter head-letter}
+    {:items [] :headLetter head-letter}))
 
 (defn anime-list-excerpt []
   {:parts (for [item (sort-by :head-letter (vals @*anime-list-by-letter))]
             {:headLetter (:head-letter item)
-             :exampleAnime (render-anime-list (:example-anime item))})})
+             :exampleItems (render-anime-list (:example-item item))})})
+
+(defn manga-list-excerpt []
+  {:parts (for [item (sort-by :head-letter (vals @*manga-list-by-letter))]
+            {:headLetter (:head-letter item)
+             :exampleItems (render-manga-list (:example-item item))})})
