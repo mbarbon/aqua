@@ -132,7 +132,12 @@
   (GET "/sitemaps/anime.xml" []
     (aqua.web.templates/render-template "aqua/sitemaps/anime.ftlh"
                                         {:content-type "text/xml"}
-                                        {:anime (vals @aqua.web.globals/*anime)}))
+                                        {:items (vals @aqua.web.globals/*anime)}))
+
+  (GET "/sitemaps/manga.xml" []
+    (aqua.web.templates/render-template "aqua/sitemaps/manga.ftlh"
+                                        {:content-type "text/xml"}
+                                        {:items (vals @aqua.web.globals/*manga)}))
 
   (GET "/images/cover/*" {{file-path :*} :route-params}
     (ring.util.response/file-response file-path {:root        (aqua.web.templates/image-root)
