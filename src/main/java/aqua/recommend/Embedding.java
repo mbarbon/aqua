@@ -41,12 +41,16 @@ public class Embedding {
                     continue;
                 float score = 0, sumSq1 = 0, sumSq2 = 0;
                 for (int z = 0; z < rank; ++z) {
-                    score += embedding[rowStart + z] * embedding[itemStart + z];
-                    sumSq1 += embedding[rowStart + z] * embedding[rowStart + z];
-                    sumSq2 += embedding[itemStart + z] * embedding[itemStart + z];
+                    float delta = embedding[rowStart + z] - embedding[itemStart + z];
+                    score += delta * delta;
+                    // score += embedding[rowStart + z] * embedding[itemStart + z];
+                    // sumSq1 += embedding[rowStart + z] * embedding[rowStart + z];
+                    // sumSq2 += embedding[itemStart + z] * embedding[itemStart + z];
                 }
-                similarAnme.add(
-                        new ScoredAnimeId(animeIndices[j], -(score / (float) (Math.sqrt(sumSq1) * Math.sqrt(sumSq2)))));
+                // similarAnme.add(
+                // new ScoredAnimeId(animeIndices[j], -(score / (float) (Math.sqrt(sumSq1) *
+                // Math.sqrt(sumSq2)))));
+                similarAnme.add(new ScoredAnimeId(animeIndices[j], -score));
             }
             similarAnme.sort(ScoredAnimeId.SORT_SCORE);
 

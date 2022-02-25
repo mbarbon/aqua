@@ -6,7 +6,7 @@
             aqua.recommend.embedding
             aqua.recommend.rp-similarity))
 
-(defn- print-similar [model-name anime scored-anime]
+(defn print-similar [model-name anime scored-anime]
   (.sort scored-anime aqua.recommend.ScoredAnimeId/SORT_SCORE)
   (println (str "\n" model-name))
   (doseq [scored scored-anime]
